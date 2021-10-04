@@ -937,6 +937,11 @@ func (i *Ibft) Close() error {
 	return nil
 }
 
+// IsIbftInSyncState returns whether or not node is in sync state
+func (i *Ibft) IsIbftInSyncState() bool {
+	return i.isState(SyncState)
+}
+
 // getNextMessage reads a new message from the message queue
 func (i *Ibft) getNextMessage(timeout time.Duration) (*proto.MessageReq, bool) {
 	timeoutCh := time.After(timeout)

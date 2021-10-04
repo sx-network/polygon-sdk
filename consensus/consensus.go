@@ -28,6 +28,9 @@ type Consensus interface {
 
 	// Close closes the connection
 	Close() error
+
+	// Returns whether or not node is in sync state
+	IsIbftInSyncState() bool
 }
 
 // Config is the configuration for the consensus

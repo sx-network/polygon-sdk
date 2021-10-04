@@ -65,3 +65,7 @@ func (d *Dummy) run() {
 	// do nothing
 	<-d.closeCh
 }
+
+func (d *Dummy) IsIbftInSyncState() bool {
+	return false
+}
