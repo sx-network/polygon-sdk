@@ -321,8 +321,8 @@ func (j *jsonRPCHub) ApplyTxn(header *types.Header, txn *types.Transaction) (res
 	return
 }
 
-func (j *jsonRPCHub) IsIbftInSyncState() bool {
-	return j.Consensus.IsIbftInSyncState()
+func (j *jsonRPCHub) IsIbftStateStale() bool {
+	return j.Consensus.IsIbftStateStale()
 }
 
 // SETUP //

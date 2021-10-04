@@ -58,8 +58,8 @@ type blockchainInterface interface {
 	// GetNonce returns the next nonce for this address
 	GetNonce(addr types.Address) (uint64, bool)
 
-	// IsIbftInSyncState returns whether or not node is in sync state
-	IsIbftInSyncState() bool
+	// IsIbftStateStale returns whether or not ibft node is stale
+	IsIbftStateStale() bool
 
 	stateHelperInterface
 }

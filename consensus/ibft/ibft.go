@@ -937,9 +937,9 @@ func (i *Ibft) Close() error {
 	return nil
 }
 
-// IsIbftInSyncState returns whether or not node is in sync state
-func (i *Ibft) IsIbftInSyncState() bool {
-	return i.isState(SyncState)
+// IsIbftStateStale returns whether or not ibft node is stale
+func (i *Ibft) IsIbftStateStale() bool {
+	return i.isState(SyncState) || i.isState(RoundChangeState)
 }
 
 // getNextMessage reads a new message from the message queue

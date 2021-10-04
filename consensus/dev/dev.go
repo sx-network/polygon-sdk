@@ -198,6 +198,6 @@ func (d *Dev) Close() error {
 	return nil
 }
 
-func (d *Dev) IsIbftInSyncState() bool {
+func (d *Dev) IsIbftStateStale() bool {
 	return false
 }
