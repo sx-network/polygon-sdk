@@ -66,6 +66,6 @@ func (d *Dummy) run() {
 	<-d.closeCh
 }
 
-func (d *Dummy) IsIbftInSyncState() bool {
+func (d *Dummy) IsIbftStateStale() bool {
 	return false
 }

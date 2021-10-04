@@ -67,7 +67,7 @@ type blockchainInterface interface {
 type nullBlockchainInterface struct {
 }
 
-func (b *nullBlockchainInterface) GetIbftState() bool {
+func (b *nullBlockchainInterface) IsIbftStateStale() bool {
 	return false
 }
 
