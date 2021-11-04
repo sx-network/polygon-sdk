@@ -239,6 +239,7 @@ func (d *Dispatcher) Handle(reqBody []byte) ([]byte, error) {
 		if req.Method == "" {
 			return NewRpcResponse(req.ID, "2.0", nil, NewInvalidRequestError("Invalid json request")).Bytes()
 		}
+
 		resp, err := d.handleReq(req)
 
 		return NewRpcResponse(req.ID, "2.0", resp, err).Bytes()
@@ -280,13 +281,13 @@ func (d *Dispatcher) handleReq(req Request) ([]byte, Error) {
 	inArgs := make([]reflect.Value, fd.inNum)
 	inArgs[0] = service.sv
 
-	if req.Params != nil {
-		inputs := make([]interface{}, fd.numParams())
-		for i := 0; i < fd.inNum-1; i++ {
-			val := reflect.New(fd.reqt[i+1])
-			inputs[i] = val.Interface()
-			inArgs[i+1] = val.Elem()
-		}
+	inputs := make([]interface{}, fd.numParams())
+	for i := 0; i < fd.inNum-1; i++ {
+		val := reflect.New(fd.reqt[i+1])
+		inputs[i] = val.Interface()
+		inArgs[i+1] = val.Elem()
+	}
+	if fd.numParams() > 0 {
 		if err := json.Unmarshal(req.Params, &inputs); err != nil {
 			return nil, NewInvalidParamsError("Invalid Params")
 		}
