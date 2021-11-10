@@ -961,6 +961,7 @@ func (i *Ibft) Close() error {
 // IsIbftStateStale returns whether or not ibft node is stale
 func (i *Ibft) IsIbftStateStale() bool {
 	_, diff := i.syncer.BestPeer()
+	fmt.Println(diff.String())
 	return diff.Cmp(big.NewInt(5)) >= 0
 }
 
