@@ -960,9 +960,15 @@ func (i *Ibft) Close() error {
 
 // IsIbftStateStale returns whether or not ibft node is stale
 func (i *Ibft) IsIbftStateStale() bool {
-	_, diff := i.syncer.BestPeer()
-	fmt.Println(diff.String())
-	return diff.Cmp(big.NewInt(5)) >= 0
+
+	if (i.isState(SyncState)) {
+		_, diff := i.syncer.BestPeer()
+		return diff.Cmp(big.NewInt(5)) >= 0
+	}
+	if (i.isState(RoundChangeState)) {
+		return true
+	}
+	return false
 }
 
 // getNextMessage reads a new message from the message queue
