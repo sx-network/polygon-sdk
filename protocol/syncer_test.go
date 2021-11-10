@@ -174,7 +174,7 @@ func TestBestPeer(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			syncer, peerSyncers := SetupSyncerNetwork(t, tt.chain, tt.peersChain)
 
-			bestPeer := syncer.BestPeer()
+			bestPeer, _ := syncer.BestPeer()
 			if tt.found {
 				assert.NotNil(t, bestPeer, "syncer should find best peer, but not found")
 
