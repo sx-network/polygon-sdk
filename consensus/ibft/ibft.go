@@ -963,8 +963,10 @@ func (i *Ibft) IsIbftStateStale() bool {
 
 	// if syncState (validators and non-sealing), ensure we are within 5 blocks old
 	if (i.isState(SyncState)) {
-		_, diff := i.syncer.BestPeer()
-		return diff.Cmp(big.NewInt(5)) >= 0
+		if _, diff := i.syncer.BestPeer(); diff != nil {
+			return diff.Cmp(big.NewInt(5)) >= 0
+		}
+		return false
 	}
 	if (i.isState(RoundChangeState)) {
 		return true
