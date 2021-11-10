@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math"
+	"math/big"
 	"path/filepath"
 	"reflect"
 	"time"
@@ -292,7 +293,7 @@ func (i *Ibft) isValidSnapshot() bool {
 func (i *Ibft) runSyncState() {
 	for i.isState(SyncState) {
 		// try to sync with some target peer
-		p := i.syncer.BestPeer()
+		p, _ := i.syncer.BestPeer()
 		if p == nil {
 			// if we do not have any peers and we have been a validator
 			// we can start now. In case we start on another fork this will be
@@ -716,7 +717,7 @@ func (i *Ibft) runRoundChangeState() {
 	checkTimeout := func() {
 		// check if there is any peer that is really advanced and we might need to sync with it first
 		if i.syncer != nil {
-			bestPeer := i.syncer.BestPeer()
+			bestPeer, _ := i.syncer.BestPeer()
 			if bestPeer != nil {
 				lastProposal := i.blockchain.Header()
 				if bestPeer.Number() > lastProposal.Number {
@@ -959,7 +960,8 @@ func (i *Ibft) Close() error {
 
 // IsIbftStateStale returns whether or not ibft node is stale
 func (i *Ibft) IsIbftStateStale() bool {
-	return i.isState(SyncState) || i.isState(RoundChangeState)
+	_, diff := i.syncer.BestPeer()
+	return diff.Cmp(big.NewInt(5)) >= 0
 }
 
 // getNextMessage reads a new message from the message queue

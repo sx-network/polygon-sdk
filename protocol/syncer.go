@@ -372,7 +372,7 @@ func (s *Syncer) Start() {
 }
 
 // BestPeer returns the best peer by difficulty (if any)
-func (s *Syncer) BestPeer() *syncPeer {
+func (s *Syncer) BestPeer() (*syncPeer, *big.Int) {
 	var bestPeer *syncPeer
 	var bestTd *big.Int
 
@@ -386,15 +386,15 @@ func (s *Syncer) BestPeer() *syncPeer {
 	})
 
 	if bestPeer == nil {
-		return nil
+		return nil, nil
 	}
 
 	curDiff := s.blockchain.CurrentTD()
 	if bestTd.Cmp(curDiff) <= 0 {
-		return nil
+		return nil, nil
 	}
 
-	return bestPeer
+	return bestPeer, big.NewInt(0).Sub(bestTd, curDiff)
 }
 
 // HandleNewPeer is a helper method that is used to handle new user connections within the Syncer
