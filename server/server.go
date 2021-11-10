@@ -243,6 +243,7 @@ type jsonRPCHub struct {
 	*blockchain.Blockchain
 	*txpool.TxPool
 	*state.Executor
+	consensus.Consensus
 }
 
 // HELPER + WRAPPER METHODS //
@@ -322,6 +323,10 @@ func (j *jsonRPCHub) ApplyTxn(header *types.Header, txn *types.Transaction) (res
 	return
 }
 
+func (j *jsonRPCHub) IsIbftStateStale() bool {
+	return j.Consensus.IsIbftStateStale()
+}
+
 // SETUP //
 
 // setupJSONRCP sets up the JSONRPC server, using the set configuration
@@ -331,6 +336,7 @@ func (s *Server) setupJSONRPC() error {
 		Blockchain: s.blockchain,
 		TxPool:     s.txpool,
 		Executor:   s.executor,
+		Consensus:  s.consensus,
 	}
 
 	conf := &jsonrpc.Config{
