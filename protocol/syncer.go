@@ -33,6 +33,7 @@ var (
 	ErrCommonAncestorNotFound = errors.New("header is nil")
 	ErrForkNotFound           = errors.New("fork not found")
 	ErrPopTimeout             = errors.New("timeout")
+	ErrConnectionClosed       = errors.New("connection closed")
 )
 
 // syncPeer is a representation of the peer the node is syncing with
@@ -83,20 +84,28 @@ func (s *syncPeer) purgeBlocks(lastSeen types.Hash) {
 func (s *syncPeer) popBlock(timeout time.Duration) (b *types.Block, err error) {
 	timeoutCh := time.After(timeout)
 	for {
-		s.enqueueLock.Lock()
-		if len(s.enqueue) != 0 {
-			b, s.enqueue = s.enqueue[0], s.enqueue[1:]
-			s.enqueueLock.Unlock()
-			return
-		}
-		s.enqueueLock.Unlock()
 
-		select {
-		case <-s.enqueueCh:
-		case <-timeoutCh:
-			return nil, ErrPopTimeout
+		if !s.IsClosed() {
+			s.enqueueLock.Lock()
+			if len(s.enqueue) != 0 {
+				b, s.enqueue = s.enqueue[0], s.enqueue[1:]
+				s.enqueueLock.Unlock()
+				return
+			}
+
+			s.enqueueLock.Unlock()
+			select {
+			case <-s.enqueueCh:
+			case <-timeoutCh:
+				return nil, ErrPopTimeout
+			}
+
+		} else {
+			return nil, ErrConnectionClosed
 		}
+
 	}
+
 }
 
 // appendBlock adds a new block to the block queue
@@ -286,15 +295,20 @@ func (s *Syncer) updatePeerStatus(peerID peer.ID, status *Status) {
 
 // Broadcast broadcasts a block to all peers
 func (s *Syncer) Broadcast(b *types.Block) {
-	// diff is number in ibft
-	diff := new(big.Int).SetUint64(b.Header.Difficulty)
+	// Get the chain difficulty associated with block
+	td, ok := s.blockchain.GetTD(b.Hash())
+	if !ok {
+		// not supposed to happen
+		s.logger.Error("total difficulty not found", "block number", b.Number())
+		return
+	}
 
 	// broadcast the new block to all the peers
 	req := &proto.NotifyReq{
 		Status: &proto.V1Status{
 			Hash:       b.Hash().String(),
 			Number:     b.Number(),
-			Difficulty: diff.String(),
+			Difficulty: td.String(),
 		},
 		Raw: &any.Any{
 			Value: b.MarshalRLP(),
@@ -358,7 +372,7 @@ func (s *Syncer) Start() {
 }
 
 // BestPeer returns the best peer by difficulty (if any)
-func (s *Syncer) BestPeer() *syncPeer {
+func (s *Syncer) BestPeer() (*syncPeer, *big.Int) {
 	var bestPeer *syncPeer
 	var bestTd *big.Int
 
@@ -372,16 +386,15 @@ func (s *Syncer) BestPeer() *syncPeer {
 	})
 
 	if bestPeer == nil {
-		return nil
+		return nil, nil
 	}
 
 	curDiff := s.blockchain.CurrentTD()
-
 	if bestTd.Cmp(curDiff) <= 0 {
-		return nil
+		return nil, nil
 	}
 
-	return bestPeer
+	return bestPeer, big.NewInt(0).Sub(bestTd, curDiff)
 }
 
 // HandleNewPeer is a helper method that is used to handle new user connections within the Syncer
@@ -415,6 +428,7 @@ func (s *Syncer) DeletePeer(peerID peer.ID) error {
 		if err := p.(*syncPeer).conn.Close(); err != nil {
 			return err
 		}
+		close(p.(*syncPeer).enqueueCh)
 	}
 
 	return nil
@@ -499,7 +513,6 @@ func (s *Syncer) WatchSyncWithPeer(p *syncPeer, handler func(b *types.Block) boo
 			s.logger.Info("Connection to a peer has closed already", "id", p.peer)
 			break
 		}
-
 		b, err := p.popBlock(popTimeout)
 		if err != nil {
 			s.logger.Error("failed to pop block", "err", err)
@@ -509,7 +522,7 @@ func (s *Syncer) WatchSyncWithPeer(p *syncPeer, handler func(b *types.Block) boo
 			s.logger.Error("failed to write block", "err", err)
 			break
 		}
-		if !handler(b) {
+		if handler(b) {
 			break
 		}
 	}

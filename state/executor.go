@@ -15,6 +15,9 @@ import (
 
 const (
 	spuriousDragonMaxCodeSize = 24576
+
+	TxGas                 uint64 = 21000 // Per transaction not creating a contract
+	TxGasContractCreation uint64 = 53000 // Per transaction that creates a contract
 )
 
 var emptyCodeHashTwo = types.BytesToHash(crypto.Keccak256(nil))
@@ -289,7 +292,7 @@ func (t *Transition) Apply(msg *types.Transaction) (*runtime.ExecutionResult, er
 		t.r.PostHook(t)
 	}
 
-	return result, nil
+	return result, err
 }
 
 // ContextPtr returns reference of context
@@ -330,7 +333,7 @@ var (
 	ErrNonceIncorrect        = fmt.Errorf("incorrect nonce")
 	ErrNotEnoughFundsForGas  = fmt.Errorf("not enough funds to cover gas costs")
 	ErrBlockLimitReached     = fmt.Errorf("gas limit reached in the pool")
-	ErrBlockLimitExceeded    = fmt.Errorf("specified gas exceeds block gas limit")
+	ErrBlockLimitExceeded    = fmt.Errorf("transaction's gas limit exceeds block gas limit")
 	ErrIntrinsicGasOverflow  = fmt.Errorf("overflow in intrinsic gas calculation")
 	ErrNotEnoughIntrinsicGas = fmt.Errorf("not enough gas supplied for intrinsic gas costs")
 	ErrNotEnoughFunds        = fmt.Errorf("not enough funds for transfer with given value")
@@ -352,7 +355,7 @@ func NewTransitionApplicationError(err error, isRecoverable bool) *TransitionApp
 	}
 }
 
-func (t *Transition) apply(msg *types.Transaction) (*runtime.ExecutionResult, *TransitionApplicationError) {
+func (t *Transition) apply(msg *types.Transaction) (*runtime.ExecutionResult, error) {
 	// First check this message satisfies all consensus rules before
 	// applying the message. The rules include these clauses
 	//
@@ -655,9 +658,9 @@ func TransactionGasCost(msg *types.Transaction, isHomestead, isIstanbul bool) (u
 
 	// Contract creation is only paid on the homestead fork
 	if msg.IsContractCreation() && isHomestead {
-		cost += 53000
+		cost += TxGasContractCreation
 	} else {
-		cost += 21000
+		cost += TxGas
 	}
 
 	payload := msg.Input
