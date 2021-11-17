@@ -224,14 +224,14 @@ func (t *TxPool) GetNonce(addr types.Address) (uint64, bool) {
 		return 0, false
 	}
 
-	keys := make([]uint64, len(accountTxs))
-	i := 0
+	highestNonce := uint64(0)
 	for k := range accountTxs {
-			keys[i] = k
-			i++
+			if k > highestNonce {
+				highestNonce = k
+			}
 	}
 
-	return uint64(accountTxs[uint64(keys[len(keys)-1])].Nonce + 1), true
+	return uint64(accountTxs[highestNonce].Nonce + 1), true
 }
 
 // NumAccountTxs Returns the number of transactions in the account specific queue
