@@ -221,11 +221,13 @@ func (t *TxPool) GetNonce(addr types.Address) (uint64, bool) {
 	mux := t.lockAccountQueue(addr, false)
 	defer mux.unlock()
 
-	wrapper, ok := t.accountQueues[addr]
+	pendingTxs, _ := t.GetTxs()
+	wrapper, ok := pendingTxs[addr]
 	if !ok {
 		return 0, false
 	}
-	return wrapper.accountQueue.nextNonce, true
+
+	return uint64(wrapper[uint64(len(wrapper)-1)].Nonce + 1), true
 }
 
 // NumAccountTxs Returns the number of transactions in the account specific queue
