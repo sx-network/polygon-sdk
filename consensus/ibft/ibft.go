@@ -541,6 +541,7 @@ func (i *Ibft) runAcceptState() { // start new round
 	for i.getState() == AcceptState {
 		msg, ok := i.getNextMessage(timeout)
 		if !ok {
+			i.logger.Debug("dgk - accept state - getNextMsg not ok, continuing in acceptState loop...")
 			return
 		}
 		if msg == nil {
@@ -781,6 +782,9 @@ func (i *Ibft) runRoundChangeState() {
 
 		// we only expect RoundChange messages right now
 		num := i.state.AddRoundMessage(msg)
+
+		i.logger.Debug("dgk - roundchange state received msg", "roundLength", num)
+		i.logger.Debug("dgk - roundchange state received msg", "round", msg.View.Round)
 
 		if num == i.state.NumValid() {
 			// start a new round inmediatly
