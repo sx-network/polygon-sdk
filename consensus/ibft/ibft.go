@@ -462,6 +462,10 @@ func (i *Ibft) runAcceptState() { // start new round
 	logger := i.logger.Named("acceptState")
 	logger.Info("Accept state", "sequence", i.state.view.Sequence)
 
+	for ind, peer := range i.network.Peers() {
+		i.logger.Debug("dgk - acceptState", "total peers", len(i.network.Peers()), "current peer #", ind, "current peer ID", peer.Info.ID)
+	}
+
 	// This is the state in which we either propose a block or wait for the pre-prepare message
 	parent := i.blockchain.Header()
 	number := parent.Number + 1
@@ -487,6 +491,10 @@ func (i *Ibft) runAcceptState() { // start new round
 	i.logger.Info("current snapshot", "validators", len(snap.Set), "votes", len(snap.Votes))
 
 	i.state.validators = snap.Set
+
+	i.logger.Debug("dgk - acceptState messages", "prepared msg length", len(i.state.prepared))
+	i.logger.Debug("dgk - acceptState messages", "committed msg length", len(i.state.committed))
+	i.logger.Debug("dgk - acceptState messages", "roundMessages msg length", len(i.state.roundMessages))
 
 	// reset round messages
 	i.state.resetRoundMsgs()
@@ -541,6 +549,7 @@ func (i *Ibft) runAcceptState() { // start new round
 	for i.getState() == AcceptState {
 		msg, ok := i.getNextMessage(timeout)
 		if !ok {
+			i.logger.Debug("dgk - accept state - getNextMsg not ok, continuing in acceptState loop...")
 			return
 		}
 		if msg == nil {
@@ -781,6 +790,11 @@ func (i *Ibft) runRoundChangeState() {
 
 		// we only expect RoundChange messages right now
 		num := i.state.AddRoundMessage(msg)
+		i.logger.Debug("dgk - roundchange state received msg", "roundLength", num, "round", msg.View.Round, "from", msg.From)
+
+		for ind, peer := range i.network.Peers() {
+			i.logger.Debug("dgk - roundchange", "total peers", len(i.network.Peers()), "current peer #", ind, "current peer ID", peer.Info.ID)
+		}
 
 		if num == i.state.NumValid() {
 			// start a new round inmediatly
