@@ -492,6 +492,10 @@ func (i *Ibft) runAcceptState() { // start new round
 
 	i.state.validators = snap.Set
 
+	i.logger.Debug("dgk - acceptState messages", "prepared msg length", len(i.state.prepared))
+	i.logger.Debug("dgk - acceptState messages", "committed msg length", len(i.state.committed))
+	i.logger.Debug("dgk - acceptState messages", "roundMessages msg length", len(i.state.roundMessages))
+
 	// reset round messages
 	i.state.resetRoundMsgs()
 
