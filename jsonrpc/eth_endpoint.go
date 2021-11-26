@@ -421,7 +421,7 @@ func (e *Eth) GetLogs(filterOptions *LogFilter) (interface{}, error) {
 		if err != nil {
 			return err
 		}
-		// TODO: dan - assumes receipt index matches tx index...
+
 		for indx, receipt := range receipts {
 			for logIndx, log := range receipt.Logs {
 				if filterOptions.Match(log) {
@@ -442,7 +442,7 @@ func (e *Eth) GetLogs(filterOptions *LogFilter) (interface{}, error) {
 	}
 
 	if filterOptions.BlockHash != nil {
-		block, ok := e.d.store.GetBlockByHash(*filterOptions.BlockHash, false)
+		block, ok := e.d.store.GetBlockByHash(*filterOptions.BlockHash, true)
 		if !ok {
 			return nil, fmt.Errorf("not found")
 		}
@@ -475,7 +475,7 @@ func (e *Eth) GetLogs(filterOptions *LogFilter) (interface{}, error) {
 		return nil, fmt.Errorf("incorrect range")
 	}
 	for i := from; i <= to; i++ {
-		block, ok := e.d.store.GetBlockByNumber(i, false)
+		block, ok := e.d.store.GetBlockByNumber(i, true)
 		if !ok {
 			break
 		}
