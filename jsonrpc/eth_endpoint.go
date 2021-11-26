@@ -416,12 +416,12 @@ func (e *Eth) EstimateGas(
 // GetLogs returns an array of logs matching the filter options
 func (e *Eth) GetLogs(filterOptions *LogFilter) (interface{}, error) {
 	result := make([]*Log, 0)
-	parseReceipts := func(header *types.Header) error {
-		receipts, err := e.d.store.GetReceiptsByHash(header.Hash)
+	parseReceipts := func(block *types.Block) error {
+		receipts, err := e.d.store.GetReceiptsByHash(block.Header.Hash)
 		if err != nil {
 			return err
 		}
-
+		// TODO: dan - assumes receipt index matches tx index...
 		for indx, receipt := range receipts {
 			for logIndx, log := range receipt.Logs {
 				if filterOptions.Match(log) {
@@ -429,9 +429,9 @@ func (e *Eth) GetLogs(filterOptions *LogFilter) (interface{}, error) {
 						Address:     log.Address,
 						Topics:      log.Topics,
 						Data:        argBytes(log.Data),
-						BlockNumber: argUint64(header.Number),
-						BlockHash:   header.Hash,
-						TxHash:      receipt.TxHash,
+						BlockNumber: argUint64(block.Header.Number),
+						BlockHash:   block.Header.Hash,
+						TxHash:      block.Transactions[indx].Hash,
 						TxIndex:     argUint64(indx),
 						LogIndex:    argUint64(logIndx),
 					})
@@ -446,7 +446,11 @@ func (e *Eth) GetLogs(filterOptions *LogFilter) (interface{}, error) {
 		if !ok {
 			return nil, fmt.Errorf("not found")
 		}
-		if err := parseReceipts(block.Header); err != nil {
+		if len(block.Transactions) == 0 {
+			// no txs in block, return empty response
+			return result, nil
+		}
+		if err := parseReceipts(block); err != nil {
 			return nil, err
 		}
 		return result, nil
@@ -471,15 +475,15 @@ func (e *Eth) GetLogs(filterOptions *LogFilter) (interface{}, error) {
 		return nil, fmt.Errorf("incorrect range")
 	}
 	for i := from; i <= to; i++ {
-		header, ok := e.d.store.GetHeaderByNumber(i)
+		block, ok := e.d.store.GetBlockByNumber(i, false)
 		if !ok {
 			break
 		}
-		if header.Number == 0 {
-			// do not check logs in genesis
+		if block.Header.Number == 0 || len(block.Transactions) == 0 {
+			// do not check logs in genesis and skip if no txs
 			continue
 		}
-		if err := parseReceipts(header); err != nil {
+		if err := parseReceipts(block); err != nil {
 			return nil, err
 		}
 	}
