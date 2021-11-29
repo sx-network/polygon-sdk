@@ -252,12 +252,34 @@ func (i *Ibft) start() {
 	}
 }
 
+func (i *Ibft) logStates() {
+	i.logger.Debug("dgk - Current state log --------------------")
+	i.logger.Debug("dgk - Committed messages")
+	for k, v := range i.state.committed {
+		i.logger.Debug("dgk - Committed", "key", k, "value", v)
+	}
+	i.logger.Debug("dgk - Prepared messages")
+	for k, v := range i.state.prepared {
+		i.logger.Debug("dgk - Prepared", "key", k, "value", v)
+	}
+	i.logger.Debug("dgk - Round messages")
+	for k, v := range i.state.roundMessages {
+		i.logger.Debug("dgk - Round messages", "key", k)
+		for rk, rv := range v {
+			i.logger.Debug("dgk - Round message", "key", rk, "value", rv)
+		}
+	}
+	i.logger.Debug("dgk - End current state log --------------------")
+}
+
 // runCycle represents the IBFT state machine loop
 func (i *Ibft) runCycle() {
 	// Log to the console
 	if i.state.view != nil {
 		i.logger.Debug("cycle", "state", i.getState(), "sequence", i.state.view.Sequence, "round", i.state.view.Round)
 	}
+
+	i.logStates()
 
 	// Based on the current state, execute the corresponding section
 	switch i.getState() {
@@ -988,13 +1010,13 @@ func (i *Ibft) Close() error {
 func (i *Ibft) IsIbftStateStale() bool {
 
 	// if syncState (validators and non-sealing), ensure we are within 5 blocks old
-	if (i.isState(SyncState)) {
+	if i.isState(SyncState) {
 		if _, diff := i.syncer.BestPeer(); diff != nil {
 			return diff.Cmp(big.NewInt(5)) >= 0
 		}
 		return false
 	}
-	if (i.isState(RoundChangeState)) {
+	if i.isState(RoundChangeState) {
 		return true
 	}
 	return false
@@ -1006,6 +1028,7 @@ func (i *Ibft) getNextMessage(timeout time.Duration) (*proto.MessageReq, bool) {
 	for {
 		msg := i.msgQueue.readMessage(i.getState(), i.state.view)
 		if msg != nil {
+			i.logger.Debug("dgk - getNextMessage", "view", msg.view, "msg", msg.msg, "obj", msg.obj)
 			return msg.obj, true
 		}
 
