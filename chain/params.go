@@ -10,6 +10,7 @@ type Params struct {
 	ChainID        int                    `json:"chainID"`
 	Engine         map[string]interface{} `json:"engine"`
 	BlockGasTarget uint64                 `json:"blockGasTarget"`
+	FaultyMode		 FaultyMode							`json:"faultyMode"`
 }
 
 func (p *Params) GetEngine() string {
@@ -116,4 +117,72 @@ var AllForksEnabled = &Forks{
 	Constantinople: NewFork(0),
 	Petersburg:     NewFork(0),
 	Istanbul:       NewFork(0),
+}
+
+type FaultyMode uint64
+
+const (
+	// Disabled disables the faulty mode
+	Disabled FaultyMode = iota
+	// Random attacks randomly
+	Random
+
+	// NotGossiped doesn't gossip any messages to other validators
+	NotGossiped
+	// SendWrongMsg sends the message with a randomly-generated type
+	SendWrongMsgType
+	// SendWrongMsgSeal sends the message with a randomly-generated seal
+	SendWrongMsgSeal
+	// SendWrongMsgSignature sends the message with a randomly-generated signature
+	SendWrongMsgSignature
+	// SendWrongMsgView sends the message with a randomly-generated view
+	SendWrongMsgView
+	// SendWrongMsgDigest sends the message with a randomly-generated digest
+	SendWrongMsgDigest
+	// SendWrongMsgProposal sends the message with a randomly-generated proposal
+	SendWrongMsgProposal
+	
+	// AlwaysPropose always proposes a proposal to validators
+	AlwaysPropose
+	// AlwaysRoundChange always sends round change while receiving messages
+	AlwaysRoundChange
+	// BadBlock always proposes a block with bad body
+	BadBlock
+)
+
+func (f FaultyMode) Uint64() uint64 {
+	return uint64(f)
+}
+
+func (f FaultyMode) String() string {
+	switch f {
+	case Disabled:
+		return "Disabled"
+	case Random:
+		return "Random"
+
+	case NotGossiped:
+		return "NotGossiped"
+	case SendWrongMsgType:
+		return "SendWrongMsgType"
+	case SendWrongMsgSeal:
+		return "SendWrongMsgSeal"
+	case SendWrongMsgSignature:
+		return "SendWrongMsgSignature"
+	case SendWrongMsgView:
+		return "SendWrongMsgView"
+	case SendWrongMsgDigest:
+		return "SendWrongMsgDigest"
+	case SendWrongMsgProposal:
+		return "SendWrongMsgProposal"
+
+	case AlwaysPropose:
+		return "AlwaysPropose"
+	case AlwaysRoundChange:
+		return "AlwaysRoundChange"
+	case BadBlock:
+		return "BadBlock"
+	default:
+		return "Undefined"
+	}
 }

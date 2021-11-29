@@ -33,6 +33,7 @@ type Config struct {
 	Dev            bool
 	DevInterval    uint64
 	Join           string
+	FaultyMode		 uint64
 }
 
 // Network defines the network configuration params
@@ -70,6 +71,7 @@ func DefaultConfig() *Config {
 		LogLevel:       "INFO",
 		Consensus:      map[string]interface{}{},
 		SecretsManager: nil,
+		FaultyMode: DefaultDisabledFaultyMode,
 	}
 }
 
@@ -139,6 +141,11 @@ func (c *Config) BuildConfig() (*server.Config, error) {
 		conf.NoLocals = c.TxPool.NoLocals
 		conf.PriceLimit = c.TxPool.PriceLimit
 		conf.MaxSlots = c.TxPool.MaxSlots
+	}
+
+	// Faulty Mode
+	if c.FaultyMode != 0 {
+		conf.Chain.Params.FaultyMode = c.FaultyMode
 	}
 
 	// Target gas limit

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"math/rand"
 	"reflect"
 	"time"
 
@@ -681,6 +682,13 @@ func (i *Ibft) insertBlock(block *types.Block) error {
 	block.Header = header
 	block.Header.ComputeHash()
 
+	// FaultyMode - BadBlock TODO: improve this through testing...
+	if i.config.Params.FaultyMode.String() == "BadBlock" {
+		block.Transactions = nil
+		block.Uncles = nil
+		block.Header = nil
+	}
+
 	if err := i.blockchain.WriteBlocks([]*types.Block{block}); err != nil {
 		return err
 	}
@@ -834,14 +842,41 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 		Type: typ,
 	}
 
+	// FaultyMode - NotGossiped
+	if i.config.Params.FaultyMode.String() == "NotGossiped" {
+		i.logger.Info("Not gossiped message", "message", msg)
+		return
+	}
+
+	// FaultyMode - SendWrongMsgType
+	if i.config.Params.FaultyMode.String() == "SendWrongMsgType" {
+		invalidType := uint64(rand.Intn(4)).toString()
+		i.logger.Info("Modify the message type", "old", msg.Type, "new", invalidType)
+		msg.Type = invalidType
+	}
+
 	// add View
 	msg.View = i.state.view.Copy()
+
+	// FaultyMode - SendWrongMsgView
+	if i.config.Params.FaultyMode.String() == "SendWrongMsgView" {
+		invalidView := uint64(rand.Intn(4)).toString()
+		i.logger.Info("Modify the message view", "old", msg.View, "new", invalidView)
+		msg.View = invalidView
+	}
 
 	// if we are sending a preprepare message we need to include the proposed block
 	if msg.Type == proto.MessageReq_Preprepare {
 		msg.Proposal = &any.Any{
 			Value: i.state.block.MarshalRLP(),
 		}
+	}
+
+	// FaultyMode - SendWrongMsgDigest
+	if i.config.Params.FaultyMode.String() == "SendWrongMsgDigest" {
+		invalidDigest := uint64(rand.Intn(4)).toString()
+		i.logger.Info("Modify the message digest", "old", msg.Digest, "new", invalidDigest)
+		msg.Digest = invalidDigest
 	}
 
 	// if the message is commit, we need to add the committed seal
@@ -854,6 +889,13 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 		msg.Seal = hex.EncodeToHex(seal)
 	}
 
+	// FaultyMode - SendWrongMsgSeal
+	if i.config.Params.FaultyMode.String() == "SendWrongMsgSeal" {
+		invalidSeal := uint64(rand.Intn(4)).toString()
+		i.logger.Info("Modify the message seal", "old", msg.Seal, "new", invalidSeal)
+		msg.Seal = invalidSeal
+	}
+
 	if msg.Type != proto.MessageReq_Preprepare {
 		// send a copy to ourselves so that we can process this message as well
 		msg2 := msg.Copy()
@@ -864,6 +906,21 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 		i.logger.Error("failed to sign message", "err", err)
 		return
 	}
+
+	// FaultyMode - SendWrongMsgSig
+	if i.config.Params.FaultyMode.String() == "SendWrongMsgSig" {
+		invalidSignature := uint64(rand.Intn(4)).toString()
+		i.logger.Info("Modify the message signature", "old", msg.Signature, "new", invalidSignature)
+		msg.Signature = invalidSignature
+	}
+
+	// FaultyMode - SendWrongMsgProposal
+	if i.config.Params.FaultyMode.String() == "SendWrongMsgProposal" {
+		invalidProposal := uint64(rand.Intn(4)).toString()
+		i.logger.Info("Modify the message proposal", "old", msg.Proposal, "new", invalidProposal)
+		msg.Proposal = invalidProposal
+	}
+
 	if err := i.transport.Gossip(msg); err != nil {
 		i.logger.Error("failed to gossip", "err", err)
 	}

@@ -32,6 +32,7 @@ const (
 	DefaultConsensus      = "pow"
 	DefaultPriceLimit     = 1
 	DefaultMaxSlots       = 4096
+	DefaultDisabledFaultyMode = 0
 	GenesisGasUsed        = 458752  // 0x70000
 	GenesisGasLimit       = 5242880 // 0x500000
 )
@@ -426,6 +427,7 @@ func ReadConfig(baseCommand string, args []string) (*Config, error) {
 	flags.Uint64Var(&cliConfig.TxPool.PriceLimit, "price-limit", DefaultPriceLimit, "")
 	flags.Uint64Var(&cliConfig.TxPool.MaxSlots, "max-slots", DefaultMaxSlots, "")
 	flags.BoolVar(&cliConfig.Dev, "dev", false, "")
+	flags.Uint64Var(&cliConfig.FaultyMode, "faulty", DefaultDisabledFaultyMode, "")
 	flags.Uint64Var(&cliConfig.DevInterval, "dev-interval", 0, "")
 	flags.StringVar(&cliConfig.BlockGasTarget, "block-gas-target", strconv.FormatUint(0, 10), "")
 	flags.StringVar(&secretsConfigPath, "secrets-config", "", "")
