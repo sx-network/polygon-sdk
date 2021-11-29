@@ -71,7 +71,7 @@ func (m *msgQueue) readMessage(state IbftState, current *proto.View) *msgTask {
 		heap.Pop(queue)
 
 		if cmpView(msg.view, current) < 0 {
-			fmt.Println("dgk - readMessage - Message is old ")
+			fmt.Println("dgk - readMessage - Message is old ", "view", msg.view, "msg", msg.msg, "obj", msg.obj)
 			// old value, try again
 			continue
 		}
