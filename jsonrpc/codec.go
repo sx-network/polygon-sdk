@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-
-	"github.com/0xPolygon/polygon-sdk/types"
 )
 
 // Request is a jsonrpc request
@@ -95,16 +93,16 @@ func (e *ErrorObject) Error() string {
 }
 
 const (
-	PendingBlockNumber  = BlockNumber(-3)
-	LatestBlockNumber   = BlockNumber(-2)
-	EarliestBlockNumber = BlockNumber(-1)
+	PendingBlockNumber  = "-3"
+	LatestBlockNumber   = "-2"
+	EarliestBlockNumber = "-1"
 )
 
-type BlockNumber int64
+type BlockNumber string
 
 func stringToBlockNumber(str string) (BlockNumber, error) {
 	if str == "" {
-		return 0, fmt.Errorf("value is empty")
+		return BlockNumber("0x0"), fmt.Errorf("value is empty")
 	}
 
 	str = strings.Trim(str, "\"")
@@ -117,11 +115,7 @@ func stringToBlockNumber(str string) (BlockNumber, error) {
 		return EarliestBlockNumber, nil
 	}
 
-	n, err := types.ParseUint64orHex(&str)
-	if err != nil {
-		return 0, err
-	}
-	return BlockNumber(n), nil
+	return BlockNumber(str), nil
 }
 
 func createBlockNumberPointer(str string) (*BlockNumber, error) {
@@ -134,6 +128,27 @@ func createBlockNumberPointer(str string) (*BlockNumber, error) {
 
 // UnmarshalJSON automatically decodes the user input for the block number, when a JSON RPC method is called
 func (b *BlockNumber) UnmarshalJSON(buffer []byte) error {
+
+	// process blockHash e.g. 0xeb3f1429c8868cf7d4d3db207fd9466fa31072928c59ac00f7079343fb085e07
+	if (len(buffer) > 64) {
+		type BlockHashObject struct {
+			BlockHash string `json:"blockHash"`
+		}
+		
+		var blockHashField *BlockHashObject
+		if err := json.Unmarshal(buffer, &blockHashField); err != nil {
+			return NewInvalidParamsError("Invalid Params")
+		}
+		//
+		//n, err := types.ParseUint256orHex(&blockHashField.BlockHash)
+		//if err != nil {
+		//			return err
+		//}
+		*b = BlockNumber(blockHashField.BlockHash)
+		return nil
+	}
+	
+
 	num, err := stringToBlockNumber(string(buffer))
 	if err != nil {
 		return err

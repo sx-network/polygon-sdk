@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/big"
 	"reflect"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -415,6 +416,7 @@ func lowerCaseFirst(str string) string {
 }
 
 func (d *Dispatcher) getBlockHeaderImpl(number BlockNumber) (*types.Header, error) {
+
 	switch number {
 	case LatestBlockNumber:
 		return d.store.Header(), nil
@@ -427,9 +429,10 @@ func (d *Dispatcher) getBlockHeaderImpl(number BlockNumber) (*types.Header, erro
 
 	default:
 		// Convert the block number from hex to uint64
-		header, ok := d.store.GetHeaderByNumber(uint64(number))
+		num, _ := strconv.ParseUint(string(number)[2:], 16, 64)
+		header, ok := d.store.GetHeaderByNumber(num)
 		if !ok {
-			return nil, fmt.Errorf("Error fetching block number %d header", uint64(number))
+			return nil, fmt.Errorf("Error fetching block number %d header", num)
 		}
 		return header, nil
 	}

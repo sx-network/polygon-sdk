@@ -3,6 +3,7 @@ package jsonrpc
 import (
 	"fmt"
 	"math/big"
+	"strconv"
 
 	"github.com/0xPolygon/polygon-sdk/helper/hex"
 	"github.com/0xPolygon/polygon-sdk/state"
@@ -32,10 +33,11 @@ func GetNumericBlockNumber(number BlockNumber, e *Eth) (uint64, error) {
 		return 0, fmt.Errorf("fetching the pending header is not supported")
 
 	default:
-		if number < 0 {
+		res, _ := strconv.ParseInt(string(number), 10, 64)
+		if res < 0 {
 			return 0, fmt.Errorf("invalid argument 0: block number larger than int64")
 		}
-		return uint64(number), nil
+		return uint64(res), nil
 	}
 }
 
@@ -257,10 +259,20 @@ func (e *Eth) Call(arg *txnArgs, number *BlockNumber) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Fetch the requested header
-	header, err := e.d.getBlockHeaderImpl(*number)
-	if err != nil {
-		return nil, err
+
+	var header *types.Header
+	if len(*number) > 64 {
+		block, ok := e.d.store.GetBlockByHash(types.StringToHash(string(*number)), false)
+		if !ok {
+			return nil, err
+		}
+		header = block.Header
+	} else {
+		// Fetch the requested header
+		header, err = e.d.getBlockHeaderImpl(*number)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// If the caller didn't supply the gas limit in the message, then we set it to maximum possible => block gas limit
@@ -292,16 +304,17 @@ func (e *Eth) EstimateGas(
 
 	number := LatestBlockNumber
 	if rawNum != nil {
-		number = *rawNum
+		number = string(*rawNum)
 	}
 
 	// Fetch the requested header
-	header, err := e.d.getBlockHeaderImpl(number)
+	header, err := e.d.getBlockHeaderImpl(*rawNum)
 	if err != nil {
 		return nil, err
 	}
 
-	forksInTime := e.d.store.GetForksInTime(uint64(number))
+	num, _ := strconv.ParseUint(string(number)[2:], 16, 64)
+	forksInTime := e.d.store.GetForksInTime(uint64(num))
 
 	var standardGas uint64
 	if transaction.IsContractCreation() && forksInTime.Homestead {
@@ -465,7 +478,9 @@ func (e *Eth) GetLogs(filterOptions *LogFilter) (interface{}, error) {
 		if num == LatestBlockNumber {
 			return head
 		}
-		return uint64(num)
+
+		res, _ := strconv.ParseInt(string(num), 10, 64)
+		return uint64(res)
 	}
 
 	from := resolveNum(filterOptions.fromBlock)

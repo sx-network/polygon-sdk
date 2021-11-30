@@ -349,26 +349,26 @@ func TestEth_Block_GetLogs(t *testing.T) {
 	}{
 		{"Found matching logs, fromBlock < toBlock",
 			&LogFilter{
-				fromBlock: 1,
-				toBlock:   3,
+				fromBlock: "1",
+				toBlock:   "3",
 				Topics:    topics,
 			},
 			false, 3},
 		{"Found matching logs, fromBlock == toBlock",
 			&LogFilter{
-				fromBlock: 2,
-				toBlock:   2,
+				fromBlock: "2",
+				toBlock:   "2",
 				Topics:    topics,
 			},
 			false, 1},
 		{"No logs found", &LogFilter{
-			fromBlock: 4,
-			toBlock:   5,
+			fromBlock: "4",
+			toBlock:   "5",
 			Topics:    topics,
 		}, false, 0},
 		{"Invalid block range", &LogFilter{
-			fromBlock: 10,
-			toBlock:   5,
+			fromBlock: "10",
+			toBlock:   "5",
 			Topics:    topics,
 		}, true, 0},
 	}
