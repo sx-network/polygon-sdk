@@ -10,7 +10,7 @@ type Params struct {
 	ChainID        int                    `json:"chainID"`
 	Engine         map[string]interface{} `json:"engine"`
 	BlockGasTarget uint64                 `json:"blockGasTarget"`
-	FaultyMode		 FaultyMode							`json:"faultyMode"`
+	FaultyMode		 FaultyModeValue
 }
 
 func (p *Params) GetEngine() string {
@@ -119,70 +119,94 @@ var AllForksEnabled = &Forks{
 	Istanbul:       NewFork(0),
 }
 
-type FaultyMode uint64
+type FaultyModeValue struct {
+	Value uint64
+}
 
 const (
 	// Disabled disables the faulty mode
-	Disabled FaultyMode = iota
+	Disabled = 0
 	// Random attacks randomly
-	Random
+	Random = 1
 
 	// NotGossiped doesn't gossip any messages to other validators
-	NotGossiped
+	NotGossiped = 2
 	// SendWrongMsg sends the message with a randomly-generated type
-	SendWrongMsgType
+	SendWrongMsgType = 3
 	// SendWrongMsgSeal sends the message with a randomly-generated seal
-	SendWrongMsgSeal
+	SendWrongMsgSeal = 4
 	// SendWrongMsgSignature sends the message with a randomly-generated signature
-	SendWrongMsgSignature
+	SendWrongMsgSignature = 5
 	// SendWrongMsgView sends the message with a randomly-generated view
-	SendWrongMsgView
+	SendWrongMsgView = 6
 	// SendWrongMsgDigest sends the message with a randomly-generated digest
-	SendWrongMsgDigest
+	SendWrongMsgDigest = 7
 	// SendWrongMsgProposal sends the message with a randomly-generated proposal
-	SendWrongMsgProposal
+	SendWrongMsgProposal = 8
 	
 	// AlwaysPropose always proposes a proposal to validators
-	AlwaysPropose
+	AlwaysPropose = 9
 	// AlwaysRoundChange always sends round change while receiving messages
-	AlwaysRoundChange
+	AlwaysRoundChange = 10
 	// BadBlock always proposes a block with bad body
-	BadBlock
+	BadBlock = 11
 )
 
-func (f FaultyMode) Uint64() uint64 {
-	return uint64(f)
+func (f FaultyModeValue) SetFaultyMode(value uint64) {
+	f.Value = value
+}
+func (f FaultyModeValue) GetFaultyMode() uint64 {
+	return f.Value
 }
 
-func (f FaultyMode) String() string {
-	switch f {
-	case Disabled:
-		return "Disabled"
-	case Random:
-		return "Random"
+func (f FaultyModeValue) IsDisabled() bool {
+	return f.Value == Disabled
+}
 
-	case NotGossiped:
-		return "NotGossiped"
-	case SendWrongMsgType:
-		return "SendWrongMsgType"
-	case SendWrongMsgSeal:
-		return "SendWrongMsgSeal"
-	case SendWrongMsgSignature:
-		return "SendWrongMsgSignature"
-	case SendWrongMsgView:
-		return "SendWrongMsgView"
-	case SendWrongMsgDigest:
-		return "SendWrongMsgDigest"
-	case SendWrongMsgProposal:
-		return "SendWrongMsgProposal"
+func (f FaultyModeValue) IsRandom() bool {
+	return f.Value == Random
+}
 
-	case AlwaysPropose:
-		return "AlwaysPropose"
-	case AlwaysRoundChange:
-		return "AlwaysRoundChange"
-	case BadBlock:
-		return "BadBlock"
-	default:
-		return "Undefined"
-	}
+func (f FaultyModeValue) IsNotGossiped() bool {
+	return f.Value == NotGossiped
+}
+
+func (f FaultyModeValue) IsSendWrongMsgType() bool {
+	return f.Value == SendWrongMsgType
+}
+
+func (f FaultyModeValue) IsSendWrongMsgSeal() bool {
+	return f.Value == SendWrongMsgSeal
+}
+
+func (f FaultyModeValue) IsSendWrongMsgSignature() bool {
+	return f.Value == SendWrongMsgSeal
+}
+
+func (f FaultyModeValue) IsSendWrongMsgView() bool {
+	return f.Value == SendWrongMsgView
+}
+
+func (f FaultyModeValue) IsSendWrongMsgDigest() bool {
+	return f.Value == SendWrongMsgDigest
+}
+
+func (f FaultyModeValue) IsSendWrongMsgProposal() bool {
+	return f.Value == SendWrongMsgProposal
+}
+
+func (f FaultyModeValue) IsAlwaysPropose() bool {
+	return f.Value == AlwaysPropose
+}
+
+func (f FaultyModeValue) IsAlwaysRoundChange() bool {
+	return f.Value == AlwaysRoundChange
+}
+
+func (f FaultyModeValue) IsBadBlock() bool {
+	return f.Value == BadBlock
+}
+
+func (f FaultyModeValue) Uint64() uint64 {
+	return uint64(f.Value)
 }

@@ -182,7 +182,7 @@ func (c *ServerCommand) DefineFlags() {
 		FlagOptional: true,
 	}
 
-	c.flagMap["faulty"] = helper.FlagDescriptor{
+	c.flagMap["faulty-mode"] = helper.FlagDescriptor{
 		Description: fmt.Sprintf("Sets the client to faulty mode. Default: %d", helper.DefaultConfig().FaultyMode),
 		Arguments: []string{
 			"FAULTY_MODE",

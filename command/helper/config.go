@@ -33,7 +33,7 @@ type Config struct {
 	Dev            bool
 	DevInterval    uint64
 	Join           string
-	FaultyMode		 uint64
+	FaultyMode		 uint64												 `json:"faulty_mode"`
 }
 
 // Network defines the network configuration params
@@ -145,7 +145,7 @@ func (c *Config) BuildConfig() (*server.Config, error) {
 
 	// Faulty Mode
 	if c.FaultyMode != 0 {
-		conf.Chain.Params.FaultyMode = c.FaultyMode
+		conf.Chain.Params.FaultyMode = chain.FaultyModeValue {Value: c.FaultyMode}
 	}
 
 	// Target gas limit
@@ -240,6 +240,10 @@ func (c *Config) mergeConfigWith(otherConfig *Config) error {
 
 	if otherConfig.Join != "" {
 		c.Join = otherConfig.Join
+	}
+
+	if otherConfig.FaultyMode != 0 {
+		c.FaultyMode = otherConfig.FaultyMode
 	}
 
 	{

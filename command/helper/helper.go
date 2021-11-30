@@ -427,7 +427,7 @@ func ReadConfig(baseCommand string, args []string) (*Config, error) {
 	flags.Uint64Var(&cliConfig.TxPool.PriceLimit, "price-limit", DefaultPriceLimit, "")
 	flags.Uint64Var(&cliConfig.TxPool.MaxSlots, "max-slots", DefaultMaxSlots, "")
 	flags.BoolVar(&cliConfig.Dev, "dev", false, "")
-	flags.Uint64Var(&cliConfig.FaultyMode, "faulty", DefaultDisabledFaultyMode, "")
+	flags.Uint64Var(&cliConfig.FaultyMode, "faulty-mode", DefaultDisabledFaultyMode, "")
 	flags.Uint64Var(&cliConfig.DevInterval, "dev-interval", 0, "")
 	flags.StringVar(&cliConfig.BlockGasTarget, "block-gas-target", strconv.FormatUint(0, 10), "")
 	flags.StringVar(&secretsConfigPath, "secrets-config", "", "")

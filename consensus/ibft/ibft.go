@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"math/rand"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/0xPolygon/polygon-sdk/consensus"
@@ -683,7 +684,7 @@ func (i *Ibft) insertBlock(block *types.Block) error {
 	block.Header.ComputeHash()
 
 	// FaultyMode - BadBlock TODO: improve this through testing...
-	if i.config.Params.FaultyMode.String() == "BadBlock" {
+	if i.config.Params.FaultyMode.IsBadBlock() {
 		block.Transactions = nil
 		block.Uncles = nil
 		block.Header = nil
@@ -843,14 +844,14 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 	}
 
 	// FaultyMode - NotGossiped
-	if i.config.Params.FaultyMode.String() == "NotGossiped" {
+	if i.config.Params.FaultyMode.IsNotGossiped() {
 		i.logger.Info("Not gossiped message", "message", msg)
 		return
 	}
 
 	// FaultyMode - SendWrongMsgType
-	if i.config.Params.FaultyMode.String() == "SendWrongMsgType" {
-		invalidType := uint64(rand.Intn(4)).toString()
+	if i.config.Params.FaultyMode.IsSendWrongMsgType() {
+		invalidType := proto.MessageReq_RoundChange
 		i.logger.Info("Modify the message type", "old", msg.Type, "new", invalidType)
 		msg.Type = invalidType
 	}
@@ -859,8 +860,8 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 	msg.View = i.state.view.Copy()
 
 	// FaultyMode - SendWrongMsgView
-	if i.config.Params.FaultyMode.String() == "SendWrongMsgView" {
-		invalidView := uint64(rand.Intn(4)).toString()
+	if i.config.Params.FaultyMode.IsSendWrongMsgView() {
+		invalidView := &proto.View{}
 		i.logger.Info("Modify the message view", "old", msg.View, "new", invalidView)
 		msg.View = invalidView
 	}
@@ -873,8 +874,8 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 	}
 
 	// FaultyMode - SendWrongMsgDigest
-	if i.config.Params.FaultyMode.String() == "SendWrongMsgDigest" {
-		invalidDigest := uint64(rand.Intn(4)).toString()
+	if i.config.Params.FaultyMode.IsSendWrongMsgDigest() {
+		invalidDigest := strconv.FormatUint(uint64(rand.Intn(4)), 10)
 		i.logger.Info("Modify the message digest", "old", msg.Digest, "new", invalidDigest)
 		msg.Digest = invalidDigest
 	}
@@ -890,8 +891,8 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 	}
 
 	// FaultyMode - SendWrongMsgSeal
-	if i.config.Params.FaultyMode.String() == "SendWrongMsgSeal" {
-		invalidSeal := uint64(rand.Intn(4)).toString()
+	if i.config.Params.FaultyMode.IsSendWrongMsgSeal() {
+		invalidSeal := strconv.FormatUint(uint64(rand.Intn(4)), 10)
 		i.logger.Info("Modify the message seal", "old", msg.Seal, "new", invalidSeal)
 		msg.Seal = invalidSeal
 	}
@@ -908,15 +909,17 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 	}
 
 	// FaultyMode - SendWrongMsgSig
-	if i.config.Params.FaultyMode.String() == "SendWrongMsgSig" {
-		invalidSignature := uint64(rand.Intn(4)).toString()
+	if i.config.Params.FaultyMode.IsSendWrongMsgSignature() {
+		invalidSignature := strconv.FormatUint(uint64(rand.Intn(4)), 10)
 		i.logger.Info("Modify the message signature", "old", msg.Signature, "new", invalidSignature)
 		msg.Signature = invalidSignature
 	}
 
 	// FaultyMode - SendWrongMsgProposal
-	if i.config.Params.FaultyMode.String() == "SendWrongMsgProposal" {
-		invalidProposal := uint64(rand.Intn(4)).toString()
+	if i.config.Params.FaultyMode.IsSendWrongMsgProposal() {
+		invalidProposal := &any.Any{
+			Value: []byte("hello"),
+		}
 		i.logger.Info("Modify the message proposal", "old", msg.Proposal, "new", invalidProposal)
 		msg.Proposal = invalidProposal
 	}
@@ -1097,3 +1100,4 @@ func (i *Ibft) pushMessage(msg *proto.MessageReq) {
 	default:
 	}
 }
+
