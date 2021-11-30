@@ -429,10 +429,16 @@ func (d *Dispatcher) getBlockHeaderImpl(number BlockNumber) (*types.Header, erro
 
 	default:
 		// Convert the block number from hex to uint64
-		num, _ := strconv.ParseUint(string(number)[2:], 16, 64)
-		header, ok := d.store.GetHeaderByNumber(num)
+		var res uint64
+		if strings.HasPrefix(string(number), "0x") {
+			res, _ = strconv.ParseUint(string(number)[2:], 16, 64)
+		} else {
+			res, _ = strconv.ParseUint(string(number), 10, 64)
+		}
+
+		header, ok := d.store.GetHeaderByNumber(res)
 		if !ok {
-			return nil, fmt.Errorf("Error fetching block number %d header", num)
+			return nil, fmt.Errorf("Error fetching block number %d header", res)
 		}
 		return header, nil
 	}

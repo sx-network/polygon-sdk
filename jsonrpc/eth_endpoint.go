@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 
 	"github.com/0xPolygon/polygon-sdk/helper/hex"
 	"github.com/0xPolygon/polygon-sdk/state"
@@ -33,10 +34,13 @@ func GetNumericBlockNumber(number BlockNumber, e *Eth) (uint64, error) {
 		return 0, fmt.Errorf("fetching the pending header is not supported")
 
 	default:
-		res, _ := strconv.ParseInt(string(number), 10, 64)
-		if res < 0 {
-			return 0, fmt.Errorf("invalid argument 0: block number larger than int64")
+		var res uint64
+		if strings.HasPrefix(string(number), "0x") {
+			res, _ = strconv.ParseUint(string(number)[2:], 16, 64)
+		} else {
+			res, _ = strconv.ParseUint(string(number), 10, 64)
 		}
+		
 		return uint64(res), nil
 	}
 }
@@ -313,7 +317,13 @@ func (e *Eth) EstimateGas(
 		return nil, err
 	}
 
-	num, _ := strconv.ParseUint(string(number)[2:], 16, 64)
+	var num uint64
+	if strings.HasPrefix(string(number), "0x") {
+		num, _ = strconv.ParseUint(string(number)[2:], 16, 64)
+	} else {
+		num, _ = strconv.ParseUint(string(number), 10, 64)
+	}
+
 	forksInTime := e.d.store.GetForksInTime(uint64(num))
 
 	var standardGas uint64
@@ -479,7 +489,13 @@ func (e *Eth) GetLogs(filterOptions *LogFilter) (interface{}, error) {
 			return head
 		}
 
-		res, _ := strconv.ParseInt(string(num), 10, 64)
+		var res uint64
+		if strings.HasPrefix(string(num), "0x") {
+			res, _ = strconv.ParseUint(string(num)[2:], 16, 64)
+		} else {
+			res, _ = strconv.ParseUint(string(num), 10, 64)
+		}
+
 		return uint64(res)
 	}
 

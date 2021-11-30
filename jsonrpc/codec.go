@@ -102,7 +102,7 @@ type BlockNumber string
 
 func stringToBlockNumber(str string) (BlockNumber, error) {
 	if str == "" {
-		return BlockNumber("0x0"), fmt.Errorf("value is empty")
+		return BlockNumber("0"), fmt.Errorf("value is empty")
 	}
 
 	str = strings.Trim(str, "\"")
@@ -139,15 +139,10 @@ func (b *BlockNumber) UnmarshalJSON(buffer []byte) error {
 		if err := json.Unmarshal(buffer, &blockHashField); err != nil {
 			return NewInvalidParamsError("Invalid Params")
 		}
-		//
-		//n, err := types.ParseUint256orHex(&blockHashField.BlockHash)
-		//if err != nil {
-		//			return err
-		//}
+
 		*b = BlockNumber(blockHashField.BlockHash)
 		return nil
 	}
-	
 
 	num, err := stringToBlockNumber(string(buffer))
 	if err != nil {
