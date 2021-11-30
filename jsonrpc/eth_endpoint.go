@@ -312,16 +312,18 @@ func (e *Eth) EstimateGas(
 	}
 
 	// Fetch the requested header
-	header, err := e.d.getBlockHeaderImpl(*rawNum)
+	header, err := e.d.getBlockHeaderImpl(BlockNumber(number))
 	if err != nil {
 		return nil, err
 	}
-
-	var num uint64
-	if strings.HasPrefix(string(number), "0x") {
-		num, _ = strconv.ParseUint(string(number)[2:], 16, 64)
-	} else {
-		num, _ = strconv.ParseUint(string(number), 10, 64)
+	
+	num := header.Number
+	if number != LatestBlockNumber {
+		if strings.HasPrefix(string(number), "0x") {
+			num, _ = strconv.ParseUint(string(number)[2:], 16, 64)
+		} else {
+			num, _ = strconv.ParseUint(string(number), 10, 64)
+		}
 	}
 
 	forksInTime := e.d.store.GetForksInTime(uint64(num))
