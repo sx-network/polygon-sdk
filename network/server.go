@@ -362,10 +362,17 @@ func (s *Server) addPeer(id peer.ID) {
 		PeerID: id,
 		Type:   PeerEventConnected,
 	})
+
+	// loop over elements of slice
+	s.logger.Debug("dgk - Peer state ---------------------")
+	for k := range s.peers {
+		s.logger.Debug("dgk - Peer", "ID", k)
+	}
+	s.logger.Debug("dgk - End peer state ------------------")
 }
 
 func (s *Server) delPeer(id peer.ID) {
-	s.logger.Info("Peer disconnected", "id", id.String())
+	s.logger.Info("dgk - Peer disconnected", "id", id.String())
 
 	s.peersLock.Lock()
 	defer s.peersLock.Unlock()
@@ -377,6 +384,12 @@ func (s *Server) delPeer(id peer.ID) {
 		PeerID: id,
 		Type:   PeerEventDisconnected,
 	})
+
+	s.logger.Debug("dgk - Peer state ---------------------")
+	for k := range s.peers {
+		s.logger.Debug("dgk - Peer", "ID", k)
+	}
+	s.logger.Debug("dgk - End peer state ------------------")
 }
 
 func (s *Server) Disconnect(peer peer.ID, reason string) {
