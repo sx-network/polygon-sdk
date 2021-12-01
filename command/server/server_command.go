@@ -182,6 +182,14 @@ func (c *ServerCommand) DefineFlags() {
 		FlagOptional: true,
 	}
 
+	c.flagMap["faulty-mode"] = helper.FlagDescriptor{
+		Description: fmt.Sprintf("Sets the client to faulty mode. Default: %d", helper.DefaultConfig().FaultyMode),
+		Arguments: []string{
+			"FAULTY_MODE",
+		},
+		FlagOptional: true,
+	}
+
 	c.flagMap["dev-interval"] = helper.FlagDescriptor{
 		Description: "Sets the client's dev notification interval. Default: 0",
 		Arguments: []string{
@@ -189,7 +197,13 @@ func (c *ServerCommand) DefineFlags() {
 		},
 		FlagOptional: true,
 	}
-
+	c.flagMap["prometheus"] = helper.FlagDescriptor{
+		Description: "Sets the address and port for the prometheus instrumentation service (address:port)",
+		Arguments: []string{
+			"PROMETHEUS_ADDRESS",
+		},
+		FlagOptional: true,
+  }
 	c.flagMap["secrets-config"] = helper.FlagDescriptor{
 		Description: "Sets the path to the SecretsManager config file. Used for Hashicorp Vault. " +
 			"If omitted, the local FS secrets manager is used",
@@ -198,7 +212,7 @@ func (c *ServerCommand) DefineFlags() {
 		},
 		ArgumentsOptional: false,
 		FlagOptional:      true,
-	}
+}
 }
 
 // GetHelperText returns a simple description of the command

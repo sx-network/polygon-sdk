@@ -59,6 +59,7 @@ type ConsensusParams struct {
 	Executor       *state.Executor
 	Grpc           *grpc.Server
 	Logger         hclog.Logger
+  Metrics        *Metrics
 	SecretsManager secrets.SecretsManager
 }
 

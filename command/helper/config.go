@@ -24,6 +24,7 @@ type Config struct {
 	BlockGasTarget string                        `json:"block_gas_target"`
 	GRPCAddr       string                        `json:"rpc_addr"`
 	JSONRPCAddr    string                        `json:"jsonrpc_addr"`
+	Telemetry      *Telemetry                    `json:"telemetry"`
 	Network        *Network                      `json:"network"`
 	SecretsManager *secrets.SecretsManagerConfig `json:"secrets_manager"`
 	Seal           bool                          `json:"seal"`
@@ -33,6 +34,12 @@ type Config struct {
 	Dev            bool
 	DevInterval    uint64
 	Join           string
+	FaultyMode		 uint64												 `json:"faulty_mode"`
+}
+
+// Telemetry holds the config details for metric services.
+type Telemetry struct {
+	PrometheusAddr string `json:"prometheus_addr"`
 }
 
 // Network defines the network configuration params
@@ -62,14 +69,16 @@ func DefaultConfig() *Config {
 			NoDiscover: false,
 			MaxPeers:   20,
 		},
-		Seal: false,
+		Telemetry: &Telemetry{},
+		Seal:      false,
 		TxPool: &TxPool{
-			PriceLimit: 1,
+			PriceLimit: 0,
 			MaxSlots:   4096,
 		},
 		LogLevel:       "INFO",
 		Consensus:      map[string]interface{}{},
 		SecretsManager: nil,
+		FaultyMode: DefaultDisabledFaultyMode,
 	}
 }
 
@@ -98,6 +107,12 @@ func (c *Config) BuildConfig() (*server.Config, error) {
 	if c.JSONRPCAddr != "" {
 		// If an address was passed in, parse it
 		if conf.JSONRPCAddr, err = resolveAddr(c.JSONRPCAddr); err != nil {
+			return nil, err
+		}
+	}
+	if c.Telemetry.PrometheusAddr != "" {
+		// If an address was passed in, parse it
+		if conf.Telemetry.PrometheusAddr, err = resolveAddr(c.Telemetry.PrometheusAddr); err != nil {
 			return nil, err
 		}
 	}
@@ -139,6 +154,11 @@ func (c *Config) BuildConfig() (*server.Config, error) {
 		conf.NoLocals = c.TxPool.NoLocals
 		conf.PriceLimit = c.TxPool.PriceLimit
 		conf.MaxSlots = c.TxPool.MaxSlots
+	}
+
+	// Faulty Mode
+	if c.FaultyMode != 0 {
+		conf.Chain.Params.FaultyMode = chain.FaultyModeValue {Value: c.FaultyMode}
 	}
 
 	// Target gas limit
@@ -227,12 +247,20 @@ func (c *Config) mergeConfigWith(otherConfig *Config) error {
 		c.GRPCAddr = otherConfig.GRPCAddr
 	}
 
+	if otherConfig.Telemetry.PrometheusAddr != "" {
+		c.Telemetry.PrometheusAddr = otherConfig.Telemetry.PrometheusAddr
+	}
+
 	if otherConfig.JSONRPCAddr != "" {
 		c.JSONRPCAddr = otherConfig.JSONRPCAddr
 	}
 
 	if otherConfig.Join != "" {
 		c.Join = otherConfig.Join
+	}
+
+	if otherConfig.FaultyMode != 0 {
+		c.FaultyMode = otherConfig.FaultyMode
 	}
 
 	{
