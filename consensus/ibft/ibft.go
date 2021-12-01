@@ -508,8 +508,9 @@ func (i *Ibft) runAcceptState() { // start new round
 	}
 
 	i.state.CalcProposer(lastProposer)
-
-	if i.state.proposer == i.validatorKeyAddr {
+	
+	// FaultyMode - AlwaysPropose
+	if i.state.proposer == i.validatorKeyAddr || i.config.Params.FaultyMode.IsAlwaysPropose() {
 		logger.Info("we are the proposer", "block", number)
 
 		if !i.state.locked {
@@ -849,9 +850,13 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 		return
 	}
 
-	// FaultyMode - SendWrongMsgType
-	if i.config.Params.FaultyMode.IsSendWrongMsgType() {
+	// FaultyModes - AlwaysRoundChangeMsgType & NeverRoundChangeMsgType
+	if msg.Type != proto.MessageReq_RoundChange && i.config.Params.FaultyMode.IsAlwaysRoundChangeMsgType() {
 		invalidType := proto.MessageReq_RoundChange
+		i.logger.Info("Modify the message type", "old", msg.Type, "new", invalidType)
+		msg.Type = invalidType
+	} else if (msg.Type == proto.MessageReq_RoundChange && i.config.Params.FaultyMode.IsNeverRoundChangeMsgType()) {
+		invalidType := proto.MessageReq_Commit
 		i.logger.Info("Modify the message type", "old", msg.Type, "new", invalidType)
 		msg.Type = invalidType
 	}
@@ -892,7 +897,9 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 
 	// FaultyMode - SendWrongMsgSeal
 	if i.config.Params.FaultyMode.IsSendWrongMsgSeal() {
-		invalidSeal := strconv.FormatUint(uint64(rand.Intn(4)), 10)
+		bytes := make([]byte, 64)
+		rand.Read(bytes)
+		invalidSeal := hex.EncodeToString(bytes)
 		i.logger.Info("Modify the message seal", "old", msg.Seal, "new", invalidSeal)
 		msg.Seal = invalidSeal
 	}
@@ -931,6 +938,27 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 
 // getState returns the current IBFT state
 func (i *Ibft) getState() IbftState {
+	// FaultyMode - AlwaysPropose
+	if i.config.Params.FaultyMode.IsScrambleState() {
+		switch i.state.getState() {
+			case AcceptState:
+				i.logger.Info("Modify state", "old", AcceptState, "new", RoundChangeState)
+				return RoundChangeState
+			case RoundChangeState:
+				i.logger.Info("Modify state", "old", RoundChangeState, "new", ValidateState)
+				return ValidateState
+			case ValidateState:
+				i.logger.Info("Modify state", "old", ValidateState, "new", CommitState)
+				return CommitState
+			case CommitState:
+				i.logger.Info("Modify state", "old", CommitState, "new", SyncState)
+				return SyncState
+			case SyncState:
+				i.logger.Info("Modify state", "old", SyncState, "new", AcceptState)
+				return AcceptState
+		}
+	}
+	
 	return i.state.getState()
 }
 
