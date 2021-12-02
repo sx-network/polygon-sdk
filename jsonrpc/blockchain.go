@@ -70,17 +70,12 @@ type blockchainInterface interface {
 type nullBlockchainInterface struct {
 }
 
-<<<<<<< HEAD
 func (b *nullBlockchainInterface) IsIbftStateStale() bool {
 	return false
 }
 
-func (b *nullBlockchainInterface) GetNonce(addr types.Address) (uint64, bool) {
-	return 0, false
-=======
 func (b *nullBlockchainInterface) GetNonce(addr types.Address) uint64 {
 	return 0
->>>>>>> develop
 }
 
 func (b *nullBlockchainInterface) Header() *types.Header {
