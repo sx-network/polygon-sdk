@@ -56,7 +56,10 @@ type blockchainInterface interface {
 	ApplyTxn(header *types.Header, txn *types.Transaction) (*runtime.ExecutionResult, error)
 
 	// GetNonce returns the next nonce for this address
-	GetNonce(addr types.Address) (uint64, bool)
+	GetNonce(addr types.Address) uint64
+
+	// GetCapacity returns the current and max capacity of the pool
+	GetCapacity() (uint64, uint64)
 
 	// IsIbftStateStale returns whether or not ibft node is stale
 	IsIbftStateStale() bool
@@ -67,12 +70,17 @@ type blockchainInterface interface {
 type nullBlockchainInterface struct {
 }
 
+<<<<<<< HEAD
 func (b *nullBlockchainInterface) IsIbftStateStale() bool {
 	return false
 }
 
 func (b *nullBlockchainInterface) GetNonce(addr types.Address) (uint64, bool) {
 	return 0, false
+=======
+func (b *nullBlockchainInterface) GetNonce(addr types.Address) uint64 {
+	return 0
+>>>>>>> develop
 }
 
 func (b *nullBlockchainInterface) Header() *types.Header {
@@ -137,4 +145,8 @@ func (b *nullBlockchainInterface) GetStorage(root types.Hash, addr types.Address
 
 func (b *nullBlockchainInterface) GetAccount(root types.Hash, addr types.Address) (*state.Account, error) {
 	return nil, nil
+}
+
+func (m *nullBlockchainInterface) GetCapacity() (uint64, uint64) {
+	panic("implement me")
 }
