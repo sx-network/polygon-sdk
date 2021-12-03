@@ -1,10 +1,12 @@
 package ibft
 
 import (
-	"github.com/0xPolygon/polygon-sdk/protocol"
-	"github.com/0xPolygon/polygon-sdk/state"
+	"math/big"
 	"testing"
 	"time"
+
+	"github.com/0xPolygon/polygon-sdk/protocol"
+	"github.com/0xPolygon/polygon-sdk/state"
 
 	"github.com/0xPolygon/polygon-sdk/blockchain"
 	"github.com/0xPolygon/polygon-sdk/consensus"
@@ -601,8 +603,8 @@ type mockSyncer struct {
 
 func (s *mockSyncer) Start() {}
 
-func (s *mockSyncer) BestPeer() *protocol.SyncPeer {
-	return &protocol.SyncPeer{}
+func (s *mockSyncer) BestPeer() (*protocol.SyncPeer, *big.Int) {
+	return &protocol.SyncPeer{}, big.NewInt(0)
 }
 
 func (s *mockSyncer) BulkSyncWithPeer(p *protocol.SyncPeer) error {

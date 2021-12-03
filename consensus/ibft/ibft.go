@@ -270,12 +270,34 @@ func (i *Ibft) start() {
 	}
 }
 
+func (i *Ibft) logStates() {
+	i.logger.Debug("dgk - Current state log --------------------")
+	i.logger.Debug("dgk - Committed messages")
+	for k, v := range i.state.committed {
+		i.logger.Debug("dgk - Committed", "key", k, "value", v)
+	}
+	i.logger.Debug("dgk - Prepared messages")
+	for k, v := range i.state.prepared {
+		i.logger.Debug("dgk - Prepared", "key", k, "value", v)
+	}
+	i.logger.Debug("dgk - Round messages")
+	for k, v := range i.state.roundMessages {
+		i.logger.Debug("dgk - Round messages", "key", k)
+		for rk, rv := range v {
+			i.logger.Debug("dgk - Round message", "key", rk, "value", rv)
+		}
+	}
+	i.logger.Debug("dgk - End current state log --------------------")
+}
+
 // runCycle represents the IBFT state machine loop
 func (i *Ibft) runCycle() {
 	// Log to the console
 	if i.state.view != nil {
 		i.logger.Debug("cycle", "state", i.getState(), "sequence", i.state.view.Sequence, "round", i.state.view.Round+1)
 	}
+
+	i.logStates()
 
 	// Based on the current state, execute the corresponding section
 	switch i.getState() {
@@ -598,11 +620,13 @@ func (i *Ibft) runAcceptState() { // start new round
 	timeout := exponentialTimeout(i.state.view.Round)
 	for i.getState() == AcceptState {
 		msg, ok := i.getNextMessage(timeout)
+		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
 		if !ok {
 			i.logger.Debug("dgk - accept state - getNextMsg not ok, continuing in acceptState loop...")
 			return
 		}
 		if msg == nil {
+			i.logger.Debug("dgk - Msg is nil, booting to round change state.")
 			i.setState(RoundChangeState)
 			continue
 		}
@@ -620,6 +644,7 @@ func (i *Ibft) runAcceptState() { // start new round
 			return
 		}
 		if i.state.locked {
+			i.logger.Debug("dgk - state is locked")
 			// the state is locked, we need to receive the same block
 			if block.Hash() == i.state.block.Hash() {
 				// fast-track and send a commit message and wait for validations
@@ -629,6 +654,7 @@ func (i *Ibft) runAcceptState() { // start new round
 				i.handleStateErr(errIncorrectBlockLocked)
 			}
 		} else {
+			i.logger.Debug("dgk - state is not locked")
 			// since its a new block, we have to verify it first
 			if err := i.verifyHeaderImpl(snap, parent, block.Header); err != nil {
 				i.logger.Error("block verification failed", "err", err)
@@ -664,6 +690,8 @@ func (i *Ibft) runValidateState() {
 	timeout := exponentialTimeout(i.state.view.Round)
 	for i.getState() == ValidateState {
 		msg, ok := i.getNextMessage(timeout)
+		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
+		i.logStates()
 		if !ok {
 			// closing
 			return
@@ -853,6 +881,7 @@ func (i *Ibft) runRoundChangeState() {
 	timeout := exponentialTimeout(i.state.view.Round)
 	for i.getState() == RoundChangeState {
 		msg, ok := i.getNextMessage(timeout)
+		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
 		if !ok {
 			// closing
 			return
@@ -977,6 +1006,7 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 		msg2.From = i.validatorKeyAddr.String()
 		i.pushMessage(msg2)
 	}
+
 	if err := signMsg(i.validatorKey, msg); err != nil {
 		i.logger.Error("failed to sign message", "err", err)
 		return
@@ -998,6 +1028,8 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 		msg.Proposal = invalidProposal
 	}
 
+
+	i.logger.Debug("Gossiping message", "message", msg)
 	if err := i.transport.Gossip(msg); err != nil {
 		i.logger.Error("failed to gossip", "err", err)
 	}
@@ -1133,13 +1165,13 @@ func (i *Ibft) Close() error {
 func (i *Ibft) IsIbftStateStale() bool {
 
 	// if syncState (validators and non-sealing), ensure we are within 5 blocks old
-	if (i.isState(SyncState)) {
+	if i.isState(SyncState) {
 		if _, diff := i.syncer.BestPeer(); diff != nil {
 			return diff.Cmp(big.NewInt(5)) >= 0
 		}
 		return false
 	}
-	if (i.isState(RoundChangeState)) {
+	if i.isState(RoundChangeState) {
 		return true
 	}
 	return false
@@ -1151,6 +1183,7 @@ func (i *Ibft) getNextMessage(timeout time.Duration) (*proto.MessageReq, bool) {
 	for {
 		msg := i.msgQueue.readMessage(i.getState(), i.state.view)
 		if msg != nil {
+			i.logger.Debug("dgk - getNextMessage return", "view", msg.view, "msg", msg.msg, "obj", msg.obj)
 			return msg.obj, true
 		}
 
