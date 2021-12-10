@@ -321,6 +321,9 @@ func (t *TxPool) handleGossipTxn(obj interface{}) {
 
 	raw := obj.(*proto.Txn)
 	txn := new(types.Transaction)
+
+	t.logger.Debug("dgk - handling gossiped tx", "from", txn.From, "nonce", txn.Nonce)
+
 	if err := txn.UnmarshalRLP(raw.Raw.Value); err != nil {
 		t.logger.Error("failed to decode broadcasted txn", "err", err)
 	} else {
@@ -349,6 +352,7 @@ func (t *TxPool) AddTx(tx *types.Transaction) error {
 				Value: tx.MarshalRLP(),
 			},
 		}
+		t.logger.Debug("dgk - publishing tx", "from", tx.From, "nonce", tx.Nonce)
 		if err := t.topic.Publish(txn); err != nil {
 			t.logger.Error("failed to topic txn", "err", err)
 		}
