@@ -369,12 +369,14 @@ func (s *Server) addPeer(id peer.ID) {
 	}
 	s.peers[id] = p
 
+	/*
 	// loop over elements of slice
 	s.logger.Debug("dgk - Peer state ---------------------")
 	for k := range s.peers {
 		s.logger.Debug("dgk - Peer", "ID", k)
 	}
 	s.logger.Debug("dgk - End peer state ------------------")
+	*/
 
 	s.emitEvent(id, PeerConnected)
 }
@@ -388,11 +390,13 @@ func (s *Server) delPeer(id peer.ID) {
 	delete(s.peers, id)
 	s.host.Network().ClosePeer(id)
 
+	/*
 	s.logger.Debug("dgk - Peer state ---------------------")
 	for k := range s.peers {
 		s.logger.Debug("dgk - Peer", "ID", k)
 	}
 	s.logger.Debug("dgk - End peer state ------------------")
+	*/
 	s.emitEvent(id, PeerDisconnected)
 }
 

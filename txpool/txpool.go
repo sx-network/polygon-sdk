@@ -265,8 +265,14 @@ func (a *accountQueueWrapper) pruneAccountTx(
 		// Check if the nonce is lower than what the TxPool is expecting
 		lowestNonceTx := a.accountQueue.txs.Peek()
 
-		if lowestNonceTx == nil || // There is nothing in the account specific queue
-			lowestNonceTx.Nonce >= a.accountQueue.nextNonce { // The lowest nonce tx is valid
+		// There is nothing in the account specific queue
+		if lowestNonceTx == nil {
+			break
+		}
+
+		a.accountQueue.logger.Debug("dgk - pruneAccountTx", "a.accountQueue.nextNonce", a.accountQueue.nextNonce, "lowestNonceTx.Nonce", lowestNonceTx.Nonce)
+
+		if lowestNonceTx.Nonce >= a.accountQueue.nextNonce { // The lowest nonce tx is valid
 			// All good
 			break
 		}
@@ -590,13 +596,17 @@ func (t *TxPool) promotedTxnCleanup(
 	// Prune out all the now possibly low-nonce transactions in the promoted queue
 	t.pendingQueue.lock.Lock()
 
+	t.logger.Debug("promotedTxnCleanup", "nonce", stateNonce, "acct", address.String())
+
 	// Find the txns that correspond to this account
 	droppedPendingTxs := 0
 	for _, pendingQueueTxn := range t.pendingQueue.index {
+		t.logger.Debug("transaction" , "acct", address.String(), "txn", pendingQueueTxn)
 		// Check if the txn in the promoted queue matches the search criteria
 		if pendingQueueTxn.from == address && // The sender of this txn is the account we're looking for
 			pendingQueueTxn.tx.Nonce < stateNonce { // The nonce on this promoted txn is invalid
 			// Transaction found, drop it from the pending queue
+			t.logger.Debug("Found old nonce", "nonce", pendingQueueTxn.tx.Nonce, "stateNonce", stateNonce)
 			if dropped := t.pendingQueue.dropTx(pendingQueueTxn.tx); dropped {
 				// Update the log data
 				droppedPendingTxs++
@@ -608,6 +618,8 @@ func (t *TxPool) promotedTxnCleanup(
 				)
 
 				cleanupCallback(pendingQueueTxn.tx)
+			} else {
+				t.logger.Debug("Dropped false!", "dropped", dropped)
 			}
 		}
 	}
