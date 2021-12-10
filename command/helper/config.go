@@ -19,22 +19,23 @@ import (
 
 // Config defines the server configuration params
 type Config struct {
-	Chain          string                        `json:"chain"`
-	DataDir        string                        `json:"data_dir"`
-	BlockGasTarget string                        `json:"block_gas_target"`
-	GRPCAddr       string                        `json:"rpc_addr"`
-	JSONRPCAddr    string                        `json:"jsonrpc_addr"`
-	Telemetry      *Telemetry                    `json:"telemetry"`
-	Network        *Network                      `json:"network"`
+	Chain          string                 `json:"chain_config"`
+	Secrets        string                 `json:"secrets_config"`
 	SecretsManager *secrets.SecretsManagerConfig `json:"secrets_manager"`
-	Seal           bool                          `json:"seal"`
-	TxPool         *TxPool                       `json:"tx_pool"`
-	LogLevel       string                        `json:"log_level"`
-	Consensus      map[string]interface{}        `json:"consensus"`
-	Dev            bool
-	DevInterval    uint64
-	Join           string
-	FaultyMode		 uint64												 `json:"faulty_mode"`
+	DataDir        string                 `json:"data_dir"`
+	BlockGasTarget string                 `json:"block_gas_target"`
+	GRPCAddr       string                 `json:"grpc_addr"`
+	JSONRPCAddr    string                 `json:"jsonrpc_addr"`
+	Telemetry      *Telemetry             `json:"telemetry"`
+	Network        *Network               `json:"network"`
+	Seal           bool                   `json:"seal"`
+	TxPool         *TxPool                `json:"tx_pool"`
+	LogLevel       string                 `json:"log_level"`
+	Dev            bool                   `json:"dev_mode"`
+	DevInterval    uint64                 `json:"dev_interval"`
+	Join           string                 `json:"join_addr"`
+	Consensus      map[string]interface{} `json:"consensus"`
+	FaultyMode		 uint64									`json:"faulty_mode"`
 }
 
 // Telemetry holds the config details for metric services.
@@ -45,9 +46,9 @@ type Telemetry struct {
 // Network defines the network configuration params
 type Network struct {
 	NoDiscover bool   `json:"no_discover"`
-	Addr       string `json:"addr"`
+	Addr       string `json:"libp2p_addr"`
 	NatAddr    string `json:"nat_addr"`
-	Dns        string `json:"dns"`
+	Dns        string `json:"dns_addr"`
 	MaxPeers   uint64 `json:"max_peers"`
 }
 
@@ -96,7 +97,15 @@ func (c *Config) BuildConfig() (*server.Config, error) {
 	conf.Chain = cc
 	conf.Seal = c.Seal
 	conf.DataDir = c.DataDir
+	// Set the secrets manager config if it was passed in
+	if c.Secrets != "" {
+		secretsConfig, readErr := secrets.ReadConfig(c.Secrets)
+		if readErr != nil {
+			return nil, fmt.Errorf("unable to read config file, %v", readErr)
+		}
 
+		conf.SecretsManager = secretsConfig
+	}
 	// JSON RPC + GRPC
 	if c.GRPCAddr != "" {
 		// If an address was passed in, parse it
@@ -191,11 +200,6 @@ func (c *Config) BuildConfig() (*server.Config, error) {
 		}
 	}
 
-	// Set the secrets manager config if it was passed in
-	if c.SecretsManager != nil {
-		conf.SecretsManager = c.SecretsManager
-	}
-
 	return conf, nil
 }
 
@@ -247,8 +251,10 @@ func (c *Config) mergeConfigWith(otherConfig *Config) error {
 		c.GRPCAddr = otherConfig.GRPCAddr
 	}
 
-	if otherConfig.Telemetry.PrometheusAddr != "" {
-		c.Telemetry.PrometheusAddr = otherConfig.Telemetry.PrometheusAddr
+	if otherConfig.Telemetry != nil {
+		if otherConfig.Telemetry.PrometheusAddr != "" {
+			c.Telemetry.PrometheusAddr = otherConfig.Telemetry.PrometheusAddr
+		}
 	}
 
 	if otherConfig.JSONRPCAddr != "" {
@@ -263,7 +269,8 @@ func (c *Config) mergeConfigWith(otherConfig *Config) error {
 		c.FaultyMode = otherConfig.FaultyMode
 	}
 
-	{
+	if otherConfig.Network != nil {
+
 		// Network
 		if otherConfig.Network.Addr != "" {
 			c.Network.Addr = otherConfig.Network.Addr
@@ -282,7 +289,7 @@ func (c *Config) mergeConfigWith(otherConfig *Config) error {
 		}
 	}
 
-	{
+	if otherConfig.TxPool != nil {
 		// TxPool
 		if otherConfig.TxPool.Locals != "" {
 			c.TxPool.Locals = otherConfig.TxPool.Locals
@@ -297,11 +304,14 @@ func (c *Config) mergeConfigWith(otherConfig *Config) error {
 			c.TxPool.MaxSlots = otherConfig.TxPool.MaxSlots
 		}
 	}
+	// Read the secrets config file location
+	if otherConfig.Secrets != "" {
+		c.Secrets = otherConfig.Secrets
+	}
 
 	if err := mergo.Merge(&c.Consensus, otherConfig.Consensus, mergo.WithOverride); err != nil {
 		return err
 	}
-
 	return nil
 }
 
