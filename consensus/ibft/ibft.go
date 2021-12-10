@@ -297,7 +297,7 @@ func (i *Ibft) runCycle() {
 		i.logger.Debug("cycle", "state", i.getState(), "sequence", i.state.view.Sequence, "round", i.state.view.Round+1)
 	}
 
-	i.logStates()
+	//i.logStates()
 
 	// Based on the current state, execute the corresponding section
 	switch i.getState() {
@@ -383,6 +383,7 @@ func (i *Ibft) runSyncState() {
 		var isValidator bool
 		i.syncer.WatchSyncWithPeer(p, func(b *types.Block) bool {
 			i.syncer.Broadcast(b)
+			i.logger.Debug("dgk - resetWithHeader called from runSyncState()")
 			i.txpool.ResetWithHeader(b.Header)
 			isValidator = i.isValidSnapshot()
 
@@ -691,7 +692,7 @@ func (i *Ibft) runValidateState() {
 	for i.getState() == ValidateState {
 		msg, ok := i.getNextMessage(timeout)
 		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
-		i.logStates()
+		//i.logStates()
 		if !ok {
 			// closing
 			return
@@ -809,6 +810,8 @@ func (i *Ibft) insertBlock(block *types.Block) error {
 
 	// after the block has been written we reset the txpool so that
 	// the old transactions are removed
+
+	i.logger.Debug("dgk - resetWithHeader called from insertBlock()")
 	i.txpool.ResetWithHeader(block.Header)
 
 	return nil

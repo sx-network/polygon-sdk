@@ -265,8 +265,14 @@ func (a *accountQueueWrapper) pruneAccountTx(
 		// Check if the nonce is lower than what the TxPool is expecting
 		lowestNonceTx := a.accountQueue.txs.Peek()
 
-		if lowestNonceTx == nil || // There is nothing in the account specific queue
-			lowestNonceTx.Nonce >= a.accountQueue.nextNonce { // The lowest nonce tx is valid
+		// There is nothing in the account specific queue
+		if lowestNonceTx == nil {
+			break
+		}
+
+		a.accountQueue.logger.Debug("dgk - pruneAccountTx", "a.accountQueue.nextNonce", a.accountQueue.nextNonce, "lowestNonceTx.Nonce", lowestNonceTx.Nonce)
+
+		if lowestNonceTx.Nonce >= a.accountQueue.nextNonce { // The lowest nonce tx is valid
 			// All good
 			break
 		}
