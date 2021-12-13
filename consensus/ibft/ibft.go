@@ -261,6 +261,7 @@ func (i *Ibft) start() {
 	for {
 		select {
 		case <-i.closeCh:
+			i.logger.Debug("dgk - closeCh start")
 			return
 		default: // Default is here because we would block until we receive something in the closeCh
 		}
@@ -598,6 +599,7 @@ func (i *Ibft) runAcceptState() { // start new round
 			select {
 			case <-time.After(delay):
 			case <-i.closeCh:
+				i.logger.Debug("dgk - closeCh runAcceptState")
 				return
 			}
 		}
@@ -619,6 +621,7 @@ func (i *Ibft) runAcceptState() { // start new round
 	// for a pre-prepare message from the proposer
 
 	timeout := exponentialTimeout(i.state.view.Round)
+	i.logger.Debug("dgk - acceptState timeout", timeout)
 	for i.getState() == AcceptState {
 		msg, ok := i.getNextMessage(timeout)
 		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
@@ -689,6 +692,7 @@ func (i *Ibft) runValidateState() {
 	}
 
 	timeout := exponentialTimeout(i.state.view.Round)
+	i.logger.Debug("dgk - validateState timeout", timeout)
 	for i.getState() == ValidateState {
 		msg, ok := i.getNextMessage(timeout)
 		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
@@ -1154,6 +1158,7 @@ func (i *Ibft) GetBlockCreator(header *types.Header) (types.Address, error) {
 func (i *Ibft) Close() error {
 	close(i.closeCh)
 
+	i.logger.Debug("dgk - ibft.Close() called")
 	if i.config.Path != "" {
 		err := i.store.saveToPath(i.config.Path)
 
@@ -1202,6 +1207,7 @@ func (i *Ibft) getNextMessage(timeout time.Duration) (*proto.MessageReq, bool) {
 			i.logger.Info("unable to read new message from the message queue", "timeout expired", timeout)
 			return nil, true
 		case <-i.closeCh:
+			i.logger.Debug("dgk - closeCh getNextMessage")
 			return nil, false
 		case <-i.updateCh:
 		}
