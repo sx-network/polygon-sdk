@@ -45,6 +45,7 @@ type syncerInterface interface {
 	BestPeer() (*protocol.SyncPeer, *big.Int)
 	BulkSyncWithPeer(p *protocol.SyncPeer) error
 	WatchSyncWithPeer(p *protocol.SyncPeer, handler func(b *types.Block) bool)
+	GetSyncProgression() *protocol.Progression
 	Broadcast(b *types.Block)
 }
 
@@ -71,8 +72,7 @@ type Ibft struct {
 	msgQueue *msgQueue     // Structure containing different message queues
 	updateCh chan struct{} // Update channel
 
-	syncer       syncerInterface // Reference to the sync protocol
-	syncNotifyCh chan bool       // Sync protocol notification channel
+	syncer syncerInterface // Reference to the sync protocol
 
 	network   *network.Server // Reference to the networking layer
 	transport transport       // Reference to the transport protocol
@@ -101,7 +101,6 @@ func Factory(
 		state:          &currentState{},
 		network:        params.Network,
 		epochSize:      DefaultEpochSize,
-		syncNotifyCh:   make(chan bool),
 		sealing:        params.Seal,
 		metrics:        params.Metrics,
 		secretsManager: params.SecretsManager,
@@ -145,6 +144,11 @@ func (i *Ibft) Start() error {
 	go i.start()
 
 	return nil
+}
+
+// GetSyncProgression gets the latest sync progression, if any
+func (i *Ibft) GetSyncProgression() *protocol.Progression {
+	return i.syncer.GetSyncProgression()
 }
 
 type transport interface {
