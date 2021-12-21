@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/0xPolygon/polygon-sdk/protocol"
+
 	"github.com/0xPolygon/polygon-sdk/chain"
 	"github.com/0xPolygon/polygon-sdk/crypto"
 	"github.com/0xPolygon/polygon-sdk/helper/common"
@@ -421,6 +423,10 @@ func (j *jsonRPCHub) ApplyTxn(header *types.Header, txn *types.Transaction) (res
 
 func (j *jsonRPCHub) IsIbftStateStale() bool {
 	return j.Consensus.IsIbftStateStale()
+}
+
+func (j *jsonRPCHub) GetSyncProgression() *protocol.Progression {
+	return j.Consensus.GetSyncProgression()
 }
 
 // SETUP //
