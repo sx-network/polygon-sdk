@@ -238,7 +238,7 @@ func (d *discovery) handleDiscovery() {
 	if d.peersCount() > 0 {
 		target := d.peers[rand.Intn(d.peersCount())]
 		if err := d.call(target.id); err != nil {
-			d.srv.logger.Error("failed to dial bootnode", "err", err)
+			d.srv.logger.Error("failed to dial bootnode", "id", target.id, "err", err)
 		}
 	}
 }
