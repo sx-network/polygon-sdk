@@ -34,7 +34,7 @@ type blockchainInterface interface {
 }
 
 type transactionPoolInterface interface {
-	ResetWithHeader(h *types.Header)
+	ResetWithHeaders(headers ...*types.Header)
 	Pop() (*types.Transaction, func())
 	DecreaseAccountNonce(tx *types.Transaction)
 	Length() uint64
@@ -43,8 +43,8 @@ type transactionPoolInterface interface {
 type syncerInterface interface {
 	Start()
 	BestPeer() (*protocol.SyncPeer, *big.Int)
-	BulkSyncWithPeer(p *protocol.SyncPeer) error
-	WatchSyncWithPeer(p *protocol.SyncPeer, handler func(b *types.Block) bool)
+	BulkSyncWithPeer(p *protocol.SyncPeer, newBlocksHandler func(blocks []*types.Block)) error
+	WatchSyncWithPeer(p *protocol.SyncPeer, newBlockHandler func(b *types.Block) bool)
 	GetSyncProgression() *protocol.Progression
 	Broadcast(b *types.Block)
 }
@@ -372,7 +372,14 @@ func (i *Ibft) runSyncState() {
 			continue
 		}
 
-		if err := i.syncer.BulkSyncWithPeer(p); err != nil {
+		if err := i.syncer.BulkSyncWithPeer(p, func(newBlocks []*types.Block) {
+			newHeaders := []*types.Header{}
+			for _, block := range newBlocks {
+				newHeaders = append(newHeaders, block.Header)
+			}
+
+			i.txpool.ResetWithHeaders(newHeaders...)
+		}); err != nil {
 			i.logger.Error("failed to bulk sync", "err", err)
 			continue
 		}
@@ -388,8 +395,8 @@ func (i *Ibft) runSyncState() {
 		var isValidator bool
 		i.syncer.WatchSyncWithPeer(p, func(b *types.Block) bool {
 			i.syncer.Broadcast(b)
-			i.logger.Debug("dgk - resetWithHeader called from runSyncState()")
-			i.txpool.ResetWithHeader(b.Header)
+			i.logger.Debug("dgk - resetWithHeaders called from runSyncState()")
+			i.txpool.ResetWithHeaders(b.Header)
 			isValidator = i.isValidSnapshot()
 
 			return isValidator
@@ -583,7 +590,7 @@ func (i *Ibft) runAcceptState() { // start new round
 	}
 
 	i.state.CalcProposer(lastProposer)
-	
+
 	// FaultyMode - AlwaysPropose
 	if i.state.proposer == i.validatorKeyAddr || i.config.Params.FaultyMode.IsAlwaysPropose() {
 		logger.Info("we are the proposer", "block", number)
@@ -818,9 +825,8 @@ func (i *Ibft) insertBlock(block *types.Block) error {
 
 	// after the block has been written we reset the txpool so that
 	// the old transactions are removed
-
-	i.logger.Debug("dgk - resetWithHeader called from insertBlock()")
-	i.txpool.ResetWithHeader(block.Header)
+	i.logger.Debug("dgk - resetWithHeaders called from insertBlock()")
+	i.txpool.ResetWithHeaders(block.Header)
 
 	return nil
 }
@@ -962,7 +968,7 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 		invalidType := proto.MessageReq_RoundChange
 		i.logger.Info("Modify the message type", "old", msg.Type, "new", invalidType)
 		msg.Type = invalidType
-	} else if (msg.Type == proto.MessageReq_RoundChange && i.config.Params.FaultyMode.IsNeverRoundChangeMsgType()) {
+	} else if msg.Type == proto.MessageReq_RoundChange && i.config.Params.FaultyMode.IsNeverRoundChangeMsgType() {
 		invalidType := proto.MessageReq_Commit
 		i.logger.Info("Modify the message type", "old", msg.Type, "new", invalidType)
 		msg.Type = invalidType
@@ -1039,7 +1045,6 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 		msg.Proposal = invalidProposal
 	}
 
-
 	i.logger.Debug("Gossiping message", "message", msg)
 	if err := i.transport.Gossip(msg); err != nil {
 		i.logger.Error("failed to gossip", "err", err)
@@ -1051,24 +1056,24 @@ func (i *Ibft) getState() IbftState {
 	// FaultyMode - AlwaysPropose
 	if i.config.Params.FaultyMode.IsScrambleState() {
 		switch i.state.getState() {
-			case AcceptState:
-				i.logger.Info("Modify state", "old", AcceptState, "new", RoundChangeState)
-				return RoundChangeState
-			case RoundChangeState:
-				i.logger.Info("Modify state", "old", RoundChangeState, "new", ValidateState)
-				return ValidateState
-			case ValidateState:
-				i.logger.Info("Modify state", "old", ValidateState, "new", CommitState)
-				return CommitState
-			case CommitState:
-				i.logger.Info("Modify state", "old", CommitState, "new", SyncState)
-				return SyncState
-			case SyncState:
-				i.logger.Info("Modify state", "old", SyncState, "new", AcceptState)
-				return AcceptState
+		case AcceptState:
+			i.logger.Info("Modify state", "old", AcceptState, "new", RoundChangeState)
+			return RoundChangeState
+		case RoundChangeState:
+			i.logger.Info("Modify state", "old", RoundChangeState, "new", ValidateState)
+			return ValidateState
+		case ValidateState:
+			i.logger.Info("Modify state", "old", ValidateState, "new", CommitState)
+			return CommitState
+		case CommitState:
+			i.logger.Info("Modify state", "old", CommitState, "new", SyncState)
+			return SyncState
+		case SyncState:
+			i.logger.Info("Modify state", "old", SyncState, "new", AcceptState)
+			return AcceptState
 		}
 	}
-	
+
 	return i.state.getState()
 }
 

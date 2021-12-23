@@ -3,8 +3,9 @@ package dev
 import (
 	"context"
 	"fmt"
-	"github.com/0xPolygon/polygon-sdk/protocol"
 	"time"
+
+	"github.com/0xPolygon/polygon-sdk/protocol"
 
 	"github.com/0xPolygon/polygon-sdk/blockchain"
 	"github.com/0xPolygon/polygon-sdk/consensus"
@@ -196,7 +197,7 @@ func (d *Dev) writeNewBlock(parent *types.Header) error {
 
 	// after the block has been written we reset the txpool so that
 	// the old transactions are removed
-	d.txpool.ResetWithHeader(block.Header)
+	d.txpool.ResetWithHeaders(block.Header)
 
 	return nil
 }
