@@ -403,11 +403,6 @@ func (t *TxPool) addImpl(origin TxOrigin, tx *types.Transaction) error {
 				tx.Hash.String()),
 		)
 
-		// dan - special case for testing if same tx can be processed within addImpl twice, so do not log error
-		if tx.Nonce+1 == nextNonce {
-			return nil
-		}
-
 		return ErrNonceTooLow
 	}
 
