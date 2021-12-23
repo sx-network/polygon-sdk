@@ -333,7 +333,9 @@ func (t *TxPool) handleGossipTxn(obj interface{}) {
 	} else {
 		t.logger.Debug("dgk - handling gossiped tx", "from", txn.From, "nonce", txn.Nonce, "hash", txn.Hash)
 		if err := t.addImpl(OriginGossip, txn); err != nil {
-			t.logger.Error("failed to add broadcasted txn", "err", err)
+			if !errors.Is(err, ErrAlreadyKnown) {
+				t.logger.Error("failed to add broadcasted txn", "err", err)
+			}
 		}
 	}
 }
@@ -401,10 +403,10 @@ func (t *TxPool) addImpl(origin TxOrigin, tx *types.Transaction) error {
 				tx.Hash.String()),
 		)
 
-			// dan - special case for testing if same tx can be processed within addImpl twice, so do not log error
-			if (tx.Nonce + 1 == nextNonce) {
-				return nil
-			}
+		// dan - special case for testing if same tx can be processed within addImpl twice, so do not log error
+		if tx.Nonce+1 == nextNonce {
+			return nil
+		}
 
 		return ErrNonceTooLow
 	}
@@ -565,9 +567,9 @@ func (t *TxPool) batchDeleteTxFromLookup(txns []*types.Transaction) {
 }
 
 // ResetWithHeader does basic txpool housekeeping after a block write
-func (t *TxPool) ResetWithHeader(h *types.Header) {
+func (t *TxPool) ResetWithHeaders(headers ...*types.Header) {
 	evnt := &blockchain.Event{
-		NewChain: []*types.Header{h},
+		NewChain: headers,
 	}
 
 	// Process the txns in the event to make sure the TxPool is up-to-date
@@ -599,38 +601,40 @@ func (t *TxPool) promotedTxnCleanup(
 	t.logger.Debug("promotedTxnCleanup", "nonce", stateNonce, "acct", address.String())
 
 	// Find the txns that correspond to this account
-	droppedPendingTxs := 0
+	droppedPendingTxs := make([]*types.Transaction, 0)
 	for _, pendingQueueTxn := range t.pendingQueue.index {
-		t.logger.Debug("transaction" , "acct", address.String(), "txn", pendingQueueTxn)
+		t.logger.Debug("transaction", "acct", address.String(), "txn", pendingQueueTxn)
 		// Check if the txn in the promoted queue matches the search criteria
 		if pendingQueueTxn.from == address && // The sender of this txn is the account we're looking for
 			pendingQueueTxn.tx.Nonce < stateNonce { // The nonce on this promoted txn is invalid
 			// Transaction found, drop it from the pending queue
 			t.logger.Debug("Found old nonce", "nonce", pendingQueueTxn.tx.Nonce, "stateNonce", stateNonce)
 			if dropped := t.pendingQueue.dropTx(pendingQueueTxn.tx); dropped {
-				// Update the log data
-				droppedPendingTxs++
-				t.logger.Debug(
-					fmt.Sprintf(
-						"Dropping promoted txn [%s]",
-						pendingQueueTxn.tx.Hash.String(),
-					),
-				)
-
-				cleanupCallback(pendingQueueTxn.tx)
-			} else {
-				t.logger.Debug("Dropped false!", "dropped", dropped)
+				// Save the transaction as dropped
+				droppedPendingTxs = append(droppedPendingTxs, pendingQueueTxn.tx)
 			}
 		}
 	}
 
 	t.pendingQueue.lock.Unlock()
 
+	for _, droppedPendingTx := range droppedPendingTxs {
+		// Update the log
+		t.logger.Debug(
+			fmt.Sprintf(
+				"Dropping promoted txn [%s]",
+				droppedPendingTx.Hash.String(),
+			),
+		)
+
+		cleanupCallback(droppedPendingTx)
+	}
+
 	// Print out the number of dropped pending txns
 	t.logger.Debug(
 		fmt.Sprintf(
 			"Dropped %d promoted txns for account [%s]",
-			droppedPendingTxs,
+			len(droppedPendingTxs),
 			address.String(),
 		),
 	)
