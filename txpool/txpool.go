@@ -192,7 +192,10 @@ func NewTxPool(
 		if err != nil {
 			return nil, err
 		}
-		topic.Subscribe(txPool.handleGossipTxn)
+		if subscribeErr := topic.Subscribe(txPool.handleGossipTxn); subscribeErr != nil {
+			return nil, fmt.Errorf("unable to subscribe to gossip topic, %v", subscribeErr)
+		}
+
 		txPool.topic = topic
 	}
 
@@ -841,7 +844,10 @@ func (t *TxPool) Underpriced(tx *types.Transaction) bool {
 	}
 	// tx.GasPrice < lowestTx.Price
 	underpriced := tx.GasPrice.Cmp(lowestTx.price) < 0
-	t.remoteTxns.Push(lowestTx.tx)
+	if pushErr := t.remoteTxns.Push(lowestTx.tx); pushErr != nil {
+		t.logger.Error(fmt.Sprintf("Unable to push transaction to remoteTxn queue, %v", pushErr))
+	}
+
 	return underpriced
 }
 
@@ -866,7 +872,9 @@ func (t *TxPool) Discard(slotsToRemove uint64, force bool) ([]*types.Transaction
 	// Put back if couldn't make required space
 	if slotsToRemove > 0 && !force {
 		for _, tx := range dropped {
-			t.remoteTxns.Push(tx)
+			if pushErr := t.remoteTxns.Push(tx); pushErr != nil {
+				t.logger.Error(fmt.Sprintf("Unable to push transaction to remoteTxn queue, %v", pushErr))
+			}
 		}
 		return nil, false
 	}
