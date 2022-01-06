@@ -1,12 +1,14 @@
 package hashicorpvault
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
 	"github.com/0xPolygon/polygon-sdk/secrets"
 	"github.com/hashicorp/go-hclog"
 	vault "github.com/hashicorp/vault/api"
+	auth "github.com/hashicorp/vault/api/auth/aws"
 )
 
 // VaultSecretsManager is a SecretsManager that
@@ -30,8 +32,12 @@ type VaultSecretsManager struct {
 	// The HTTP client used for interacting with the Vault server
 	client *vault.Client
 
-	// The namespace under which the secrets are stored 
+	// The namespace under which the secrets are stored
 	namespace string
+
+	// approle connection parameters
+	approleRoleID       string
+	approleSecretIDFile string
 }
 
 // SecretsManagerFactory implements the factory method
@@ -94,12 +100,104 @@ func (v *VaultSecretsManager) Setup() error {
 	// Set the access token
 	client.SetToken(v.token)
 
-	// Set the namespace 
+	// Set the namespace
 	client.SetNamespace(v.namespace)
+
+	//TODO v.token needs to be vault.Secret
+	go v.RenewLoginPeriodically(context.Background()) // keep alive
 
 	v.client = client
 
 	return nil
+}
+
+func (v *VaultSecretsManager) RenewLoginPeriodically(ctx context.Context) {
+	v.logger.Debug("dgk - RENEWING LOGIN PERIODICALLY")
+
+	var currentAuthToken *vault.Secret = nil
+	for {
+		if err := v.renewUntilMaxTTL(ctx, currentAuthToken, "auth token"); err != nil {
+			// break out when shutdown is requested
+			if errors.Is(err, context.Canceled) {
+				return
+			}
+
+			v.logger.Debug("auth token renew error: %v", err) // simplified error handling
+		}
+
+		// the auth token's lease has expired and needs to be renewed
+		t, err := v.login(ctx)
+		if err != nil {
+			v.logger.Error("login authentication error: %v", err) // simplified error handling
+		}
+
+		currentAuthToken = t
+	}
+}
+
+// renewUntilMaxTTL is a blocking helper function that uses LifetimeWatcher to
+// periodically renew the given secret or token when it is close to its
+// 'token_ttl' lease expiration time until it reaches its 'token_max_ttl' lease
+// expiration time.
+func (v *VaultSecretsManager) renewUntilMaxTTL(ctx context.Context, secret *vault.Secret, label string) error {
+	watcher, err := v.client.NewLifetimeWatcher(&vault.LifetimeWatcherInput{
+		Secret: secret,
+	})
+
+	if err != nil {
+		return fmt.Errorf("unable to initialize %s lifetime watcher: %w", label, err)
+	}
+
+	go watcher.Start()
+	defer watcher.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return context.Canceled
+
+		// DoneCh will return if renewal fails, or if the remaining lease
+		// duration is under a built-in threshold and either renewing is not
+		// extending it or renewing is disabled.  In both cases, the caller
+		// should attempt a re-read of the secret. Clients should check the
+		// return value of the channel to see if renewal was successful.
+		case err := <-watcher.DoneCh():
+			if err != nil {
+				return fmt.Errorf("%s renewal failed: %w", label, err)
+			}
+
+			return nil
+
+		// RenewCh is a channel that receives a message when a successful
+		// renewal takes place and includes metadata about the renewal.
+		case info := <-watcher.RenewCh():
+			v.logger.Debug("%s: successfully renewed; remaining lease duration: %ds", label, info.Secret.LeaseDuration)
+		}
+	}
+}
+
+// AWS ec2 auth type
+func (v *VaultSecretsManager) login(ctx context.Context) (*vault.Secret, error) {
+
+	awsAuth, err := auth.NewAWSAuth(
+		auth.WithEC2Auth(),
+		auth.WithRole("foundation-node-role"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to initialize AWS auth method: %w", err)
+	}
+
+	authInfo, err := v.client.Auth().Login(ctx, awsAuth)
+	if err != nil {
+		return nil, fmt.Errorf("unable to login to AWS auth method: %w", err)
+	}
+	if authInfo == nil {
+		return nil, fmt.Errorf("no auth info was returned after login")
+	}
+
+	v.logger.Debug("logging in to vault with ec2 auth: success!")
+
+	return authInfo, nil
 }
 
 // constructSecretPath is a helper method for constructing a path to the secret
