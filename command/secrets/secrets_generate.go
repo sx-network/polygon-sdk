@@ -15,7 +15,7 @@ type SecretsGenerate struct {
 const (
 	defaultNodeName       = "polygon-sdk-node"
 	defaultConfigFileName = "./secretsManagerConfig.json"
-	defaultNamespace = "admin"
+	defaultNamespace      = "admin"
 )
 
 func (s *SecretsGenerate) DefineFlags() {
@@ -39,15 +39,6 @@ func (s *SecretsGenerate) DefineFlags() {
 		FlagOptional:      false,
 	}
 
-	s.FlagMap["token"] = helper.FlagDescriptor{
-		Description: "Specifies the access token for the service",
-		Arguments: []string{
-			"TOKEN",
-		},
-		ArgumentsOptional: false,
-		FlagOptional:      false,
-	}
-
 	s.FlagMap["server-url"] = helper.FlagDescriptor{
 		Description: "Specifies the server URL for the service",
 		Arguments: []string{
@@ -63,7 +54,7 @@ func (s *SecretsGenerate) DefineFlags() {
 			"NAMESPACE",
 		},
 		ArgumentsOptional: false,
-		FlagOptional: false,
+		FlagOptional:      false,
 	}
 
 	s.FlagMap["name"] = helper.FlagDescriptor{
@@ -102,14 +93,12 @@ func (s *SecretsGenerate) Run(args []string) int {
 	flags := s.Base.NewFlagSet(s.GetBaseCommand())
 
 	var path string
-	var token string
 	var serverURL string
 	var serviceType string
 	var name string
 	var namespace string
 
 	flags.StringVar(&path, "dir", defaultConfigFileName, "")
-	flags.StringVar(&token, "token", "", "")
 	flags.StringVar(&serverURL, "server-url", "", "")
 	flags.StringVar(&serviceType, "type", string(secrets.HashicorpVault), "")
 	flags.StringVar(&name, "name", defaultNodeName, "")
@@ -123,11 +112,6 @@ func (s *SecretsGenerate) Run(args []string) int {
 	// Safety checks
 	if path == "" {
 		s.UI.Error("required argument (path) not passed in")
-		return 1
-	}
-
-	if token == "" {
-		s.UI.Error("required argument (token) not passed in")
 		return 1
 	}
 
@@ -148,7 +132,6 @@ func (s *SecretsGenerate) Run(args []string) int {
 
 	// Generate the configuration
 	config := &secrets.SecretsManagerConfig{
-		Token:     token,
 		ServerURL: serverURL,
 		Type:      secrets.SecretsManagerType(serviceType),
 		Name:      name,
@@ -167,7 +150,6 @@ func (s *SecretsGenerate) Run(args []string) int {
 	output += helper.FormatKV([]string{
 		fmt.Sprintf("Service Type|%s", serviceType),
 		fmt.Sprintf("Server URL|%s", serverURL),
-		fmt.Sprintf("Access Token|%s", token),
 		fmt.Sprintf("Node Name|%s", name),
 		fmt.Sprintf("Namespace|%s", namespace),
 	})

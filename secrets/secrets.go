@@ -11,9 +11,6 @@ const (
 	// Path is the path to the base working directory
 	Path = "path"
 
-	// Token is the token used for authenticating with a KMS
-	Token = "token"
-
 	// Server is the address of the KMS
 	Server = "server"
 

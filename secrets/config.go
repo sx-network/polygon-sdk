@@ -8,7 +8,6 @@ import (
 // SecretsManagerConfig is the configuration that gets
 // written to a single configuration file
 type SecretsManagerConfig struct {
-	Token     string                 `json:"token"`      // Access token to the instance
 	ServerURL string                 `json:"server_url"` // The URL of the running server
 	Type      SecretsManagerType     `json:"type"`       // The type of SecretsManager
 	Name      string                 `json:"name"`       // The name of the current node

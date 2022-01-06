@@ -17,9 +17,6 @@ type VaultSecretsManager struct {
 	// Logger object
 	logger hclog.Logger
 
-	// Token used for Vault instance authentication
-	token string
-
 	// The Server URL of the Vault instance
 	serverURL string
 
@@ -34,10 +31,6 @@ type VaultSecretsManager struct {
 
 	// The namespace under which the secrets are stored
 	namespace string
-
-	// approle connection parameters
-	approleRoleID       string
-	approleSecretIDFile string
 }
 
 // SecretsManagerFactory implements the factory method
@@ -49,14 +42,6 @@ func SecretsManagerFactory(
 	vaultManager := &VaultSecretsManager{
 		logger: params.Logger.Named(string(secrets.HashicorpVault)),
 	}
-
-	// Check if the token is present
-	if config.Token == "" {
-		return nil, errors.New("no token specified for Vault secrets manager")
-	}
-
-	// Grab the token from the config
-	vaultManager.token = config.Token
 
 	// Check if the server URL is present
 	if config.ServerURL == "" {
@@ -81,7 +66,10 @@ func SecretsManagerFactory(
 	vaultManager.basePath = fmt.Sprintf("secret/data/%s", vaultManager.name)
 
 	// Run the initial setup
-	_ = vaultManager.Setup()
+	err := vaultManager.Setup()
+	if err != nil {
+		return nil, err
+	}
 
 	return vaultManager, nil
 }
@@ -97,97 +85,36 @@ func (v *VaultSecretsManager) Setup() error {
 		return fmt.Errorf("unable to initialize Vault client: %v", err)
 	}
 
-	// Set the access token
-	client.SetToken(v.token)
-
 	// Set the namespace
 	client.SetNamespace(v.namespace)
 
-	//TODO v.token needs to be vault.Secret
-	go v.RenewLoginPeriodically(context.Background()) // keep alive
-
 	v.client = client
+
+	token, err := v.login()
+	if err != nil {
+		return fmt.Errorf("login authentication error: %v", err)
+	}
+
+	// Set the access token
+	client.SetToken(token.Auth.ClientToken)
 
 	return nil
 }
 
-func (v *VaultSecretsManager) RenewLoginPeriodically(ctx context.Context) {
-	v.logger.Debug("dgk - RENEWING LOGIN PERIODICALLY")
-
-	var currentAuthToken *vault.Secret = nil
-	for {
-		if err := v.renewUntilMaxTTL(ctx, currentAuthToken, "auth token"); err != nil {
-			// break out when shutdown is requested
-			if errors.Is(err, context.Canceled) {
-				return
-			}
-
-			v.logger.Debug("auth token renew error: %v", err) // simplified error handling
-		}
-
-		// the auth token's lease has expired and needs to be renewed
-		t, err := v.login(ctx)
-		if err != nil {
-			v.logger.Error("login authentication error: %v", err) // simplified error handling
-		}
-
-		currentAuthToken = t
-	}
-}
-
-// renewUntilMaxTTL is a blocking helper function that uses LifetimeWatcher to
-// periodically renew the given secret or token when it is close to its
-// 'token_ttl' lease expiration time until it reaches its 'token_max_ttl' lease
-// expiration time.
-func (v *VaultSecretsManager) renewUntilMaxTTL(ctx context.Context, secret *vault.Secret, label string) error {
-	watcher, err := v.client.NewLifetimeWatcher(&vault.LifetimeWatcherInput{
-		Secret: secret,
-	})
-
-	if err != nil {
-		return fmt.Errorf("unable to initialize %s lifetime watcher: %w", label, err)
-	}
-
-	go watcher.Start()
-	defer watcher.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return context.Canceled
-
-		// DoneCh will return if renewal fails, or if the remaining lease
-		// duration is under a built-in threshold and either renewing is not
-		// extending it or renewing is disabled.  In both cases, the caller
-		// should attempt a re-read of the secret. Clients should check the
-		// return value of the channel to see if renewal was successful.
-		case err := <-watcher.DoneCh():
-			if err != nil {
-				return fmt.Errorf("%s renewal failed: %w", label, err)
-			}
-
-			return nil
-
-		// RenewCh is a channel that receives a message when a successful
-		// renewal takes place and includes metadata about the renewal.
-		case info := <-watcher.RenewCh():
-			v.logger.Debug("%s: successfully renewed; remaining lease duration: %ds", label, info.Secret.LeaseDuration)
-		}
-	}
-}
-
 // AWS ec2 auth type
-func (v *VaultSecretsManager) login(ctx context.Context) (*vault.Secret, error) {
+func (v *VaultSecretsManager) login() (*vault.Secret, error) {
 
 	awsAuth, err := auth.NewAWSAuth(
 		auth.WithEC2Auth(),
 		auth.WithRole("foundation-node-role"),
+		// override dynamic nonce generation
+		auth.WithNonce("static-nonce"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize AWS auth method: %w", err)
 	}
 
-	authInfo, err := v.client.Auth().Login(ctx, awsAuth)
+	authInfo, err := v.client.Auth().Login(context.Background(), awsAuth)
 	if err != nil {
 		return nil, fmt.Errorf("unable to login to AWS auth method: %w", err)
 	}
