@@ -314,6 +314,7 @@ func (s *Server) runDial() {
 				// the handshake done in the identity service.
 				if err := s.host.Connect(context.Background(), *tt.addr); err != nil {
 					s.logger.Debug("failed to dial", "addr", tt.addr.String(), "err", err)
+					s.emitEvent(tt.addr.ID, PeerFailedToConnect)
 				}
 			}
 		}
@@ -333,6 +334,7 @@ func (s *Server) numPeers() int64 {
 	defer s.peersLock.Unlock()
 	return int64(len(s.peers))
 }
+
 func (s *Server) getRandomBootNode() *peer.AddrInfo {
 	return s.discovery.bootnodes[rand.Intn(len(s.discovery.bootnodes))]
 }
@@ -439,7 +441,7 @@ func (s *Server) Disconnect(peer peer.ID, reason string) {
 }
 
 var (
-	DefaultJoinTimeout   = 20 * time.Second // Anything below 15s is prone to false timeouts, as seen from empirical test data
+	DefaultJoinTimeout   = 40 * time.Second // Anything below 35s is prone to false timeouts, as seen from empirical test data
 	DefaultBufferTimeout = DefaultJoinTimeout + time.Second*5
 )
 
