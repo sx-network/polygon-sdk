@@ -94,7 +94,7 @@ func (a *AwsSsmManager) SetSecret(name string, value []byte) error {
 		Name:      aws.String(a.constructSecretPath(name)),
 		Value:     aws.String(string(value)),
 		Type:      aws.String(ssm.ParameterTypeSecureString),
-		Overwrite: aws.Bool(true),
+		Overwrite: aws.Bool(false),
 	})
 	if err != nil {
 		return fmt.Errorf("unable to store secret (%s), %v", name, err)
