@@ -50,6 +50,7 @@ func Factory(
 		if !ok {
 			return nil, fmt.Errorf("interval expected int")
 		}
+
 		d.interval = interval
 	}
 
@@ -70,6 +71,7 @@ func (d *Dev) Start() error {
 func (d *Dev) nextNotify() chan struct{} {
 	if d.interval != 0 {
 		ch := make(chan struct{})
+
 		go func() {
 			<-time.After(time.Duration(d.interval) * time.Second)
 			ch <- struct{}{}
@@ -107,6 +109,7 @@ type transitionInterface interface {
 func (d *Dev) writeTransactions(gasLimit uint64, transition transitionInterface) []*types.Transaction {
 	txns := []*types.Transaction{}
 	returnTxnFuncs := []func(){}
+
 	for {
 		txn, retTxnFn := d.txpool.Pop()
 		if txn == nil {
@@ -116,18 +119,22 @@ func (d *Dev) writeTransactions(gasLimit uint64, transition transitionInterface)
 		if txn.ExceedsBlockGasLimit(gasLimit) {
 			d.logger.Error(fmt.Sprintf("failed to write transaction: %v", state.ErrBlockLimitExceeded))
 			d.txpool.DecreaseAccountNonce(txn)
+
 			continue
 		}
 
 		if err := transition.Write(txn); err != nil {
+			//nolint:errorlint
 			if _, ok := err.(*state.GasLimitReachedTransitionApplicationError); ok {
 				returnTxnFuncs = append(returnTxnFuncs, retTxnFn)
+
 				break
-			} else if appErr, ok := err.(*state.TransitionApplicationError); ok && appErr.IsRecoverable {
+			} else if appErr, ok := err.(*state.TransitionApplicationError); ok && appErr.IsRecoverable { //nolint:errorlint
 				returnTxnFuncs = append(returnTxnFuncs, retTxnFn)
 			} else {
 				d.txpool.DecreaseAccountNonce(txn)
 			}
+
 			continue
 		}
 
@@ -141,13 +148,13 @@ func (d *Dev) writeTransactions(gasLimit uint64, transition transitionInterface)
 	}
 
 	d.logger.Info("picked out txns from pool", "num", len(txns), "remaining", d.txpool.Length())
+
 	return txns
 }
 
 // writeNewBLock generates a new block based on transactions from the pool,
 // and writes them to the blockchain
 func (d *Dev) writeNewBlock(parent *types.Header) error {
-
 	// Generate the base block
 	num := parent.Number
 	header := &types.Header{
@@ -162,13 +169,16 @@ func (d *Dev) writeNewBlock(parent *types.Header) error {
 	if err != nil {
 		return err
 	}
+
 	header.GasLimit = gasLimit
 
 	miner, err := d.GetBlockCreator(header)
 	if err != nil {
 		return err
 	}
+
 	transition, err := d.executor.BeginTxn(parent.StateRoot, header, miner)
+
 	if err != nil {
 		return err
 	}
@@ -229,6 +239,7 @@ func (d *Dev) Seal(block *types.Block, ctx context.Context) (*types.Block, error
 
 func (d *Dev) Close() error {
 	close(d.closeCh)
+
 	return nil
 }
 

@@ -19,6 +19,7 @@ func (p *Params) GetEngine() string {
 	for k := range p.Engine {
 		return k
 	}
+
 	return ""
 }
 
@@ -38,6 +39,7 @@ func (f *Forks) active(ff *Fork, block uint64) bool {
 	if ff == nil {
 		return false
 	}
+
 	return ff.Active(block)
 }
 
