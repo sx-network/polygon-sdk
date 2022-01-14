@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/0xPolygon/polygon-sdk/helper/staking"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -15,6 +14,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/0xPolygon/polygon-sdk/helper/staking"
+
 	"github.com/0xPolygon/polygon-sdk/chain"
 	helperFlags "github.com/0xPolygon/polygon-sdk/helper/flags"
 	"github.com/0xPolygon/polygon-sdk/types"
@@ -23,15 +24,15 @@ import (
 )
 
 const (
-	GenesisFileName       = "./genesis.json"
-	DefaultChainName      = "example"
-	DefaultChainID        = 100
-	DefaultPremineBalance = "0x3635C9ADC5DEA00000" // 1000 ETH
-	DefaultConsensus      = "pow"
-	DefaultMaxSlots       = 4096
+	GenesisFileName           = "./genesis.json"
+	DefaultChainName          = "polygon-sdk"
+	DefaultChainID            = 100
+	DefaultPremineBalance     = "0x3635C9ADC5DEA00000" // 1000 ETH
+	DefaultConsensus          = "pow"
+	DefaultMaxSlots           = 4096
 	DefaultDisabledFaultyMode = 0
-	GenesisGasUsed        = 458752  // 0x70000
-	GenesisGasLimit       = 5242880 // 0x500000
+	GenesisGasUsed            = 458752  // 0x70000
+	GenesisGasLimit           = 5242880 // 0x500000
 )
 
 // FlagDescriptor contains the description elements for a command flag
@@ -400,8 +401,6 @@ func BootstrapDevCommand(baseCommand string, args []string) (*Config, error) {
 
 	flags.StringVar(&cliConfig.LogLevel, "log-level", DefaultConfig().LogLevel, "")
 	flags.Var(&premine, "premine", "")
-	flags.StringVar(&cliConfig.TxPool.Locals, "locals", "", "")
-	flags.BoolVar(&cliConfig.TxPool.NoLocals, "nolocals", false, "")
 	flags.Uint64Var(&cliConfig.TxPool.PriceLimit, "price-limit", 0, "")
 	flags.Uint64Var(&cliConfig.TxPool.MaxSlots, "max-slots", DefaultMaxSlots, "")
 	flags.Uint64Var(&gaslimit, "block-gas-limit", GenesisGasLimit, "")
@@ -467,13 +466,11 @@ func ReadConfig(baseCommand string, args []string) (*Config, error) {
 	)
 	flags.BoolVar(&cliConfig.Network.NoDiscover, "no-discover", false, "")
 	flags.Uint64Var(&cliConfig.Network.MaxPeers, "max-peers", 0, "")
-	flags.StringVar(&cliConfig.TxPool.Locals, "locals", "", "")
-	flags.BoolVar(&cliConfig.TxPool.NoLocals, "nolocals", false, "")
 	flags.Uint64Var(&cliConfig.TxPool.PriceLimit, "price-limit", 0, "")
 	flags.Uint64Var(&cliConfig.TxPool.MaxSlots, "max-slots", DefaultMaxSlots, "")
 	flags.BoolVar(&cliConfig.Dev, "dev", false, "")
 	flags.Uint64Var(&cliConfig.FaultyMode, "faulty-mode", DefaultDisabledFaultyMode, "")
-	flags.Uint64Var(&cliConfig.DevInterval, "dev-interval", 0, "")
+	flags.Uint64Var(&cliConfig.DevInterval, "dev-interval", 1, "")
 	flags.StringVar(&cliConfig.BlockGasTarget, "block-gas-target", strconv.FormatUint(0, 10), "")
 	flags.StringVar(&cliConfig.Secrets, "secrets-config", "", "")
 
