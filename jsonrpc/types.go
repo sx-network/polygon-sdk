@@ -120,7 +120,7 @@ func toBlock(b *types.Block, fullTx bool) *block {
 		Number:          argUint64(h.Number),
 		GasLimit:        argUint64(h.GasLimit),
 		GasUsed:         argUint64(h.GasUsed),
-		Timestamp:       argUint64(h.Timestamp),
+		Timestamp:       argUint64(h.Timestamp / 1000),
 		ExtraData:       argBytes(h.ExtraData),
 		MixHash:         h.MixHash,
 		Nonce:           h.Nonce,
