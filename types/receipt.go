@@ -2,11 +2,12 @@ package types
 
 import (
 	"database/sql/driver"
+	"errors"
 
 	goHex "encoding/hex"
 
-	"github.com/0xPolygon/polygon-sdk/helper/hex"
-	"github.com/0xPolygon/polygon-sdk/helper/keccak"
+	"github.com/0xPolygon/polygon-edge/helper/hex"
+	"github.com/0xPolygon/polygon-edge/helper/keccak"
 )
 
 type ReceiptStatus uint64
@@ -64,7 +65,12 @@ func (b Bloom) Value() (driver.Value, error) {
 }
 
 func (b *Bloom) Scan(src interface{}) error {
-	bb := hex.MustDecodeHex(string(src.([]byte)))
+	stringVal, ok := src.([]byte)
+	if !ok {
+		return errors.New("invalid type assert")
+	}
+
+	bb := hex.MustDecodeHex(string(stringVal))
 	copy(b[:], bb[:])
 
 	return nil

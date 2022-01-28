@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"sync/atomic"
 
-	"github.com/0xPolygon/polygon-sdk/helper/keccak"
+	"github.com/0xPolygon/polygon-edge/helper/keccak"
 )
 
 type Transaction struct {
@@ -78,7 +78,12 @@ func (t *Transaction) Cost() *big.Int {
 
 func (t *Transaction) Size() uint64 {
 	if size := t.size.Load(); size != nil {
-		return size.(uint64)
+		sizeVal, ok := size.(uint64)
+		if !ok {
+			return 0
+		}
+
+		return sizeVal
 	}
 
 	size := uint64(len(t.MarshalRLP()))

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/0xPolygon/polygon-sdk/consensus/ibft/proto"
+	"github.com/0xPolygon/polygon-edge/consensus/ibft/proto"
 )
 
 // msgQueue defines the structure that holds message queues for different IBFT states
@@ -203,7 +203,12 @@ func (m msgQueueImpl) Swap(i, j int) {
 
 // Push adds a new item to the queue
 func (m *msgQueueImpl) Push(x interface{}) {
-	*m = append(*m, x.(*msgTask))
+	task, ok := x.(*msgTask)
+	if !ok {
+		return
+	}
+
+	*m = append(*m, task)
 }
 
 // Pop removes an item from the queue

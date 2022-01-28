@@ -4,7 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/0xPolygon/polygon-sdk/types"
+	"github.com/0xPolygon/polygon-edge/types"
 )
 
 // Thread safe map of all accounts registered by the pool.
@@ -45,7 +45,12 @@ func (m *accountsMap) exists(addr types.Address) bool {
 // from each of the promoted queues.
 func (m *accountsMap) getPrimaries() (primaries []*types.Transaction) {
 	m.Range(func(key, value interface{}) bool {
-		account := m.get(key.(types.Address))
+		addressKey, ok := key.(types.Address)
+		if !ok {
+			return false
+		}
+
+		account := m.get(addressKey)
 
 		account.promoted.lock(false)
 		defer account.promoted.unlock()
@@ -68,13 +73,23 @@ func (m *accountsMap) get(addr types.Address) *account {
 		return nil
 	}
 
-	return a.(*account)
+	fetchedAccount, ok := a.(*account)
+	if !ok {
+		return nil
+	}
+
+	return fetchedAccount
 }
 
 // promoted returns the number of all promoted transactons.
 func (m *accountsMap) promoted() (total uint64) {
 	m.Range(func(key, value interface{}) bool {
-		account := m.get(key.(types.Address))
+		accountKey, ok := key.(types.Address)
+		if !ok {
+			return false
+		}
+
+		account := m.get(accountKey)
 
 		account.promoted.lock(false)
 		defer account.promoted.unlock()
@@ -101,13 +116,17 @@ func (m *accountsMap) allTxs(includeEnqueued bool) (
 		account.promoted.lock(false)
 		defer account.promoted.unlock()
 
-		allPromoted[addr] = account.promoted.queue
+		if account.promoted.length() != 0 {
+			allPromoted[addr] = account.promoted.queue
+		}
 
 		if includeEnqueued {
 			account.enqueued.lock(false)
 			defer account.enqueued.unlock()
 
-			allEnqueued[addr] = account.enqueued.queue
+			if account.enqueued.length() != 0 {
+				allEnqueued[addr] = account.enqueued.queue
+			}
 		}
 
 		return true
@@ -144,14 +163,12 @@ func (a *account) setNonce(nonce uint64) {
 }
 
 // enqueue attempts tp push the transaction onto the enqueued queue.
-func (a *account) enqueue(tx *types.Transaction, demoted bool) error {
+func (a *account) enqueue(tx *types.Transaction) error {
 	a.enqueued.lock(true)
 	defer a.enqueued.unlock()
 
-	// only accept low nonce if
-	// tx was demoted
-	if tx.Nonce < a.getNonce() &&
-		!demoted {
+	// reject low nonce tx
+	if tx.Nonce < a.getNonce() {
 		return ErrNonceTooLow
 	}
 
@@ -166,7 +183,7 @@ func (a *account) enqueue(tx *types.Transaction, demoted bool) error {
 // Eligible transactions are all sequential in order of nonce
 // and the first one has to have nonce less (or equal) to the account's
 // nextNonce.
-func (a *account) promote() uint64 {
+func (a *account) promote() (uint64, []types.Hash) {
 	a.promoted.lock(true)
 	a.enqueued.lock(true)
 
@@ -179,10 +196,11 @@ func (a *account) promote() uint64 {
 	if a.enqueued.length() == 0 ||
 		a.enqueued.peek().Nonce > currentNonce {
 		// nothing to promote
-		return 0
+		return 0, nil
 	}
 
 	promoted := uint64(0)
+	promotedTxnHashes := make([]types.Hash, 0)
 	nextNonce := a.enqueued.peek().Nonce
 
 	for {
@@ -197,6 +215,7 @@ func (a *account) promote() uint64 {
 
 		// push to promoted
 		a.promoted.push(tx)
+		promotedTxnHashes = append(promotedTxnHashes, tx.Hash)
 
 		// update counters
 		nextNonce += 1
@@ -209,5 +228,5 @@ func (a *account) promote() uint64 {
 		a.setNonce(nextNonce)
 	}
 
-	return promoted
+	return promoted, promotedTxnHashes
 }

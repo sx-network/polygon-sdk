@@ -2,11 +2,12 @@ package loadbot
 
 import (
 	"fmt"
-	"github.com/0xPolygon/polygon-sdk/crypto"
-	txpoolOp "github.com/0xPolygon/polygon-sdk/txpool/proto"
-	"github.com/0xPolygon/polygon-sdk/types"
+	"github.com/0xPolygon/polygon-edge/crypto"
+	txpoolOp "github.com/0xPolygon/polygon-edge/txpool/proto"
+	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/umbracle/go-web3/jsonrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"os"
 	"strings"
 )
@@ -23,7 +24,7 @@ func createJSONRPCClient(endpoint string, maxConns int) (*jsonrpc.Client, error)
 }
 
 func createGRPCClient(endpoint string) (txpoolOp.TxnPoolOperatorClient, error) {
-	conn, err := grpc.Dial(endpoint, grpc.WithInsecure())
+	conn, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func extractSenderAccount(address types.Address) (*Account, error) {
 		PrivateKey: nil,
 	}
 
-	privateKeyRaw := os.Getenv("PSDK_" + address.String())
+	privateKeyRaw := os.Getenv("LOADBOT_" + address.String())
 	privateKeyRaw = strings.TrimPrefix(privateKeyRaw, "0x")
 	privateKey, err := crypto.BytesToPrivateKey([]byte(privateKeyRaw))
 

@@ -10,17 +10,18 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/0xPolygon/polygon-edge/consensus"
+	"github.com/0xPolygon/polygon-edge/consensus/ibft/proto"
+	"github.com/0xPolygon/polygon-edge/crypto"
+	"github.com/0xPolygon/polygon-edge/helper/hex"
+	"github.com/0xPolygon/polygon-edge/helper/progress"
+	"github.com/0xPolygon/polygon-edge/network"
+	"github.com/0xPolygon/polygon-edge/protocol"
+	"github.com/0xPolygon/polygon-edge/secrets"
+	"github.com/0xPolygon/polygon-edge/state"
+	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/hashicorp/go-hclog"
-
-	"github.com/0xPolygon/polygon-sdk/consensus"
-	"github.com/0xPolygon/polygon-sdk/consensus/ibft/proto"
-	"github.com/0xPolygon/polygon-sdk/crypto"
-	"github.com/0xPolygon/polygon-sdk/helper/hex"
-	"github.com/0xPolygon/polygon-sdk/network"
-	"github.com/0xPolygon/polygon-sdk/protocol"
-	"github.com/0xPolygon/polygon-sdk/secrets"
-	"github.com/0xPolygon/polygon-sdk/state"
-	"github.com/0xPolygon/polygon-sdk/types"
+	"google.golang.org/grpc"
 	any "google.golang.org/protobuf/types/known/anypb"
 )
 
@@ -55,7 +56,7 @@ type syncerInterface interface {
 	BestPeer() (*protocol.SyncPeer, *big.Int)
 	BulkSyncWithPeer(p *protocol.SyncPeer, newBlockHandler func(block *types.Block)) error
 	WatchSyncWithPeer(p *protocol.SyncPeer, newBlockHandler func(b *types.Block) bool)
-	GetSyncProgression() *protocol.Progression
+	GetSyncProgression() *progress.Progression
 	Broadcast(b *types.Block)
 }
 
@@ -65,6 +66,7 @@ type Ibft struct {
 
 	logger hclog.Logger      // Output logger
 	config *consensus.Config // Consensus configuration
+	Grpc   *grpc.Server      // gRPC configuration
 	state  *currentState     // Reference to the current state
 
 	blockchain blockchainInterface // Interface exposed by the blockchain layer
@@ -97,6 +99,8 @@ type Ibft struct {
 	secretsManager secrets.SecretsManager
 
 	mechanism ConsensusMechanism // IBFT ConsensusMechanism used (PoA / PoS)
+
+	blockTime uint64 // Configurable consensus blocktime in miliseconds
 }
 
 // Define the type of the IBFT consensus
@@ -155,12 +159,6 @@ const (
 	// when building a block (candidate voting)
 	CandidateVoteHook = "CandidateVoteHook"
 
-	// POA + POS //
-
-	// AcceptStateLogHook defines what should be logged out as the status
-	// from AcceptState
-	AcceptStateLogHook = "AcceptStateLogHook"
-
 	// POS //
 
 	// SyncStateHook defines the additional snapshot update logic
@@ -169,6 +167,16 @@ const (
 
 	// VerifyBlockHook defines the additional verification steps for the PoS mechanism
 	VerifyBlockHook = "VerifyBlockHook"
+
+	// POA + POS //
+
+	// AcceptStateLogHook defines what should be logged out as the status
+	// from AcceptState
+	AcceptStateLogHook = "AcceptStateLogHook"
+
+	// CalculateProposerHook defines what is the next proposer
+	// based on the previous
+	CalculateProposerHook = "CalculateProposerHook"
 )
 
 type ConsensusMechanism interface {
@@ -220,12 +228,18 @@ func Factory(
 		epochSize = DefaultEpochSize
 	} else {
 		// Epoch size is defined, use the passed in one
-		epochSize = uint64(definedEpochSize.(float64))
+		readSize, ok := definedEpochSize.(float64)
+		if !ok {
+			return nil, errors.New("invalid type assertion")
+		}
+
+		epochSize = uint64(readSize)
 	}
 
 	p := &Ibft{
 		logger:         params.Logger.Named("ibft"),
 		config:         params.Config,
+		Grpc:           params.Grpc,
 		blockchain:     params.Blockchain,
 		executor:       params.Executor,
 		closeCh:        make(chan struct{}),
@@ -236,6 +250,7 @@ func Factory(
 		sealing:        params.Seal,
 		metrics:        params.Metrics,
 		secretsManager: params.SecretsManager,
+		blockTime:      params.BlockTime,
 	}
 
 	// Initialize the mechanism
@@ -259,34 +274,41 @@ func Factory(
 
 	p.syncer = protocol.NewSyncer(params.Logger, params.Network, params.Blockchain)
 
-	// register the grpc operator
-	p.operator = &operator{ibft: p}
-	proto.RegisterIbftOperatorServer(params.Grpc, p.operator)
-
-	// Set up the node's validator key
-	if err := p.createKey(); err != nil {
-		return nil, err
-	}
-
-	p.logger.Info("validator key", "addr", p.validatorKeyAddr.String())
-
-	// start the transport protocol
-	if err := p.setupTransport(); err != nil {
-		return nil, err
-	}
-
 	return p, nil
 }
 
 // Start starts the IBFT consensus
-func (i *Ibft) Start() error {
-	// Start the syncer
-	i.syncer.Start()
-
+func (i *Ibft) Initialize() error {
 	// Set up the snapshots
 	if err := i.setupSnapshot(); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+// Start starts the IBFT consensus
+func (i *Ibft) Start() error {
+	// register the grpc operator
+	if i.Grpc != nil {
+		i.operator = &operator{ibft: i}
+		proto.RegisterIbftOperatorServer(i.Grpc, i.operator)
+	}
+
+	// Set up the node's validator key
+	if err := i.createKey(); err != nil {
+		return err
+	}
+
+	i.logger.Info("validator key", "addr", i.validatorKeyAddr.String())
+
+	// start the transport protocol
+	if err := i.setupTransport(); err != nil {
+		return err
+	}
+
+	// Start the syncer
+	i.syncer.Start()
 
 	// Start the actual IBFT protocol
 	go i.start()
@@ -295,7 +317,7 @@ func (i *Ibft) Start() error {
 }
 
 // GetSyncProgression gets the latest sync progression, if any
-func (i *Ibft) GetSyncProgression() *protocol.Progression {
+func (i *Ibft) GetSyncProgression() *progress.Progression {
 	return i.syncer.GetSyncProgression()
 }
 
@@ -585,8 +607,6 @@ func (i *Ibft) runSyncState() {
 	}
 }
 
-var defaultBlockPeriod = 2 * time.Second
-
 // buildBlock builds the block, based on the passed in snapshot and parent header
 func (i *Ibft) buildBlock(snap *Snapshot, parent *types.Header) (*types.Block, error) {
 	header := &types.Header{
@@ -617,15 +637,18 @@ func (i *Ibft) buildBlock(snap *Snapshot, parent *types.Header) (*types.Block, e
 		i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", CandidateVoteHook, hookErr))
 	}
 
+	// calculate millisecond values from consensus custom functions in utils.go file
+	// to preserve go backward compatibility as time.UnixMili is available as of go 17
+
 	// set the timestamp
-	parentTime := time.Unix(int64(parent.Timestamp), 0)
-	headerTime := parentTime.Add(defaultBlockPeriod)
+	parentTime := consensus.MilliToUnix(parent.Timestamp)
+	headerTime := parentTime.Add(time.Duration(i.blockTime) * time.Millisecond)
 
 	if headerTime.Before(time.Now()) {
 		headerTime = time.Now()
 	}
 
-	header.Timestamp = uint64(headerTime.Unix())
+	header.Timestamp = consensus.UnixToMilli(headerTime)
 
 	// we need to include in the extra field the current set of validators
 	putIbftExtraValidators(header, snap.Set)
@@ -671,12 +694,16 @@ func (i *Ibft) buildBlock(snap *Snapshot, parent *types.Header) (*types.Block, e
 
 type transitionInterface interface {
 	Write(txn *types.Transaction) error
+	WriteFailedReceipt(txn *types.Transaction) error
 }
 
 // writeTransactions writes transactions from the txpool to the transition object
 // and returns transactions that were included in the transition (new block)
 func (i *Ibft) writeTransactions(gasLimit uint64, transition transitionInterface) []*types.Transaction {
-	var successful []*types.Transaction
+	var transactions []*types.Transaction
+
+	successTxCount := 0
+	failedTxCount := 0
 
 	i.txpool.Prepare()
 
@@ -687,6 +714,17 @@ func (i *Ibft) writeTransactions(gasLimit uint64, transition transitionInterface
 		}
 
 		if tx.ExceedsBlockGasLimit(gasLimit) {
+			if err := transition.WriteFailedReceipt(tx); err != nil {
+				failedTxCount++
+
+				i.txpool.Drop(tx)
+
+				continue
+			}
+
+			failedTxCount++
+
+			transactions = append(transactions, tx)
 			i.txpool.Drop(tx)
 
 			continue
@@ -698,6 +736,7 @@ func (i *Ibft) writeTransactions(gasLimit uint64, transition transitionInterface
 			} else if appErr, ok := err.(*state.TransitionApplicationError); ok && appErr.IsRecoverable { // nolint:errorlint
 				i.txpool.Demote(tx)
 			} else {
+				failedTxCount++
 				i.txpool.Drop(tx)
 			}
 
@@ -707,12 +746,15 @@ func (i *Ibft) writeTransactions(gasLimit uint64, transition transitionInterface
 		// no errors, pop the tx from the pool
 		i.txpool.Pop(tx)
 
-		successful = append(successful, tx)
+		successTxCount++
+
+		transactions = append(transactions, tx)
 	}
 
-	i.logger.Info("picked out txns from pool", "num", len(successful), "remaining", i.txpool.Length())
+	//nolint:lll
+	i.logger.Info("executed txns", "failed ", failedTxCount, "successful", successTxCount, "remaining in pool", i.txpool.Length())
 
-	return successful
+	return transactions
 }
 
 // runAcceptState runs the Accept state loop
@@ -722,8 +764,11 @@ func (i *Ibft) writeTransactions(gasLimit uint64, transition transitionInterface
 // If it turns out that the current node is the proposer, it builds a block,
 // and sends preprepare and then prepare messages.
 func (i *Ibft) runAcceptState() { // start new round
+	// set log output
 	logger := i.logger.Named("acceptState")
 	logger.Info("Accept state", "sequence", i.state.view.Sequence, "round", i.state.view.Round+1)
+	// set consensus_rounds metric output
+	i.metrics.Rounds.Set(float64(i.state.view.Round + 1))
 
 	for ind, peer := range i.network.Peers() {
 		i.logger.Debug("dgk - acceptState", "total peers", len(i.network.Peers()), "current peer #", ind, "current peer ID", peer.Info.ID)
@@ -779,7 +824,9 @@ func (i *Ibft) runAcceptState() { // start new round
 		lastProposer, _ = ecrecoverFromHeader(parent)
 	}
 
-	i.state.CalcProposer(lastProposer)
+	if hookErr := i.runHook(CalculateProposerHook, lastProposer); hookErr != nil && !errors.Is(hookErr, ErrMissingHook) {
+		i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", CalculateProposerHook, hookErr))
+	}
 
 	// FaultyMode - AlwaysPropose
 	if i.state.proposer == i.validatorKeyAddr || i.config.Params.FaultyMode.IsAlwaysPropose() {
@@ -796,7 +843,7 @@ func (i *Ibft) runAcceptState() { // start new round
 			}
 
 			// calculate how much time do we have to wait to mine the block
-			delay := time.Until(time.Unix(int64(i.state.block.Header.Timestamp), 0))
+			delay := time.Until(consensus.MilliToUnix(i.state.block.Header.Timestamp))
 
 			select {
 			case <-time.After(delay):
@@ -979,15 +1026,15 @@ func (i *Ibft) runValidateState() {
 // updateMetrics will update various metrics based on the given block
 // currently we capture No.of Txs and block interval metrics using this function
 func (i *Ibft) updateMetrics(block *types.Block) {
+	// get previous header
 	prvHeader, _ := i.blockchain.GetHeaderByNumber(block.Number() - 1)
-	parentTime := time.Unix(int64(prvHeader.Timestamp), 0)
-	headerTime := time.Unix(int64(block.Header.Timestamp), 0)
-	//Update the block interval metric
-	if block.Number() > 1 {
-		i.metrics.BlockInterval.Observe(
-			headerTime.Sub(parentTime).Seconds(),
-		)
-	}
+	// calculate difference between previous and current header timestamps
+	// diff := time.Unix(int64(block.Header.Timestamp),0).Sub(time.Unix(int64(prvHeader.Timestamp),0))
+	diff := consensus.MilliToUnix(block.Header.Timestamp).Sub(consensus.MilliToUnix(prvHeader.Timestamp))
+
+	// update block_interval metric
+	i.metrics.BlockInterval.Set(float64(diff.Milliseconds()))
+
 	//Update the Number of transactions in the block metric
 	i.metrics.NumTxs.Set(float64(len(block.Body().Transactions)))
 }

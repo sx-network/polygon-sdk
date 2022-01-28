@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"sync"
 
-	"github.com/0xPolygon/polygon-sdk/helper/keccak"
+	"github.com/0xPolygon/polygon-edge/helper/keccak"
 )
 
 func min(i, j int) int {
@@ -23,7 +23,12 @@ func acquireFastHasher() *FastHasher {
 		return &FastHasher{k: keccak.NewKeccak256()}
 	}
 
-	return v.(*FastHasher)
+	hasher, ok := v.(*FastHasher)
+	if !ok {
+		return nil
+	}
+
+	return hasher
 }
 
 func releaseFastHasher(f *FastHasher) {

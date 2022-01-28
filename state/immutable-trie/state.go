@@ -6,8 +6,8 @@ import (
 
 	lru "github.com/hashicorp/golang-lru"
 
-	"github.com/0xPolygon/polygon-sdk/state"
-	"github.com/0xPolygon/polygon-sdk/types"
+	"github.com/0xPolygon/polygon-edge/state"
+	"github.com/0xPolygon/polygon-edge/types"
 )
 
 type State struct {
@@ -57,7 +57,12 @@ func (s *State) NewSnapshotAt(root types.Hash) (state.Snapshot, error) {
 
 		t.state = s
 
-		return tt.(*Trie), nil
+		trie, ok := tt.(*Trie)
+		if !ok {
+			return nil, errors.New("invalid type assertion")
+		}
+
+		return trie, nil
 	}
 
 	n, ok, err := GetNode(root.Bytes(), s.storage)

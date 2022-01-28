@@ -3,39 +3,42 @@ package helper
 import (
 	"encoding/json"
 	"errors"
+
 	"fmt"
 	"io/ioutil"
 	"net"
 	"strings"
 
-	"github.com/0xPolygon/polygon-sdk/chain"
-	helperFlags "github.com/0xPolygon/polygon-sdk/helper/flags"
-	"github.com/0xPolygon/polygon-sdk/secrets"
-	"github.com/0xPolygon/polygon-sdk/server"
-	"github.com/0xPolygon/polygon-sdk/types"
+	"github.com/0xPolygon/polygon-edge/chain"
+	helperFlags "github.com/0xPolygon/polygon-edge/helper/flags"
+	"github.com/0xPolygon/polygon-edge/secrets"
+	"github.com/0xPolygon/polygon-edge/server"
+	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/hashicorp/hcl"
 	"github.com/imdario/mergo"
 )
 
 // Config defines the server configuration params
 type Config struct {
-	Chain          string                 `json:"chain_config"`
-	Secrets        string                 `json:"secrets_config"`
+	Chain          string                        `json:"chain_config"`
+	Secrets        string                        `json:"secrets_config"`
 	SecretsManager *secrets.SecretsManagerConfig `json:"secrets_manager"`
-	DataDir        string                 `json:"data_dir"`
-	BlockGasTarget string                 `json:"block_gas_target"`
-	GRPCAddr       string                 `json:"grpc_addr"`
-	JSONRPCAddr    string                 `json:"jsonrpc_addr"`
-	Telemetry      *Telemetry             `json:"telemetry"`
-	Network        *Network               `json:"network"`
-	Seal           bool                   `json:"seal"`
-	TxPool         *TxPool                `json:"tx_pool"`
-	LogLevel       string                 `json:"log_level"`
-	Dev            bool                   `json:"dev_mode"`
-	DevInterval    uint64                 `json:"dev_interval"`
-	Join           string                 `json:"join_addr"`
-	Consensus      map[string]interface{} `json:"consensus"`
-	FaultyMode		 uint64									`json:"faulty_mode"`
+	DataDir        string                        `json:"data_dir"`
+	BlockGasTarget string                        `json:"block_gas_target"`
+	GRPCAddr       string                        `json:"grpc_addr"`
+	JSONRPCAddr    string                        `json:"jsonrpc_addr"`
+	Telemetry      *Telemetry                    `json:"telemetry"`
+	Network        *Network                      `json:"network"`
+	Seal           bool                          `json:"seal"`
+	TxPool         *TxPool                       `json:"tx_pool"`
+	LogLevel       string                        `json:"log_level"`
+	Dev            bool                          `json:"dev_mode"`
+	DevInterval    uint64                        `json:"dev_interval"`
+	Join           string                        `json:"join_addr"`
+	Consensus      map[string]interface{}        `json:"consensus"`
+	FaultyMode     uint64                        `json:"faulty_mode"`
+	RestoreFile    string                        `json:"restore_file"`
+	BlockTime      uint64                        `json:"block_time_ms"` // block time im miliseconds
 }
 
 // Telemetry holds the config details for metric services.
@@ -45,11 +48,13 @@ type Telemetry struct {
 
 // Network defines the network configuration params
 type Network struct {
-	NoDiscover bool   `json:"no_discover"`
-	Addr       string `json:"libp2p_addr"`
-	NatAddr    string `json:"nat_addr"`
-	DNS        string `json:"dns_addr"`
-	MaxPeers   uint64 `json:"max_peers"`
+	NoDiscover       bool   `json:"no_discover"`
+	Addr             string `json:"libp2p_addr"`
+	NatAddr          string `json:"nat_addr"`
+	DNS              string `json:"dns_addr"`
+	MaxPeers         int64  `json:"max_peers,omitempty"`
+	MaxOutboundPeers int64  `json:"max_outbound_peers,omitempty"`
+	MaxInboundPeers  int64  `json:"max_inbound_peers,omitempty"`
 }
 
 // TxPool defines the TxPool configuration params
@@ -58,6 +63,9 @@ type TxPool struct {
 	MaxSlots   uint64 `json:"max_slots"`
 }
 
+// variable defining default BlockTime parameter in miliseconds
+const defaultBlockTime uint64 = 2000
+
 // DefaultConfig returns the default server configuration
 func DefaultConfig() *Config {
 	return &Config{
@@ -65,8 +73,10 @@ func DefaultConfig() *Config {
 		DataDir:        "./test-chain",
 		BlockGasTarget: "0x0", // Special value signaling the parent gas limit should be applied
 		Network: &Network{
-			NoDiscover: false,
-			MaxPeers:   50,
+			NoDiscover:       false,
+			MaxPeers:         40,
+			MaxOutboundPeers: 8,
+			MaxInboundPeers:  32,
 		},
 		Telemetry: &Telemetry{},
 		Seal:      false,
@@ -74,10 +84,11 @@ func DefaultConfig() *Config {
 			PriceLimit: 0,
 			MaxSlots:   4096,
 		},
-		LogLevel:       "INFO",
-		Consensus:      map[string]interface{}{},
-		SecretsManager: nil,
-		FaultyMode: DefaultDisabledFaultyMode,
+		Consensus:   map[string]interface{}{},
+		LogLevel:    "INFO",
+		RestoreFile: "",
+		BlockTime:   defaultBlockTime, // default block time in miliseconds
+		FaultyMode:  DefaultDisabledFaultyMode,
 	}
 }
 
@@ -143,9 +154,10 @@ func (c *Config) BuildConfig() (*server.Config, error) {
 				return nil, err
 			}
 		}
-
 		conf.Network.NoDiscover = c.Network.NoDiscover
 		conf.Network.MaxPeers = c.Network.MaxPeers
+		conf.Network.MaxInboundPeers = c.Network.MaxInboundPeers
+		conf.Network.MaxOutboundPeers = c.Network.MaxOutboundPeers
 
 		conf.Chain = cc
 	}
@@ -158,7 +170,7 @@ func (c *Config) BuildConfig() (*server.Config, error) {
 
 	// Faulty Mode
 	if c.FaultyMode != 0 {
-		conf.Chain.Params.FaultyMode = chain.FaultyModeValue {Value: c.FaultyMode}
+		conf.Chain.Params.FaultyMode = chain.FaultyModeValue{Value: c.FaultyMode}
 	}
 
 	// Target gas limit
@@ -173,6 +185,15 @@ func (c *Config) BuildConfig() (*server.Config, error) {
 		}
 
 		conf.Chain.Params.BlockGasTarget = value.Uint64()
+	}
+
+	if c.RestoreFile != "" {
+		conf.RestoreFile = &c.RestoreFile
+	}
+
+	// set block time if not default
+	if c.BlockTime != defaultBlockTime {
+		conf.BlockTime = c.BlockTime
 	}
 
 	// if we are in dev mode, change the consensus protocol with 'dev'
@@ -278,8 +299,16 @@ func (c *Config) mergeConfigWith(otherConfig *Config) error {
 			c.Network.DNS = otherConfig.Network.DNS
 		}
 
-		if otherConfig.Network.MaxPeers != 0 {
+		if otherConfig.Network.MaxPeers > -1 {
 			c.Network.MaxPeers = otherConfig.Network.MaxPeers
+		}
+
+		if otherConfig.Network.MaxInboundPeers > -1 {
+			c.Network.MaxInboundPeers = otherConfig.Network.MaxInboundPeers
+		}
+
+		if otherConfig.Network.MaxOutboundPeers > -1 {
+			c.Network.MaxOutboundPeers = otherConfig.Network.MaxOutboundPeers
 		}
 
 		if otherConfig.Network.NoDiscover {
@@ -300,6 +329,15 @@ func (c *Config) mergeConfigWith(otherConfig *Config) error {
 	// Read the secrets config file location
 	if otherConfig.Secrets != "" {
 		c.Secrets = otherConfig.Secrets
+	}
+
+	if otherConfig.RestoreFile != "" {
+		c.RestoreFile = otherConfig.RestoreFile
+	}
+
+	// if block time not default, set to new value
+	if otherConfig.BlockTime != defaultBlockTime {
+		c.BlockTime = otherConfig.BlockTime
 	}
 
 	if err := mergo.Merge(&c.Consensus, otherConfig.Consensus, mergo.WithOverride); err != nil {
@@ -330,10 +368,15 @@ func readConfigFile(path string) (*Config, error) {
 		return nil, fmt.Errorf("suffix of %s is neither hcl nor json", path)
 	}
 
-	var config Config
-	if err := unmarshalFunc(data, &config); err != nil {
+	config := new(Config)
+	config.Network = new(Network)
+	config.Network.MaxPeers = -1
+	config.Network.MaxInboundPeers = -1
+	config.Network.MaxOutboundPeers = -1
+
+	if err := unmarshalFunc(data, config); err != nil {
 		return nil, err
 	}
 
-	return &config, nil
+	return config, nil
 }

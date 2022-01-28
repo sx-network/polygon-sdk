@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/0xPolygon/polygon-sdk/secrets"
+	"github.com/0xPolygon/polygon-edge/secrets"
 	"github.com/hashicorp/go-hclog"
 	vault "github.com/hashicorp/vault/api"
 )
@@ -145,7 +145,12 @@ func (v *VaultSecretsManager) GetSecret(name string) ([]byte, error) {
 		return nil, secrets.ErrSecretNotFound
 	}
 
-	return []byte(value.(string)), nil
+	stringVal, ok := value.(string)
+	if !ok {
+		return nil, errors.New("invalid type assertion for secret value")
+	}
+
+	return []byte(stringVal), nil
 }
 
 // SetSecret saves a secret to the Hashicorp Vault server

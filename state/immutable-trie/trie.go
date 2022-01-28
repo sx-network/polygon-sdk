@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/0xPolygon/polygon-sdk/helper/hex"
-	"github.com/0xPolygon/polygon-sdk/state"
-	"github.com/0xPolygon/polygon-sdk/types"
+	"github.com/0xPolygon/polygon-edge/helper/hex"
+	"github.com/0xPolygon/polygon-edge/state"
+	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/umbracle/fastrlp"
 	"golang.org/x/crypto/sha3"
 )
@@ -157,7 +157,12 @@ func (t *Trie) Commit(objs []*state.Object) (state.Snapshot, []byte) {
 					panic(err)
 				}
 
-				localTxn := localSnapshot.(*Trie).Txn()
+				trie, ok := localSnapshot.(*Trie)
+				if !ok {
+					panic("invalid type assertion")
+				}
+
+				localTxn := trie.Txn()
 				localTxn.batch = batch
 
 				for _, entry := range obj.Storage {

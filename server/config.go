@@ -3,13 +3,14 @@ package server
 import (
 	"net"
 
-	"github.com/0xPolygon/polygon-sdk/chain"
-	"github.com/0xPolygon/polygon-sdk/network"
-	"github.com/0xPolygon/polygon-sdk/secrets"
+	"github.com/0xPolygon/polygon-edge/chain"
+	"github.com/0xPolygon/polygon-edge/network"
+	"github.com/0xPolygon/polygon-edge/secrets"
 )
 
 const DefaultGRPCPort int = 9632
 const DefaultJSONRPCPort int = 8545
+const DefaultBlockTime = 2000 // in milliseconds
 
 // Config is used to parametrize the minimal client
 type Config struct {
@@ -25,6 +26,8 @@ type Config struct {
 	PriceLimit     uint64
 	MaxSlots       uint64
 	SecretsManager *secrets.SecretsManagerConfig
+	RestoreFile    *string
+	BlockTime      uint64
 }
 
 // DefaultConfig returns the default config for JSON-RPC, GRPC (ports) and Networking
@@ -35,6 +38,7 @@ func DefaultConfig() *Config {
 		Network:        network.DefaultConfig(),
 		Telemetry:      &Telemetry{PrometheusAddr: nil},
 		SecretsManager: nil,
+		BlockTime:      DefaultBlockTime, // default block time in milliseconds
 	}
 }
 
