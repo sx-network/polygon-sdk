@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"math"
 	"math/big"
 	"net"
 	"regexp"
@@ -54,9 +53,8 @@ type Config struct {
 	NatAddr          net.IP
 	DNS              multiaddr.Multiaddr
 	DataDir          string
-	MaxPeers         int64
-	MaxInboundPeers  int64
-	MaxOutboundPeers int64
+	MaxInboundPeers  uint64
+	MaxOutboundPeers uint64
 	Chain            *chain.Chain
 	SecretsManager   secrets.SecretsManager
 	Metrics          *Metrics
@@ -66,9 +64,8 @@ func DefaultConfig() *Config {
 	return &Config{
 		NoDiscover:       false,
 		Addr:             &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: DefaultLibp2pPort},
-		MaxPeers:         40,
-		MaxInboundPeers:  32,
 		MaxOutboundPeers: 8,
+		MaxInboundPeers:  32,
 	}
 }
 
@@ -106,6 +103,8 @@ type Server struct {
 	emitterPeerEvent event.Emitter
 
 	inboundConnCount int64
+
+	temporaryDials sync.Map
 }
 
 type Peer struct {
@@ -148,11 +147,6 @@ func setupLibp2pKey(secretsManager secrets.SecretsManager) (crypto.PrivKey, erro
 
 func NewServer(logger hclog.Logger, config *Config) (*Server, error) {
 	logger = logger.Named("network")
-
-	if config.MaxPeers != DefaultConfig().MaxPeers {
-		config.MaxOutboundPeers = int64(math.Floor(float64(config.MaxPeers) * DefaultDialRatio))
-		config.MaxInboundPeers = config.MaxPeers - config.MaxOutboundPeers
-	}
 
 	key, err := setupLibp2pKey(config.SecretsManager)
 	if err != nil {
@@ -228,8 +222,6 @@ func (s *Server) Start() error {
 		return identityStartErr
 	}
 
-	go s.runDial()
-	go s.checkPeerConnections()
 	s.logger.Info("LibP2P server running", "addr", AddrInfoToString(s.AddrInfo()))
 
 	if !s.config.NoDiscover {
@@ -244,7 +236,7 @@ func (s *Server) Start() error {
 		}
 
 		// start discovery
-		s.discovery = &discovery{srv: s}
+		s.discovery = &discovery{srv: s, closeCh: make(chan struct{})}
 
 		// try to decode the bootnodes
 		bootnodes := []*peer.AddrInfo{}
@@ -269,6 +261,8 @@ func (s *Server) Start() error {
 		}
 	}
 
+	go s.runDial()
+	go s.checkPeerConnections()
 	go func() {
 		if err := s.runJoinWatcher(); err != nil {
 			s.logger.Error(fmt.Sprintf("Unable to start join watcher service, %v", err))
@@ -332,7 +326,7 @@ func (s *Server) runDial() {
 		// TODO: Right now the dial task are done sequentially because Connect
 		// is a blocking request. In the future we should try to make up to
 		// maxDials requests concurrently.
-		for i := int64(0); i < s.numOpenSlots(); i++ {
+		for i := int64(0); i < s.availableOutboundConns(); i++ {
 			tt := s.dialQueue.pop()
 			if tt == nil {
 				// dial closed
@@ -373,11 +367,33 @@ func (s *Server) numPeers() int64 {
 }
 
 func (s *Server) getRandomBootNode() *peer.AddrInfo {
-	randNum, _ := rand.Int(rand.Reader, big.NewInt(int64(len(s.discovery.bootnodes))))
+	if size := int64(len(s.discovery.bootnodes)); size > 0 {
+		randNum, _ := rand.Int(rand.Reader, big.NewInt(size))
 
-	return s.discovery.bootnodes[randNum.Int64()]
+		return s.discovery.bootnodes[randNum.Int64()]
+	}
+
+	return nil
 }
 
+// getBootNode returns the address of a random bootnode which is not connected
+func (s *Server) getBootNode() *peer.AddrInfo {
+	nonConnectedNodes := make([]*peer.AddrInfo, 0)
+
+	for _, v := range s.discovery.bootnodes {
+		if !s.hasPeer(v.ID) {
+			nonConnectedNodes = append(nonConnectedNodes, v)
+		}
+	}
+
+	if len(nonConnectedNodes) > 0 {
+		randNum, _ := rand.Int(rand.Reader, big.NewInt(int64(len(nonConnectedNodes))))
+
+		return nonConnectedNodes[randNum.Int64()]
+	}
+
+	return nil
+}
 func (s *Server) Peers() []*Peer {
 	s.peersLock.Lock()
 	defer s.peersLock.Unlock()
@@ -400,7 +416,7 @@ func (s *Server) hasPeer(peerID peer.ID) bool {
 	return ok
 }
 
-func (s *Server) numOpenSlots() int64 {
+func (s *Server) availableOutboundConns() int64 {
 	n := s.maxOutboundConns() - s.outboundConns()
 	if n < 0 {
 		n = 0
@@ -419,15 +435,17 @@ func (s *Server) inboundConns() int64 {
 }
 
 func (s *Server) outboundConns() int64 {
-	return (s.numPeers() - atomic.LoadInt64(&s.inboundConnCount)) + s.identity.pendingOutboundConns()
+	activeOutboundConns := s.numPeers() - atomic.LoadInt64(&s.inboundConnCount)
+
+	return activeOutboundConns + s.identity.pendingOutboundConns()
 }
 
 func (s *Server) maxInboundConns() int64 {
-	return s.config.MaxInboundPeers
+	return int64(s.config.MaxInboundPeers)
 }
 
 func (s *Server) maxOutboundConns() int64 {
-	return s.config.MaxOutboundPeers
+	return int64(s.config.MaxOutboundPeers)
 }
 
 func (s *Server) isConnected(peerID peer.ID) bool {
@@ -458,6 +476,10 @@ func (s *Server) addPeer(id peer.ID, direction network.Direction) {
 		atomic.AddInt64(&s.inboundConnCount, 1)
 	}
 
+	if !s.config.NoDiscover && s.discovery.isBootNode(id) {
+		atomic.AddInt32(&s.discovery.bootnodeConnCount, 1)
+	}
+
 	s.emitEvent(id, PeerConnected)
 	s.metrics.Peers.Set(float64(len(s.peers)))
 }
@@ -471,6 +493,10 @@ func (s *Server) delPeer(id peer.ID) {
 	if peer, ok := s.peers[id]; ok {
 		if peer.connDirection == network.DirInbound {
 			atomic.AddInt64(&s.inboundConnCount, -1)
+		}
+
+		if !s.config.NoDiscover && s.discovery.isBootNode(id) {
+			atomic.AddInt32(&s.discovery.bootnodeConnCount, -1)
 		}
 
 		delete(s.peers, id)
@@ -583,6 +609,11 @@ func (s *Server) runJoinWatcher() error {
 func (s *Server) Close() error {
 	err := s.host.Close()
 	s.dialQueue.Close()
+
+	if !s.config.NoDiscover {
+		s.discovery.Close()
+	}
+
 	close(s.closeCh)
 
 	return err
@@ -598,7 +629,6 @@ func (s *Server) NewProtoStream(proto string, id peer.ID) (interface{}, error) {
 	}
 
 	stream, err := s.NewStream(proto, id)
-
 	if err != nil {
 		return nil, err
 	}

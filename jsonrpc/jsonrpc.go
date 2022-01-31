@@ -209,7 +209,8 @@ func (j *JSONRPC) handleHealth(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	w.Header().Set("Access-Control-Allow-Headers",
+		"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 
 	if (*req).Method == "OPTIONS" {
 		return
@@ -217,17 +218,22 @@ func (j *JSONRPC) handleHealth(w http.ResponseWriter, req *http.Request) {
 
 	if req.Method != "GET" {
 		w.WriteHeader(http.StatusBadRequest)
+		//nolint
 		w.Write([]byte("method " + req.Method + " not allowed"))
+
 		return
 	}
 
 	if j.config.Store.IsIbftStateStale() {
 		w.WriteHeader(http.StatusTooEarly)
+		//nolint
 		w.Write([]byte("IBFT node in stale state, try again shortly.."))
+
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
+	//nolint
 	w.Write(nil)
 }
 

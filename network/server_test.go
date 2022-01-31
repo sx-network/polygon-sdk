@@ -11,6 +11,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/helper/tests"
 
 	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +22,6 @@ func TestConnLimit_Inbound(t *testing.T) {
 	defaultConfig := &CreateServerParams{
 		ConfigCallback: func(c *Config) {
 			c.MaxInboundPeers = 1
-			c.MaxOutboundPeers = 1
 			c.NoDiscover = true
 		},
 	}
@@ -75,7 +75,6 @@ func TestConnLimit_Outbound(t *testing.T) {
 	// we should not try to make connections if we are already connected to max peers
 	defaultConfig := &CreateServerParams{
 		ConfigCallback: func(c *Config) {
-			c.MaxInboundPeers = 1
 			c.MaxOutboundPeers = 1
 			c.NoDiscover = true
 		},
@@ -593,8 +592,8 @@ func TestRunDial(t *testing.T) {
 			server, createErr := CreateServer(
 				&CreateServerParams{
 					ConfigCallback: func(c *Config) {
-						c.MaxInboundPeers = maxPeers[idx]
-						c.MaxOutboundPeers = maxPeers[idx]
+						c.MaxInboundPeers = uint64(maxPeers[idx])
+						c.MaxOutboundPeers = uint64(maxPeers[idx])
 						c.NoDiscover = true
 					},
 				})
@@ -689,6 +688,7 @@ func TestMinimumBootNodeCount(t *testing.T) {
 			expectedError: nil,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, createErr := CreateServer(&CreateServerParams{
@@ -696,8 +696,34 @@ func TestMinimumBootNodeCount(t *testing.T) {
 					server.config.Chain.Bootnodes = tt.bootNodes
 				},
 			})
-
 			assert.Equal(t, tt.expectedError, createErr)
 		})
 	}
+}
+
+func TestTemporaryDial(t *testing.T) {
+	defaultConfig := &CreateServerParams{
+		ConfigCallback: func(c *Config) {
+			c.NoDiscover = true
+		},
+	}
+	servers, err := createServers(2, map[int]*CreateServerParams{0: defaultConfig, 1: defaultConfig})
+
+	if err != nil {
+		t.Fatalf("Unable to create servers, %v", err)
+	}
+
+	t.Cleanup(func() {
+		closeTestServers(t, servers)
+	})
+
+	//make a temporary dail to server1
+	assert.NoError(t, dialServer(servers[0], *servers[1].AddrInfo(), true))
+
+	// ensure that the connection is established
+	assert.Equal(t, network.Connected, servers[0].host.Network().Connectedness(servers[1].host.ID()))
+
+	// since it is temporary dial, server should not have a persistent connection to its peer
+	connected := isServerConnectedTo(servers[0], servers[1].host.ID())
+	assert.False(t, connected)
 }

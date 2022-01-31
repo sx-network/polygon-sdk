@@ -129,6 +129,7 @@ func (c *currentState) maxRound() (maxRound uint64, found bool) {
 
 	return
 }
+
 // resetRoundMsgs resets the prepared, committed and round messages in the current state
 func (c *currentState) resetRoundMsgs() {
 	c.prepared = map[types.Address]*proto.MessageReq{}

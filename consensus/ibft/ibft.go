@@ -442,6 +442,7 @@ func (i *Ibft) start() {
 		select {
 		case <-i.closeCh:
 			i.logger.Debug("dgk - closeCh start")
+
 			return
 		default: // Default is here because we would block until we receive something in the closeCh
 		}
@@ -451,34 +452,12 @@ func (i *Ibft) start() {
 	}
 }
 
-func (i *Ibft) logStates() {
-	i.logger.Debug("dgk - Current state log --------------------")
-	i.logger.Debug("dgk - Committed messages")
-	for k, v := range i.state.committed {
-		i.logger.Debug("dgk - Committed", "key", k, "value", v)
-	}
-	i.logger.Debug("dgk - Prepared messages")
-	for k, v := range i.state.prepared {
-		i.logger.Debug("dgk - Prepared", "key", k, "value", v)
-	}
-	i.logger.Debug("dgk - Round messages")
-	for k, v := range i.state.roundMessages {
-		i.logger.Debug("dgk - Round messages", "key", k)
-		for rk, rv := range v {
-			i.logger.Debug("dgk - Round message", "key", rk, "value", rv)
-		}
-	}
-	i.logger.Debug("dgk - End current state log --------------------")
-}
-
 // runCycle represents the IBFT state machine loop
 func (i *Ibft) runCycle() {
 	// Log to the console
 	if i.state.view != nil {
 		i.logger.Debug("cycle", "state", i.getState(), "sequence", i.state.view.Sequence, "round", i.state.view.Round+1)
 	}
-
-	//i.logStates()
 
 	// Based on the current state, execute the corresponding section
 	switch i.getState() {
@@ -535,7 +514,6 @@ func (i *Ibft) runSyncState() {
 	}
 
 	for i.isState(SyncState) {
-
 		oldLatestNumber := i.blockchain.Header().Number
 		// try to sync with the best-suited peer
 		p, _ := i.syncer.BestPeer()
@@ -771,7 +749,7 @@ func (i *Ibft) runAcceptState() { // start new round
 	i.metrics.Rounds.Set(float64(i.state.view.Round + 1))
 
 	for ind, peer := range i.network.Peers() {
-		i.logger.Debug("dgk - acceptState", "total peers", len(i.network.Peers()), "current peer #", ind, "current peer ID", peer.Info.ID)
+		i.logger.Debug("dgk - acceptState", "total peers", len(i.network.Peers()), "current peer #", ind, "current peer ID", peer.Info.ID) //nolint:lll
 	}
 
 	// This is the state in which we either propose a block or wait for the pre-prepare message
@@ -849,6 +827,7 @@ func (i *Ibft) runAcceptState() { // start new round
 			case <-time.After(delay):
 			case <-i.closeCh:
 				i.logger.Debug("dgk - closeCh runAcceptState")
+
 				return
 			}
 		}
@@ -872,11 +851,14 @@ func (i *Ibft) runAcceptState() { // start new round
 
 	timeout := exponentialTimeout(i.state.view.Round)
 	i.logger.Debug("dgk - acceptState timeout", timeout)
+
 	for i.getState() == AcceptState {
 		msg, ok := i.getNextMessage(timeout)
 		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
+
 		if !ok {
 			i.logger.Debug("dgk - accept state - getNextMsg not ok, continuing in acceptState loop...")
+
 			return
 		}
 
@@ -963,6 +945,7 @@ func (i *Ibft) runValidateState() {
 
 	timeout := exponentialTimeout(i.state.view.Round)
 	i.logger.Debug("dgk - validateState timeout", timeout)
+
 	for i.getState() == ValidateState {
 		msg, ok := i.getNextMessage(timeout)
 		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
@@ -1164,6 +1147,7 @@ func (i *Ibft) runRoundChangeState() {
 	for i.getState() == RoundChangeState {
 		msg, ok := i.getNextMessage(timeout)
 		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
+
 		if !ok {
 			// closing
 			return
@@ -1183,7 +1167,7 @@ func (i *Ibft) runRoundChangeState() {
 		i.logger.Debug("dgk - roundchange state received msg", "roundLength", num, "round", msg.View.Round, "from", msg.From)
 
 		for ind, peer := range i.network.Peers() {
-			i.logger.Debug("dgk - roundchange", "total peers", len(i.network.Peers()), "current peer #", ind, "current peer ID", peer.Info.ID)
+			i.logger.Debug("dgk - roundchange", "total peers", len(i.network.Peers()), "current peer #", ind, "current peer ID", peer.Info.ID) //nolint:lll
 		}
 
 		if num == i.state.NumValid() {
@@ -1227,6 +1211,7 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 	// FaultyMode - NotGossiped
 	if i.config.Params.FaultyMode.IsNotGossiped() {
 		i.logger.Info("Not gossiped message", "message", msg)
+
 		return
 	}
 
@@ -1260,7 +1245,7 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 
 	// FaultyMode - SendWrongMsgDigest
 	if i.config.Params.FaultyMode.IsSendWrongMsgDigest() {
-		invalidDigest := strconv.FormatUint(uint64(rand.Intn(4)), 10)
+		invalidDigest := strconv.FormatUint(uint64(rand.Intn(4)), 10) //nolint:gosec
 		i.logger.Info("Modify the message digest", "old", msg.Digest, "new", invalidDigest)
 		msg.Digest = invalidDigest
 	}
@@ -1280,7 +1265,7 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 	// FaultyMode - SendWrongMsgSeal
 	if i.config.Params.FaultyMode.IsSendWrongMsgSeal() {
 		bytes := make([]byte, 64)
-		rand.Read(bytes)
+		rand.Read(bytes) //nolint:gosec
 		invalidSeal := hex.EncodeToString(bytes)
 		i.logger.Info("Modify the message seal", "old", msg.Seal, "new", invalidSeal)
 		msg.Seal = invalidSeal
@@ -1301,7 +1286,7 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 
 	// FaultyMode - SendWrongMsgSig
 	if i.config.Params.FaultyMode.IsSendWrongMsgSignature() {
-		invalidSignature := strconv.FormatUint(uint64(rand.Intn(4)), 10)
+		invalidSignature := strconv.FormatUint(uint64(rand.Intn(4)), 10) //nolint:gosec
 		i.logger.Info("Modify the message signature", "old", msg.Signature, "new", invalidSignature)
 		msg.Signature = invalidSignature
 	}
@@ -1329,18 +1314,23 @@ func (i *Ibft) getState() IbftState {
 		switch i.state.getState() {
 		case AcceptState:
 			i.logger.Info("Modify state", "old", AcceptState, "new", RoundChangeState)
+
 			return RoundChangeState
 		case RoundChangeState:
 			i.logger.Info("Modify state", "old", RoundChangeState, "new", ValidateState)
+
 			return ValidateState
 		case ValidateState:
 			i.logger.Info("Modify state", "old", ValidateState, "new", CommitState)
+
 			return CommitState
 		case CommitState:
 			i.logger.Info("Modify state", "old", CommitState, "new", SyncState)
+
 			return SyncState
 		case SyncState:
 			i.logger.Info("Modify state", "old", SyncState, "new", AcceptState)
+
 			return AcceptState
 		}
 	}
@@ -1436,6 +1426,7 @@ func (i *Ibft) Close() error {
 	close(i.closeCh)
 
 	i.logger.Debug("dgk - ibft.Close() called")
+
 	if i.config.Path != "" {
 		err := i.store.saveToPath(i.config.Path)
 
@@ -1449,17 +1440,19 @@ func (i *Ibft) Close() error {
 
 // IsIbftStateStale returns whether or not ibft node is stale
 func (i *Ibft) IsIbftStateStale() bool {
-
 	// if syncState (validators and non-sealing), ensure we are within 5 blocks old
 	if i.isState(SyncState) {
 		if _, diff := i.syncer.BestPeer(); diff != nil {
 			return diff.Cmp(big.NewInt(5)) >= 0
 		}
+
 		return false
 	}
+
 	if i.isState(RoundChangeState) {
 		return true
 	}
+
 	return false
 }
 
@@ -1471,6 +1464,7 @@ func (i *Ibft) getNextMessage(timeout time.Duration) (*proto.MessageReq, bool) {
 		msg := i.msgQueue.readMessage(i.getState(), i.state.view)
 		if msg != nil {
 			i.logger.Debug("dgk - getNextMessage return", "view", msg.view, "msg", msg.msg, "obj", msg.obj)
+
 			return msg.obj, true
 		}
 
@@ -1489,6 +1483,7 @@ func (i *Ibft) getNextMessage(timeout time.Duration) (*proto.MessageReq, bool) {
 			return nil, true
 		case <-i.closeCh:
 			i.logger.Debug("dgk - closeCh getNextMessage")
+
 			return nil, false
 		case <-i.updateCh:
 		}

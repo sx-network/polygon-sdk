@@ -23,6 +23,10 @@ message Status {
     int64 chain = 3;
 
     string genesis = 4;
+
+    bool temporaryDial=5;
+
+    
     
     message Key {
         string signature = 1;

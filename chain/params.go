@@ -11,7 +11,7 @@ type Params struct {
 	ChainID        int                    `json:"chainID"`
 	Engine         map[string]interface{} `json:"engine"`
 	BlockGasTarget uint64                 `json:"blockGasTarget"`
-	FaultyMode		 FaultyModeValue
+	FaultyMode     FaultyModeValue
 }
 
 func (p *Params) GetEngine() string {
@@ -157,6 +157,7 @@ const (
 )
 
 func (f FaultyModeValue) random() bool {
+	//nolint:gosec
 	return f.Value == Random && rand.Intn(2) == 1
 }
 
@@ -203,9 +204,9 @@ func (f FaultyModeValue) IsBadBlock() bool {
 func (f FaultyModeValue) IsScrambleState() bool {
 	//TODO: enure this doesn't throw panic..
 	//return f.Value == ScrambleState || f.random()
-	return false 
+	return false
 }
 
 func (f FaultyModeValue) Uint64() uint64 {
-	return uint64(f.Value)
+	return f.Value
 }

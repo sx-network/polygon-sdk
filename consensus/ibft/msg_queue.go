@@ -42,11 +42,11 @@ func (m *msgQueue) readMessage(state IbftState, current *proto.View) *msgTask {
 	for {
 		if queue.Len() == 0 {
 			fmt.Println("dgk - readMessage - queue is empty, returning nil")
+
 			return nil
 		}
 
 		msg := queue.head()
-		fmt.Println("dgk - readMessage - Got message")
 		fmt.Println("dgk - getNextMessage", "view", msg.view, "msg", msg.msg, "obj", msg.obj)
 
 		// check if the message is from the future
@@ -63,6 +63,7 @@ func (m *msgQueue) readMessage(state IbftState, current *proto.View) *msgTask {
 			if cmpView(msg.view, current) > 0 {
 				// future message
 				fmt.Println("dgk - readMessage - message is in the future, returning nil")
+
 				return nil
 			}
 		}
