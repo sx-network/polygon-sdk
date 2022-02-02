@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/0xPolygon/polygon-edge/helper/hex"
 	"github.com/0xPolygon/polygon-edge/types"
@@ -106,15 +105,7 @@ type block struct {
 }
 
 func toBlock(b *types.Block, fullTx bool) *block {
-
 	h := b.Header
-
-	timestamp := h.Timestamp
-	if h.Timestamp > uint64(time.Now().Unix()) {
-		// milliseconds, convert to seconds
-		timestamp = h.Timestamp / 1000.0
-	}
-
 	res := &block{
 		ParentHash:      h.ParentHash,
 		Sha3Uncles:      h.Sha3Uncles,
@@ -129,7 +120,7 @@ func toBlock(b *types.Block, fullTx bool) *block {
 		Number:          argUint64(h.Number),
 		GasLimit:        argUint64(h.GasLimit),
 		GasUsed:         argUint64(h.GasUsed),
-		Timestamp:       argUint64(timestamp),
+		Timestamp:       argUint64(h.Timestamp),
 		ExtraData:       argBytes(h.ExtraData),
 		MixHash:         h.MixHash,
 		Nonce:           h.Nonce,

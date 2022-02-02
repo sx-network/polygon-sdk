@@ -20,25 +20,24 @@ import (
 
 // Config defines the server configuration params
 type Config struct {
-	Chain          string                        `json:"chain_config"`
-	Secrets        string                        `json:"secrets_config"`
-	SecretsManager *secrets.SecretsManagerConfig `json:"secrets_manager"`
-	DataDir        string                        `json:"data_dir"`
-	BlockGasTarget string                        `json:"block_gas_target"`
-	GRPCAddr       string                        `json:"grpc_addr"`
-	JSONRPCAddr    string                        `json:"jsonrpc_addr"`
-	Telemetry      *Telemetry                    `json:"telemetry"`
-	Network        *Network                      `json:"network"`
-	Seal           bool                          `json:"seal"`
-	TxPool         *TxPool                       `json:"tx_pool"`
-	LogLevel       string                        `json:"log_level"`
-	Dev            bool                          `json:"dev_mode"`
-	DevInterval    uint64                        `json:"dev_interval"`
-	Join           string                        `json:"join_addr"`
-	Consensus      map[string]interface{}        `json:"consensus"`
-	FaultyMode     uint64                        `json:"faulty_mode"`
-	RestoreFile    string                        `json:"restore_file"`
-	BlockTime      uint64                        `json:"block_time_ms"` // block time im miliseconds
+	Chain          string                 `json:"chain_config"`
+	Secrets        string                 `json:"secrets_config"`
+	DataDir        string                 `json:"data_dir"`
+	BlockGasTarget string                 `json:"block_gas_target"`
+	GRPCAddr       string                 `json:"grpc_addr"`
+	JSONRPCAddr    string                 `json:"jsonrpc_addr"`
+	Telemetry      *Telemetry             `json:"telemetry"`
+	Network        *Network               `json:"network"`
+	Seal           bool                   `json:"seal"`
+	TxPool         *TxPool                `json:"tx_pool"`
+	LogLevel       string                 `json:"log_level"`
+	Dev            bool                   `json:"dev_mode"`
+	DevInterval    uint64                 `json:"dev_interval"`
+	Join           string                 `json:"join_addr"`
+	Consensus      map[string]interface{} `json:"consensus"`
+	FaultyMode     uint64                 `json:"faulty_mode"`
+	RestoreFile    string                 `json:"restore_file"`
+	BlockTime      uint64                 `json:"block_time_s"`
 }
 
 // Telemetry holds the config details for metric services.
@@ -62,8 +61,8 @@ type TxPool struct {
 	MaxSlots   uint64 `json:"max_slots"`
 }
 
-// variable defining default BlockTime parameter in miliseconds
-const defaultBlockTime uint64 = 2000
+// minimum block generation time in seconds
+const defaultBlockTime uint64 = 2
 
 // DefaultConfig returns the default server configuration
 func DefaultConfig() *Config {
@@ -85,8 +84,8 @@ func DefaultConfig() *Config {
 		Consensus:   map[string]interface{}{},
 		LogLevel:    "INFO",
 		RestoreFile: "",
-		BlockTime:   defaultBlockTime, // default block time in miliseconds
 		FaultyMode:  DefaultDisabledFaultyMode,
+		BlockTime:   defaultBlockTime,
 	}
 }
 
