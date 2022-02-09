@@ -721,6 +721,10 @@ func (p *mockTxPool) Length() uint64 {
 	return uint64(len(p.transactions) + len(p.demoted))
 }
 
+func (p *mockTxPool) IsStaleTxs(uint64, uint64) bool {
+	return false
+}
+
 func (p *mockTxPool) Peek() *types.Transaction {
 	if len(p.transactions) == 0 {
 		return nil
