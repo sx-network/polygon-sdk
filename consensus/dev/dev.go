@@ -243,6 +243,6 @@ func (d *Dev) Close() error {
 	return nil
 }
 
-func (d *Dev) IsIbftStateStale() bool {
+func (d *Dev) IsNodeStateStale() bool {
 	return false
 }

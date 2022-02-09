@@ -224,10 +224,10 @@ func (j *JSONRPC) handleHealth(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if j.config.Store.IsIbftStateStale() {
-		w.WriteHeader(http.StatusTooEarly)
+	if j.config.Store.IsNodeStateStale() {
+		w.WriteHeader(http.StatusServiceUnavailable)
 		//nolint
-		w.Write([]byte("IBFT node in stale state, try again shortly.."))
+		w.Write([]byte("Node in stale state, try again shortly.."))
 
 		return
 	}

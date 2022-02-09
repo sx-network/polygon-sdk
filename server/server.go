@@ -475,8 +475,8 @@ func (j *jsonRPCHub) ApplyTxn(
 	return
 }
 
-func (j *jsonRPCHub) IsIbftStateStale() bool {
-	return j.Consensus.IsIbftStateStale()
+func (j *jsonRPCHub) IsNodeStateStale() bool {
+	return j.Consensus.IsNodeStateStale()
 }
 
 func (j *jsonRPCHub) GetSyncProgression() *progress.Progression {

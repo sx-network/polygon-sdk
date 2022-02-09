@@ -61,8 +61,8 @@ type ethBlockchainStore interface {
 	// GetSyncProgression retrieves the current sync progression, if any
 	GetSyncProgression() *progress.Progression
 
-	// IsIbftStateStale returns whether or not ibft node is stale
-	IsIbftStateStale() bool
+	// IsNodeStateStale returns whether or not node state is stale
+	IsNodeStateStale() bool
 }
 
 // ethStore provides access to the methods needed by eth endpoint

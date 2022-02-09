@@ -77,6 +77,6 @@ func (d *Dummy) run() {
 	<-d.closeCh
 }
 
-func (d *Dummy) IsIbftStateStale() bool {
+func (d *Dummy) IsNodeStateStale() bool {
 	return false
 }

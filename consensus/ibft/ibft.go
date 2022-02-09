@@ -52,6 +52,7 @@ type txPoolInterface interface {
 	Drop(tx *types.Transaction)
 	Demote(tx *types.Transaction)
 	ResetWithHeaders(headers ...*types.Header)
+	IsStaleTxs(uint64, uint64) bool
 }
 
 type syncerInterface interface {
@@ -1444,12 +1445,18 @@ func (i *Ibft) Close() error {
 	return nil
 }
 
-// IsIbftStateStale returns whether or not ibft node is stale
-func (i *Ibft) IsIbftStateStale() bool {
+// IsNodeStateStale returns whether or not node is stale based on current ibft state
+// and if there are stale txpool txs.
+func (i *Ibft) IsNodeStateStale() bool {
+
+	pendingLimit := 200
+	queuedLimit := 200
+	isStaleTxs := i.txpool.IsStaleTxs(uint64(pendingLimit), uint64(queuedLimit))
+
 	// if syncState (validators and non-sealing), ensure we are within 5 blocks old
 	if i.isState(SyncState) {
 		if _, diff := i.syncer.BestPeer(); diff != nil {
-			return diff.Cmp(big.NewInt(5)) >= 0
+			return diff.Cmp(big.NewInt(5)) >= 0 || isStaleTxs
 		}
 
 		return false
@@ -1459,7 +1466,7 @@ func (i *Ibft) IsIbftStateStale() bool {
 		return true
 	}
 
-	return false
+	return isStaleTxs
 }
 
 // getNextMessage reads a new message from the message queue

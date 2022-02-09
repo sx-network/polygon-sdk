@@ -743,3 +743,23 @@ func (p *TxPool) createAccountOnce(newAddr types.Address) *account {
 func (p *TxPool) Length() uint64 {
 	return p.accounts.promoted()
 }
+
+// IsStaleTxs detects whether or not the txpool has stale txs by comparing the totalQueued and totalPending
+// with the specified upper pendingLimit and queuedLimit.
+func (p *TxPool) IsStaleTxs(pendingLimit uint64, queuedLimit uint64) bool {
+	allPromoted, allEnqueued := p.accounts.allTxs(true)
+
+	// count total pending
+	totalPending := uint64(0)
+	for _, txs := range allPromoted {
+		totalPending += uint64(len(txs))
+	}
+
+	// count total queued
+	totalQueued := uint64(0)
+	for _, txs := range allEnqueued {
+		totalQueued += uint64(len(txs))
+	}
+
+	return totalPending > pendingLimit || totalQueued > queuedLimit
+}

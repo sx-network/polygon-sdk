@@ -40,8 +40,8 @@ type Consensus interface {
 	// Close closes the connection
 	Close() error
 
-	// Returns whether or not ibft node is stale
-	IsIbftStateStale() bool
+	// Returns whether or not node is stale
+	IsNodeStateStale() bool
 }
 
 // Config is the configuration for the consensus
