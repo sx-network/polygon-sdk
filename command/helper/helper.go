@@ -475,6 +475,8 @@ func ReadConfig(baseCommand string, args []string) (*Config, error) {
 	flags.StringVar(&cliConfig.Secrets, "secrets-config", "", "")
 	flags.StringVar(&cliConfig.RestoreFile, "restore", "", "")
 	flags.Uint64Var(&cliConfig.BlockTime, "block-time", config.BlockTime, "")
+	flags.StringVar(&cliConfig.RPCNrAppName, "rpc-nr-app-name", "", "rpc cluster new relic agent app name")
+	flags.StringVar(&cliConfig.RPCNrLicenseKey, "rpc-nr-license-key", "", "rpc cluster new relic agent license key")
 
 	if err := flags.Parse(args); err != nil {
 		return nil, err

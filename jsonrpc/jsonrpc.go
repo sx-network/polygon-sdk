@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-hclog"
+	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
 type serverType int
@@ -41,7 +42,7 @@ type JSONRPC struct {
 
 type dispatcher interface {
 	HandleWs(reqBody []byte, conn wsConn) ([]byte, error)
-	Handle(reqBody []byte) ([]byte, error)
+	Handle(reqBody []byte, txn *newrelic.Transaction) ([]byte, error)
 }
 
 // JSONRPCStore defines all the methods required
@@ -53,10 +54,16 @@ type JSONRPCStore interface {
 	filterManagerStore
 }
 
+type RpcNrConfig struct {
+	RpcNrAppName    string
+	RpcNrLicenseKey string
+}
+
 type Config struct {
-	Store   JSONRPCStore
-	Addr    *net.TCPAddr
-	ChainID uint64
+	Store       JSONRPCStore
+	Addr        *net.TCPAddr
+	ChainID     uint64
+	RpcNrConfig *RpcNrConfig
 }
 
 // NewJSONRPC returns the JsonRPC http server
@@ -84,9 +91,27 @@ func (j *JSONRPC) setupHTTP() error {
 	}
 
 	mux := http.DefaultServeMux
-	mux.HandleFunc("/", j.handle)
-	mux.HandleFunc("/ws", j.handleWs)
-	mux.HandleFunc("/health", j.handleHealth)
+
+	if j.config.RpcNrConfig != nil {
+		newRelicApp, err := newrelic.NewApplication(
+			newrelic.ConfigAppName(j.config.RpcNrConfig.RpcNrAppName),
+			newrelic.ConfigLicense(j.config.RpcNrConfig.RpcNrLicenseKey),
+			func(cfg *newrelic.Config) {
+				cfg.ErrorCollector.RecordPanics = true
+			},
+		)
+
+		if err != nil {
+			return err
+		}
+		mux.HandleFunc(newrelic.WrapHandleFunc(newRelicApp, "/", j.handle))
+		mux.HandleFunc(newrelic.WrapHandleFunc(newRelicApp, "/ws", j.handleWs))
+		mux.HandleFunc(newrelic.WrapHandleFunc(newRelicApp, "/health", j.handleHealth))
+	} else {
+		mux.HandleFunc("/", j.handle)
+		mux.HandleFunc("/ws", j.handleWs)
+		mux.HandleFunc("/health", j.handleHealth)
+	}
 
 	srv := http.Server{
 		Handler: mux,
@@ -246,6 +271,9 @@ func (j *JSONRPC) handle(w http.ResponseWriter, req *http.Request) {
 		"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization",
 	)
 
+	txn := newrelic.FromContext(req.Context())
+	txn.SetName("JSON-RPC Method")
+
 	if (*req).Method == "OPTIONS" {
 		return
 	}
@@ -267,6 +295,7 @@ func (j *JSONRPC) handle(w http.ResponseWriter, req *http.Request) {
 	data, err := ioutil.ReadAll(req.Body)
 
 	if err != nil {
+		txn.NoticeError(err)
 		//nolint
 		w.Write([]byte(err.Error()))
 
@@ -276,9 +305,10 @@ func (j *JSONRPC) handle(w http.ResponseWriter, req *http.Request) {
 	// log request
 	j.logger.Debug("handle", "request", string(data))
 
-	resp, err := j.dispatcher.Handle(data)
+	resp, err := j.dispatcher.Handle(data, txn)
 
 	if err != nil {
+		txn.NoticeError(err)
 		//nolint
 		w.Write([]byte(err.Error()))
 	} else {

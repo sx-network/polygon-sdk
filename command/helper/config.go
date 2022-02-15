@@ -20,24 +20,26 @@ import (
 
 // Config defines the server configuration params
 type Config struct {
-	Chain          string                 `json:"chain_config"`
-	Secrets        string                 `json:"secrets_config"`
-	DataDir        string                 `json:"data_dir"`
-	BlockGasTarget string                 `json:"block_gas_target"`
-	GRPCAddr       string                 `json:"grpc_addr"`
-	JSONRPCAddr    string                 `json:"jsonrpc_addr"`
-	Telemetry      *Telemetry             `json:"telemetry"`
-	Network        *Network               `json:"network"`
-	Seal           bool                   `json:"seal"`
-	TxPool         *TxPool                `json:"tx_pool"`
-	LogLevel       string                 `json:"log_level"`
-	Dev            bool                   `json:"dev_mode"`
-	DevInterval    uint64                 `json:"dev_interval"`
-	Join           string                 `json:"join_addr"`
-	Consensus      map[string]interface{} `json:"consensus"`
-	FaultyMode     uint64                 `json:"faulty_mode"`
-	RestoreFile    string                 `json:"restore_file"`
-	BlockTime      uint64                 `json:"block_time_s"`
+	Chain           string                 `json:"chain_config"`
+	Secrets         string                 `json:"secrets_config"`
+	DataDir         string                 `json:"data_dir"`
+	BlockGasTarget  string                 `json:"block_gas_target"`
+	GRPCAddr        string                 `json:"grpc_addr"`
+	JSONRPCAddr     string                 `json:"jsonrpc_addr"`
+	Telemetry       *Telemetry             `json:"telemetry"`
+	Network         *Network               `json:"network"`
+	Seal            bool                   `json:"seal"`
+	TxPool          *TxPool                `json:"tx_pool"`
+	LogLevel        string                 `json:"log_level"`
+	Dev             bool                   `json:"dev_mode"`
+	DevInterval     uint64                 `json:"dev_interval"`
+	Join            string                 `json:"join_addr"`
+	Consensus       map[string]interface{} `json:"consensus"`
+	FaultyMode      uint64                 `json:"faulty_mode"`
+	RestoreFile     string                 `json:"restore_file"`
+	BlockTime       uint64                 `json:"block_time_s"`
+	RPCNrAppName    string                 `json:"rpc_nr_app_name"`
+	RPCNrLicenseKey string                 `json:"rpc_nr_license_key"`
 }
 
 // Telemetry holds the config details for metric services.
@@ -192,6 +194,14 @@ func (c *Config) BuildConfig() (*server.Config, error) {
 		conf.BlockTime = c.BlockTime
 	}
 
+	if c.RPCNrAppName != "" {
+		conf.RPCNrAppName = c.RPCNrAppName
+	}
+
+	if c.RPCNrLicenseKey != "" {
+		conf.RPCNrLicenseKey = c.RPCNrLicenseKey
+	}
+
 	// if we are in dev mode, change the consensus protocol with 'dev'
 	// and disable discovery of other nodes
 	// TODO: Disable networking altogether.
@@ -329,6 +339,14 @@ func (c *Config) mergeConfigWith(otherConfig *Config) error {
 	// if block time not default, set to new value
 	if otherConfig.BlockTime != defaultBlockTime {
 		c.BlockTime = otherConfig.BlockTime
+	}
+
+	if otherConfig.RPCNrAppName != "" {
+		c.RPCNrAppName = otherConfig.RPCNrAppName
+	}
+
+	if otherConfig.RPCNrLicenseKey != "" {
+		c.RPCNrLicenseKey = otherConfig.RPCNrLicenseKey
 	}
 
 	if err := mergo.Merge(&c.Consensus, otherConfig.Consensus, mergo.WithOverride); err != nil {

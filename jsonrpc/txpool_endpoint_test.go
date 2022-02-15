@@ -13,7 +13,7 @@ func TestContentEndpoint(t *testing.T) {
 	resp, err := dispatcher.Handle([]byte(`{
 		"method": "txpool_content",
 		"params": []
-	}`))
+	}`), nil)
 	assert.NoError(t, err)
 
 	var res ContentResponse
@@ -29,7 +29,7 @@ func TestInspectEndpoint(t *testing.T) {
 	resp, err := dispatcher.Handle([]byte(`{
 		"method": "txpool_inspect",
 		"params": []
-	}`))
+	}`), nil)
 	assert.NoError(t, err)
 
 	var res InspectResponse
@@ -47,7 +47,7 @@ func TestStatusEndpoint(t *testing.T) {
 	resp, err := dispatcher.Handle([]byte(`{
 		"method": "txpool_status",
 		"params": []
-	}`))
+	}`), nil)
 	assert.NoError(t, err)
 
 	var res StatusResponse

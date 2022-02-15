@@ -3,6 +3,7 @@ module github.com/0xPolygon/polygon-edge
 go 1.14
 
 require (
+	github.com/aws/aws-sdk-go v1.40.45
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/containerd/cgroups v1.0.2 // indirect
@@ -32,6 +33,7 @@ require (
 	github.com/multiformats/go-base32 v0.0.4 // indirect
 	github.com/multiformats/go-multiaddr v0.5.0
 	github.com/multiformats/go-multihash v0.1.0 // indirect
+	github.com/newrelic/go-agent/v3 v3.15.2
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/prometheus/client_golang v1.12.0
 	github.com/ryanuber/columnize v2.1.2+incompatible

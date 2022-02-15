@@ -11,6 +11,7 @@ import (
 	"unicode"
 
 	"github.com/hashicorp/go-hclog"
+	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
 type serviceData struct {
@@ -218,23 +219,32 @@ func (d *Dispatcher) HandleWs(reqBody []byte, conn wsConn) ([]byte, error) {
 	return NewRPCResponse(req.ID, "2.0", resp, err).Bytes()
 }
 
-func (d *Dispatcher) Handle(reqBody []byte) ([]byte, error) {
+func (d *Dispatcher) Handle(reqBody []byte, txn *newrelic.Transaction) ([]byte, error) {
+	invalidJsonError := NewInvalidRequestError("Invalid json request")
 	x := bytes.TrimLeft(reqBody, " \t\r\n")
 	if len(x) == 0 {
-		return NewRPCResponse(nil, "2.0", nil, NewInvalidRequestError("Invalid json request")).Bytes()
+		txn.NoticeError(invalidJsonError)
+		return NewRPCResponse(nil, "2.0", nil, invalidJsonError).Bytes()
 	}
 
 	if x[0] == '{' {
 		var req Request
 		if err := json.Unmarshal(reqBody, &req); err != nil {
-			return NewRPCResponse(nil, "2.0", nil, NewInvalidRequestError("Invalid json request")).Bytes()
+			txn.NoticeError(invalidJsonError)
+			return NewRPCResponse(nil, "2.0", nil, invalidJsonError).Bytes()
 		}
 
 		if req.Method == "" {
-			return NewRPCResponse(req.ID, "2.0", nil, NewInvalidRequestError("Invalid json request")).Bytes()
+			txn.NoticeError(invalidJsonError)
+			return NewRPCResponse(req.ID, "2.0", nil, invalidJsonError).Bytes()
 		}
 
+		txn.SetName(req.Method)
+
 		resp, err := d.handleReq(req)
+		if err != nil {
+			txn.NoticeError(err)
+		}
 
 		return NewRPCResponse(req.ID, "2.0", resp, err).Bytes()
 	}
@@ -242,14 +252,17 @@ func (d *Dispatcher) Handle(reqBody []byte) ([]byte, error) {
 	// handle batch requests
 	var requests []Request
 	if err := json.Unmarshal(reqBody, &requests); err != nil {
-		return NewRPCResponse(nil, "2.0", nil, NewInvalidRequestError("Invalid json request")).Bytes()
+		txn.NoticeError(invalidJsonError)
+		return NewRPCResponse(nil, "2.0", nil, invalidJsonError).Bytes()
 	}
 
 	responses := make([]Response, 0)
 
 	for _, req := range requests {
+		txn.SetName(req.Method)
 		var response, err = d.handleReq(req)
 		if err != nil {
+			txn.NoticeError(err)
 			errorResponse := NewRPCResponse(req.ID, "2.0", nil, err)
 			responses = append(responses, errorResponse)
 
@@ -262,6 +275,7 @@ func (d *Dispatcher) Handle(reqBody []byte) ([]byte, error) {
 
 	respBytes, err := json.Marshal(responses)
 	if err != nil {
+		txn.NoticeError(err)
 		return NewRPCResponse(nil, "2.0", nil, NewInternalError("Internal error")).Bytes()
 	}
 
