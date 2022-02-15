@@ -237,6 +237,15 @@ func (c *ServerCommand) DefineFlags() {
 		},
 		FlagOptional: true,
 	}
+
+	c.FlagMap["rpc-nr-license-key"] = helper.FlagDescriptor{
+		Description: "Sets the value of the New Relic Agent License Key. Used by RPC cluster.",
+		Arguments: []string{
+			"RPC_NR_LICENSE_KEY",
+		},
+		ArgumentsOptional: false,
+		FlagOptional:      true,
+	}
 }
 
 // GetHelperText returns a simple description of the command
