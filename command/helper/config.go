@@ -38,7 +38,8 @@ type Config struct {
 	FaultyMode      uint64                 `json:"faulty_mode"`
 	RestoreFile     string                 `json:"restore_file"`
 	BlockTime       uint64                 `json:"block_time_s"`
-	RpcNrLicenseKey string                 `json:"rpc_nr_license_key"`
+	RPCNrAppName    string                 `json:"rpc_nr_app_name"`
+	RPCNrLicenseKey string                 `json:"rpc_nr_license_key"`
 }
 
 // Telemetry holds the config details for metric services.
@@ -193,8 +194,12 @@ func (c *Config) BuildConfig() (*server.Config, error) {
 		conf.BlockTime = c.BlockTime
 	}
 
-	if c.RpcNrLicenseKey != "" {
-		conf.RpcNrLicenseKey = c.RpcNrLicenseKey
+	if c.RPCNrAppName != "" {
+		conf.RPCNrAppName = c.RPCNrAppName
+	}
+
+	if c.RPCNrLicenseKey != "" {
+		conf.RPCNrLicenseKey = c.RPCNrLicenseKey
 	}
 
 	// if we are in dev mode, change the consensus protocol with 'dev'
@@ -336,8 +341,12 @@ func (c *Config) mergeConfigWith(otherConfig *Config) error {
 		c.BlockTime = otherConfig.BlockTime
 	}
 
-	if otherConfig.RpcNrLicenseKey != "" {
-		c.RpcNrLicenseKey = otherConfig.RpcNrLicenseKey
+	if otherConfig.RPCNrAppName != "" {
+		c.RPCNrAppName = otherConfig.RPCNrAppName
+	}
+
+	if otherConfig.RPCNrLicenseKey != "" {
+		c.RPCNrLicenseKey = otherConfig.RPCNrLicenseKey
 	}
 
 	if err := mergo.Merge(&c.Consensus, otherConfig.Consensus, mergo.WithOverride); err != nil {

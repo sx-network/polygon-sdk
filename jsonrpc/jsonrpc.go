@@ -54,11 +54,16 @@ type JSONRPCStore interface {
 	filterManagerStore
 }
 
-type Config struct {
-	Store           JSONRPCStore
-	Addr            *net.TCPAddr
-	ChainID         uint64
+type RpcNrConfig struct {
+	RpcNrAppName    string
 	RpcNrLicenseKey string
+}
+
+type Config struct {
+	Store       JSONRPCStore
+	Addr        *net.TCPAddr
+	ChainID     uint64
+	RpcNrConfig *RpcNrConfig
 }
 
 // NewJSONRPC returns the JsonRPC http server
@@ -87,10 +92,10 @@ func (j *JSONRPC) setupHTTP() error {
 
 	mux := http.DefaultServeMux
 
-	if j.config.RpcNrLicenseKey != "" {
+	if j.config.RpcNrConfig != nil {
 		newRelicApp, err := newrelic.NewApplication(
-			newrelic.ConfigAppName("SX-Node HTTP"),
-			newrelic.ConfigLicense(j.config.RpcNrLicenseKey),
+			newrelic.ConfigAppName(j.config.RpcNrConfig.RpcNrAppName),
+			newrelic.ConfigLicense(j.config.RpcNrConfig.RpcNrLicenseKey),
 			func(cfg *newrelic.Config) {
 				cfg.ErrorCollector.RecordPanics = true
 			},

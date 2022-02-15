@@ -28,7 +28,8 @@ type Config struct {
 	SecretsManager  *secrets.SecretsManagerConfig
 	RestoreFile     *string
 	BlockTime       uint64
-	RpcNrLicenseKey string
+	RPCNrAppName    string
+	RPCNrLicenseKey string
 }
 
 // DefaultConfig returns the default config for JSON-RPC, GRPC (ports) and Networking
@@ -40,7 +41,8 @@ func DefaultConfig() *Config {
 		Telemetry:       &Telemetry{PrometheusAddr: nil},
 		SecretsManager:  nil,
 		BlockTime:       DefaultBlockTime,
-		RpcNrLicenseKey: "",
+		RPCNrAppName:    "SX-Node HHTP",
+		RPCNrLicenseKey: "",
 	}
 }
 

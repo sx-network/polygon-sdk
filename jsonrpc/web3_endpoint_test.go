@@ -13,7 +13,7 @@ func TestWeb3EndpointSha3(t *testing.T) {
 	resp, err := dispatcher.Handle([]byte(`{
 		"method": "web3_sha3",
 		"params": ["0x68656c6c6f20776f726c64"]
-	}`))
+	}`), nil)
 	assert.NoError(t, err)
 
 	var res string
