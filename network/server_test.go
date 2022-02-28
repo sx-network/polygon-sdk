@@ -592,8 +592,8 @@ func TestRunDial(t *testing.T) {
 			server, createErr := CreateServer(
 				&CreateServerParams{
 					ConfigCallback: func(c *Config) {
-						c.MaxInboundPeers = uint64(maxPeers[idx])
-						c.MaxOutboundPeers = uint64(maxPeers[idx])
+						c.MaxInboundPeers = maxPeers[idx]
+						c.MaxOutboundPeers = maxPeers[idx]
 						c.NoDiscover = true
 					},
 				})

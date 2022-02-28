@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"net"
 	"regexp"
@@ -53,8 +54,9 @@ type Config struct {
 	NatAddr          net.IP
 	DNS              multiaddr.Multiaddr
 	DataDir          string
-	MaxInboundPeers  uint64
-	MaxOutboundPeers uint64
+	MaxPeers         int64
+	MaxInboundPeers  int64
+	MaxOutboundPeers int64
 	Chain            *chain.Chain
 	SecretsManager   secrets.SecretsManager
 	Metrics          *Metrics
@@ -64,6 +66,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		NoDiscover:       false,
 		Addr:             &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: DefaultLibp2pPort},
+		MaxPeers:         40,
 		MaxOutboundPeers: 8,
 		MaxInboundPeers:  32,
 	}
@@ -147,6 +150,11 @@ func setupLibp2pKey(secretsManager secrets.SecretsManager) (crypto.PrivKey, erro
 
 func NewServer(logger hclog.Logger, config *Config) (*Server, error) {
 	logger = logger.Named("network")
+
+	if config.MaxPeers != DefaultConfig().MaxPeers {
+		config.MaxOutboundPeers = int64(math.Floor(float64(config.MaxPeers) * DefaultDialRatio))
+		config.MaxInboundPeers = config.MaxPeers - config.MaxOutboundPeers
+	}
 
 	key, err := setupLibp2pKey(config.SecretsManager)
 	if err != nil {

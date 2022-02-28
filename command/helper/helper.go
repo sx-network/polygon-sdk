@@ -467,8 +467,9 @@ func ReadConfig(baseCommand string, args []string) (*Config, error) {
 		" the host DNS address which can be used by a remote peer for connection",
 	)
 	flags.BoolVar(&cliConfig.Network.NoDiscover, "no-discover", false, "")
-	flags.Uint64Var(&cliConfig.Network.MaxInboundPeers, "max-inbound-peers", 0, "maximum number of inbound peers")
-	flags.Uint64Var(&cliConfig.Network.MaxOutboundPeers, "max-outbound-peers", 0, "maximum number of outbound peers")
+	flags.Int64Var(&cliConfig.Network.MaxPeers, "max-peers", -1, "maximum number of peers")
+	flags.Int64Var(&cliConfig.Network.MaxInboundPeers, "max-inbound-peers", -1, "maximum number of inbound peers")
+	flags.Int64Var(&cliConfig.Network.MaxOutboundPeers, "max-outbound-peers", -1, "maximum number of outbound peers")
 	flags.Uint64Var(&cliConfig.TxPool.PriceLimit, "price-limit", 0, "")
 	flags.Uint64Var(&cliConfig.TxPool.MaxSlots, "max-slots", DefaultMaxSlots, "")
 	flags.BoolVar(&cliConfig.Dev, "dev", false, "")
