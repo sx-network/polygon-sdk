@@ -39,6 +39,7 @@ require (
 )
 
 require (
+	github.com/aws/aws-sdk-go v1.40.45
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/containerd/cgroups v1.0.2 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect

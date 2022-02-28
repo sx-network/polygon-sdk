@@ -2,7 +2,6 @@ package chain
 
 import (
 	"math/big"
-	"math/rand"
 )
 
 // Params are all the set of params for the chain
@@ -11,7 +10,6 @@ type Params struct {
 	ChainID        int                    `json:"chainID"`
 	Engine         map[string]interface{} `json:"engine"`
 	BlockGasTarget uint64                 `json:"blockGasTarget"`
-	FaultyMode     FaultyModeValue
 }
 
 func (p *Params) GetEngine() string {
@@ -120,93 +118,4 @@ var AllForksEnabled = &Forks{
 	Constantinople: NewFork(0),
 	Petersburg:     NewFork(0),
 	Istanbul:       NewFork(0),
-}
-
-type FaultyModeValue struct {
-	Value uint64
-}
-
-const (
-	// Disabled disables the faulty mode
-	Disabled = 0
-	// Random attacks randomly
-	Random = 1
-
-	// NotGossiped doesn't gossip any messages to other validators
-	NotGossiped = 2
-	// AlwaysRoundChange always sends as roundChange msg when msg type not roundChange
-	AlwaysRoundChange = 3
-	// NeverRoundChange always sends as commit msg when msg type roundChange
-	NeverRoundChange = 4
-	// SendWrongMsgSeal sends the message with a randomly-generated seal
-	SendWrongMsgSeal = 5
-	// SendWrongMsgSignature sends the message with a randomly-generated signature
-	SendWrongMsgSignature = 6
-	// SendWrongMsgView sends the message with a randomly-generated view
-	SendWrongMsgView = 7
-	// SendWrongMsgDigest sends the message with a randomly-generated digest
-	SendWrongMsgDigest = 8
-	// SendWrongMsgProposal sends the message with a randomly-generated proposal
-	SendWrongMsgProposal = 9
-	// AlwaysPropose always proposes a proposal to validators
-	AlwaysPropose = 10
-	// BadBlock always proposes a block with bad body
-	BadBlock = 11
-	// ScrambleState always return a state that we are not
-	ScrambleState = 12
-)
-
-func (f FaultyModeValue) random() bool {
-	//nolint:gosec
-	return f.Value == Random && rand.Intn(2) == 1
-}
-
-func (f FaultyModeValue) IsNotGossiped() bool {
-	return f.Value == NotGossiped || f.random()
-}
-
-func (f FaultyModeValue) IsAlwaysRoundChangeMsgType() bool {
-	return f.Value == AlwaysRoundChange || f.random()
-}
-
-func (f FaultyModeValue) IsNeverRoundChangeMsgType() bool {
-	return f.Value == NeverRoundChange || f.random()
-}
-
-func (f FaultyModeValue) IsSendWrongMsgSeal() bool {
-	return f.Value == SendWrongMsgSeal || f.random()
-}
-
-func (f FaultyModeValue) IsSendWrongMsgSignature() bool {
-	return f.Value == SendWrongMsgSignature || f.random()
-}
-
-func (f FaultyModeValue) IsSendWrongMsgView() bool {
-	return f.Value == SendWrongMsgView || f.random()
-}
-
-func (f FaultyModeValue) IsSendWrongMsgDigest() bool {
-	return f.Value == SendWrongMsgDigest || f.random()
-}
-
-func (f FaultyModeValue) IsSendWrongMsgProposal() bool {
-	return f.Value == SendWrongMsgProposal || f.random()
-}
-
-func (f FaultyModeValue) IsAlwaysPropose() bool {
-	return f.Value == AlwaysPropose || f.random()
-}
-
-func (f FaultyModeValue) IsBadBlock() bool {
-	return f.Value == BadBlock || f.random()
-}
-
-func (f FaultyModeValue) IsScrambleState() bool {
-	//TODO: enure this doesn't throw panic..
-	//return f.Value == ScrambleState || f.random()
-	return false
-}
-
-func (f FaultyModeValue) Uint64() uint64 {
-	return f.Value
 }

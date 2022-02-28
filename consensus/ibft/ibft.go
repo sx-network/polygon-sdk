@@ -778,12 +778,18 @@ func (i *Ibft) runAcceptState() { // start new round
 		lastProposer, _ = ecrecoverFromHeader(parent)
 	}
 
+<<<<<<< HEAD
 	if hookErr := i.runHook(CalculateProposerHook, i.state.view.Sequence, lastProposer); hookErr != nil {
 		i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", CalculateProposerHook, hookErr))
 	}
 
 	// FaultyMode - AlwaysPropose
 	if i.state.proposer == i.validatorKeyAddr || i.config.Params.FaultyMode.IsAlwaysPropose() {
+=======
+	i.state.CalcProposer(lastProposer)
+
+	if i.state.proposer == i.validatorKeyAddr {
+>>>>>>> parent of 9d2cd5c7... improvements + add randomMode + add scrambleStatae
 		logger.Info("we are the proposer", "block", number)
 
 		if !i.state.locked {
@@ -1194,15 +1200,18 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 		return
 	}
 
-	// FaultyModes - AlwaysRoundChangeMsgType & NeverRoundChangeMsgType
-	if msg.Type != proto.MessageReq_RoundChange && i.config.Params.FaultyMode.IsAlwaysRoundChangeMsgType() {
+	// FaultyMode - SendWrongMsgType
+	if i.config.Params.FaultyMode.IsSendWrongMsgType() {
 		invalidType := proto.MessageReq_RoundChange
 		i.logger.Info("Modify the message type", "old", msg.Type, "new", invalidType)
 		msg.Type = invalidType
+<<<<<<< HEAD
 	} else if msg.Type == proto.MessageReq_RoundChange && i.config.Params.FaultyMode.IsNeverRoundChangeMsgType() {
 		invalidType := proto.MessageReq_Commit
 		i.logger.Info("Modify the message type", "old", msg.Type, "new", invalidType)
 		msg.Type = invalidType
+=======
+>>>>>>> parent of 9d2cd5c7... improvements + add randomMode + add scrambleStatae
 	}
 
 	// add View
@@ -1241,14 +1250,6 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 		msg.Seal = hex.EncodeToHex(seal)
 	}
 
-	// FaultyMode - SendWrongMsgSeal
-	if i.config.Params.FaultyMode.IsSendWrongMsgSeal() {
-		bytes := make([]byte, 64)
-		rand.Read(bytes) //nolint:gosec
-		invalidSeal := hex.EncodeToString(bytes)
-		i.logger.Info("Modify the message seal", "old", msg.Seal, "new", invalidSeal)
-		msg.Seal = invalidSeal
-	}
 
 	if msg.Type != proto.MessageReq_Preprepare {
 		// send a copy to ourselves so that we can process this message as well
@@ -1263,21 +1264,6 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 		return
 	}
 
-	// FaultyMode - SendWrongMsgSig
-	if i.config.Params.FaultyMode.IsSendWrongMsgSignature() {
-		invalidSignature := strconv.FormatUint(uint64(rand.Intn(4)), 10) //nolint:gosec
-		i.logger.Info("Modify the message signature", "old", msg.Signature, "new", invalidSignature)
-		msg.Signature = invalidSignature
-	}
-
-	// FaultyMode - SendWrongMsgProposal
-	if i.config.Params.FaultyMode.IsSendWrongMsgProposal() {
-		invalidProposal := &any.Any{
-			Value: []byte("hello"),
-		}
-		i.logger.Info("Modify the message proposal", "old", msg.Proposal, "new", invalidProposal)
-		msg.Proposal = invalidProposal
-	}
 
 	i.logger.Debug("Gossiping message", "message", msg)
 
@@ -1288,32 +1274,6 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 
 // getState returns the current IBFT state
 func (i *Ibft) getState() IbftState {
-	// FaultyMode - AlwaysPropose
-	if i.config.Params.FaultyMode.IsScrambleState() {
-		switch i.state.getState() {
-		case AcceptState:
-			i.logger.Info("Modify state", "old", AcceptState, "new", RoundChangeState)
-
-			return RoundChangeState
-		case RoundChangeState:
-			i.logger.Info("Modify state", "old", RoundChangeState, "new", ValidateState)
-
-			return ValidateState
-		case ValidateState:
-			i.logger.Info("Modify state", "old", ValidateState, "new", CommitState)
-
-			return CommitState
-		case CommitState:
-			i.logger.Info("Modify state", "old", CommitState, "new", SyncState)
-
-			return SyncState
-		case SyncState:
-			i.logger.Info("Modify state", "old", SyncState, "new", AcceptState)
-
-			return AcceptState
-		}
-	}
-
 	return i.state.getState()
 }
 

@@ -31,7 +31,7 @@ func TestWeb3EndpointClientVersion(t *testing.T) {
 	resp, err := dispatcher.Handle([]byte(`{
 		"method": "web3_clientVersion",
 		"params": []
-	}`))
+	}`), nil)
 	assert.NoError(t, err)
 
 	var res string

@@ -1,10 +1,11 @@
 package jsonrpc
 
 import (
-	"github.com/0xPolygon/polygon-edge/types"
 	"math/big"
 	"strconv"
 	"testing"
+
+	"github.com/0xPolygon/polygon-edge/types"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -14,17 +15,9 @@ func TestContentEndpoint(t *testing.T) {
 		mockStore := newMockTxPoolStore()
 		txPoolEndpoint := &TxPool{mockStore}
 
-<<<<<<< HEAD
-	resp, err := dispatcher.Handle([]byte(`{
-		"method": "txpool_content",
-		"params": []
-	}`), nil)
-	assert.NoError(t, err)
-=======
 		result, _ := txPoolEndpoint.Content()
 		// nolint:forcetypeassert
 		response := result.(ContentResponse)
->>>>>>> origin/develop
 
 		assert.True(t, mockStore.includeQueued)
 		assert.Equal(t, 0, len(response.Pending))
@@ -151,13 +144,6 @@ func TestInspectEndpoint(t *testing.T) {
 		assert.NotNil(t, transactionInfo[strconv.FormatUint(testTx.Nonce, 10)])
 	})
 
-<<<<<<< HEAD
-	resp, err := dispatcher.Handle([]byte(`{
-		"method": "txpool_inspect",
-		"params": []
-	}`), nil)
-	assert.NoError(t, err)
-=======
 	t.Run("returns correct data for pending transactions", func(t *testing.T) {
 		mockStore := newMockTxPoolStore()
 		mockStore.capacity = 2
@@ -166,7 +152,6 @@ func TestInspectEndpoint(t *testing.T) {
 		testTx2 := newTestTransaction(3, address1)
 		mockStore.pending[address1] = []*types.Transaction{testTx, testTx2}
 		txPoolEndpoint := &TxPool{mockStore}
->>>>>>> origin/develop
 
 		result, _ := txPoolEndpoint.Inspect()
 		// nolint:forcetypeassert
@@ -245,13 +230,6 @@ func (s *mockTxPoolStore) GetCapacity() (uint64, uint64) {
 	return s.capacity, s.maxSlots
 }
 
-<<<<<<< HEAD
-	resp, err := dispatcher.Handle([]byte(`{
-		"method": "txpool_status",
-		"params": []
-	}`), nil)
-	assert.NoError(t, err)
-=======
 func newTestTransaction(nonce uint64, from types.Address) *types.Transaction {
 	txn := &types.Transaction{
 		Nonce:    nonce,
@@ -265,7 +243,6 @@ func newTestTransaction(nonce uint64, from types.Address) *types.Transaction {
 		R:        big.NewInt(1),
 		S:        big.NewInt(1),
 	}
->>>>>>> origin/develop
 
 	txn.ComputeHash()
 
