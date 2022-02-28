@@ -36,7 +36,6 @@ type Config struct {
 	Join            string                 `json:"join_addr"`
 	Consensus       map[string]interface{} `json:"consensus"`
 	Headers         *Headers               `json:"headers"`
-	FaultyMode      uint64                 `json:"faulty_mode"`
 	RestoreFile     string                 `json:"restore_file"`
 	BlockTime       uint64                 `json:"block_time_s"`
 	RPCNrAppName    string                 `json:"rpc_nr_app_name"`
@@ -92,7 +91,6 @@ func DefaultConfig() *Config {
 		Consensus:   map[string]interface{}{},
 		LogLevel:    "INFO",
 		RestoreFile: "",
-		FaultyMode:  DefaultDisabledFaultyMode,
 		BlockTime:   defaultBlockTime,
 	}
 }
@@ -173,11 +171,6 @@ func (c *Config) BuildConfig() (*server.Config, error) {
 	{
 		conf.PriceLimit = c.TxPool.PriceLimit
 		conf.MaxSlots = c.TxPool.MaxSlots
-	}
-
-	// Faulty Mode
-	if c.FaultyMode != 0 {
-		conf.Chain.Params.FaultyMode = chain.FaultyModeValue{Value: c.FaultyMode}
 	}
 
 	// Target gas limit
@@ -297,10 +290,6 @@ func (c *Config) mergeConfigWith(otherConfig *Config) error {
 
 	if otherConfig.Join != "" {
 		c.Join = otherConfig.Join
-	}
-
-	if otherConfig.FaultyMode != 0 {
-		c.FaultyMode = otherConfig.FaultyMode
 	}
 
 	if otherConfig.Network != nil {

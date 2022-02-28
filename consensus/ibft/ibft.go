@@ -6,9 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"math/rand"
 	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/0xPolygon/polygon-edge/consensus"
@@ -778,18 +776,11 @@ func (i *Ibft) runAcceptState() { // start new round
 		lastProposer, _ = ecrecoverFromHeader(parent)
 	}
 
-<<<<<<< HEAD
 	if hookErr := i.runHook(CalculateProposerHook, i.state.view.Sequence, lastProposer); hookErr != nil {
 		i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", CalculateProposerHook, hookErr))
 	}
 
-	// FaultyMode - AlwaysPropose
-	if i.state.proposer == i.validatorKeyAddr || i.config.Params.FaultyMode.IsAlwaysPropose() {
-=======
-	i.state.CalcProposer(lastProposer)
-
 	if i.state.proposer == i.validatorKeyAddr {
->>>>>>> parent of 9d2cd5c7... improvements + add randomMode + add scrambleStatae
 		logger.Info("we are the proposer", "block", number)
 
 		if !i.state.locked {
@@ -1022,13 +1013,6 @@ func (i *Ibft) insertBlock(block *types.Block) error {
 	block.Header = header
 	block.Header.ComputeHash()
 
-	// FaultyMode - BadBlock TODO: improve this through testing...
-	if i.config.Params.FaultyMode.IsBadBlock() {
-		block.Transactions = nil
-		block.Uncles = nil
-		block.Header = nil
-	}
-
 	if err := i.blockchain.WriteBlock(block); err != nil {
 		return err
 	}
@@ -1193,49 +1177,14 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 		Type: typ,
 	}
 
-	// FaultyMode - NotGossiped
-	if i.config.Params.FaultyMode.IsNotGossiped() {
-		i.logger.Info("Not gossiped message", "message", msg)
-
-		return
-	}
-
-	// FaultyMode - SendWrongMsgType
-	if i.config.Params.FaultyMode.IsSendWrongMsgType() {
-		invalidType := proto.MessageReq_RoundChange
-		i.logger.Info("Modify the message type", "old", msg.Type, "new", invalidType)
-		msg.Type = invalidType
-<<<<<<< HEAD
-	} else if msg.Type == proto.MessageReq_RoundChange && i.config.Params.FaultyMode.IsNeverRoundChangeMsgType() {
-		invalidType := proto.MessageReq_Commit
-		i.logger.Info("Modify the message type", "old", msg.Type, "new", invalidType)
-		msg.Type = invalidType
-=======
->>>>>>> parent of 9d2cd5c7... improvements + add randomMode + add scrambleStatae
-	}
-
 	// add View
 	msg.View = i.state.view.Copy()
-
-	// FaultyMode - SendWrongMsgView
-	if i.config.Params.FaultyMode.IsSendWrongMsgView() {
-		invalidView := &proto.View{}
-		i.logger.Info("Modify the message view", "old", msg.View, "new", invalidView)
-		msg.View = invalidView
-	}
 
 	// if we are sending a preprepare message we need to include the proposed block
 	if msg.Type == proto.MessageReq_Preprepare {
 		msg.Proposal = &any.Any{
 			Value: i.state.block.MarshalRLP(),
 		}
-	}
-
-	// FaultyMode - SendWrongMsgDigest
-	if i.config.Params.FaultyMode.IsSendWrongMsgDigest() {
-		invalidDigest := strconv.FormatUint(uint64(rand.Intn(4)), 10) //nolint:gosec
-		i.logger.Info("Modify the message digest", "old", msg.Digest, "new", invalidDigest)
-		msg.Digest = invalidDigest
 	}
 
 	// if the message is commit, we need to add the committed seal
@@ -1250,7 +1199,6 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 		msg.Seal = hex.EncodeToHex(seal)
 	}
 
-
 	if msg.Type != proto.MessageReq_Preprepare {
 		// send a copy to ourselves so that we can process this message as well
 		msg2 := msg.Copy()
@@ -1263,7 +1211,6 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 
 		return
 	}
-
 
 	i.logger.Debug("Gossiping message", "message", msg)
 

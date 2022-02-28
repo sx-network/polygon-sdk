@@ -188,14 +188,6 @@ func (c *ServerCommand) DefineFlags() {
 		FlagOptional: true,
 	}
 
-	c.FlagMap["faulty-mode"] = helper.FlagDescriptor{
-		Description: fmt.Sprintf("Sets the client to faulty mode. Default: %d", helper.DefaultConfig().FaultyMode),
-		Arguments: []string{
-			"FAULTY_MODE",
-		},
-		FlagOptional: true,
-	}
-
 	c.FlagMap["dev-interval"] = helper.FlagDescriptor{
 		Description: "Sets the client's dev notification interval. Default: 0",
 		Arguments: []string{
