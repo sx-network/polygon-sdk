@@ -501,6 +501,12 @@ func ReadConfig(baseCommand string, args []string) (*Config, error) {
 			return nil, err
 		}
 
+		if diskConfigFile.Network.MaxPeers != -1 {
+			if diskConfigFile.Network.MaxInboundPeers != -1 || diskConfigFile.Network.MaxOutboundPeers != -1 {
+				return nil, errors.New("both max-peers & max-inbound/outbound flags are set")
+			}
+		}
+
 		if err := config.mergeConfigWith(diskConfigFile); err != nil {
 			return nil, err
 		}

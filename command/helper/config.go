@@ -54,8 +54,8 @@ type Network struct {
 	NatAddr          string `json:"nat_addr"`
 	DNS              string `json:"dns_addr"`
 	MaxPeers         int64  `json:"max_peers,omitempty"`
-	MaxOutboundPeers int64  `json:"max_outbound_peers"`
-	MaxInboundPeers  int64  `json:"max_inbound_peers"`
+	MaxOutboundPeers int64  `json:"max_outbound_peers,omitempty"`
+	MaxInboundPeers  int64  `json:"max_inbound_peers,omitempty"`
 }
 
 // TxPool defines the TxPool configuration params
