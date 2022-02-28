@@ -14,9 +14,7 @@ const DefaultBlockTime = 2 // in seconds
 
 // Config is used to parametrize the minimal client
 type Config struct {
-	Chain *chain.Chain
-
-	JSONRPCAddr     *net.TCPAddr
+	Chain           *chain.Chain
 	GRPCAddr        *net.TCPAddr
 	LibP2PAddr      *net.TCPAddr
 	Telemetry       *Telemetry
@@ -26,6 +24,7 @@ type Config struct {
 	PriceLimit      uint64
 	MaxSlots        uint64
 	SecretsManager  *secrets.SecretsManagerConfig
+	JSONRPC         *JSONRPC
 	RestoreFile     *string
 	BlockTime       uint64
 	RPCNrAppName    string
@@ -35,13 +34,16 @@ type Config struct {
 // DefaultConfig returns the default config for JSON-RPC, GRPC (ports) and Networking
 func DefaultConfig() *Config {
 	return &Config{
-		JSONRPCAddr:     &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: DefaultJSONRPCPort},
-		GRPCAddr:        &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: DefaultGRPCPort},
-		Network:         network.DefaultConfig(),
-		Telemetry:       &Telemetry{PrometheusAddr: nil},
-		SecretsManager:  nil,
+		GRPCAddr:       &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: DefaultGRPCPort},
+		Network:        network.DefaultConfig(),
+		Telemetry:      &Telemetry{PrometheusAddr: nil},
+		SecretsManager: nil,
+		JSONRPC: &JSONRPC{
+			JSONRPCAddr:              &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: DefaultJSONRPCPort},
+			AccessControlAllowOrigin: nil,
+		},
 		BlockTime:       DefaultBlockTime,
-		RPCNrAppName:    "SX-Node HHTP",
+		RPCNrAppName:    "SX-Node HTTP",
 		RPCNrLicenseKey: "",
 	}
 }
@@ -49,4 +51,10 @@ func DefaultConfig() *Config {
 // Telemetry holds the config details for metric services
 type Telemetry struct {
 	PrometheusAddr *net.TCPAddr
+}
+
+// JSONRPC holds the config details for the JSON-RPC server
+type JSONRPC struct {
+	JSONRPCAddr              *net.TCPAddr
+	AccessControlAllowOrigin []string
 }

@@ -101,9 +101,9 @@ type Ibft struct {
 
 	secretsManager secrets.SecretsManager
 
-	blockTime time.Duration // Minimum block generation time in seconds
-
 	mechanisms []ConsensusMechanism // IBFT ConsensusMechanism used (PoA / PoS)
+
+	blockTime time.Duration // Minimum block generation time in seconds
 }
 
 // runHook runs a specified hook if it is present in the hook map
