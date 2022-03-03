@@ -93,7 +93,7 @@ func (j *JSONRPC) setupHTTP() error {
 
 	mux := http.DefaultServeMux
 
-	if j.config.RpcNrConfig != nil {
+	if j.config.RpcNrConfig != nil && j.config.RpcNrConfig.RpcNrAppName != "" {
 		newRelicApp, err := newrelic.NewApplication(
 			newrelic.ConfigAppName(j.config.RpcNrConfig.RpcNrAppName),
 			newrelic.ConfigLicense(j.config.RpcNrConfig.RpcNrLicenseKey),
