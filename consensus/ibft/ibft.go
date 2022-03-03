@@ -829,7 +829,7 @@ func (i *Ibft) runAcceptState() { // start new round
 
 	for i.getState() == AcceptState {
 		msg, ok := i.getNextMessage(timeout)
-		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
+		i.logger.Debug("dgk - msg from getNextMessage", "from", msg.From, "signature", msg.Signature, "view", msg.View)
 
 		if !ok {
 			i.logger.Debug("dgk - accept state - getNextMsg not ok, continuing in acceptState loop...")
@@ -923,7 +923,7 @@ func (i *Ibft) runValidateState() {
 
 	for i.getState() == ValidateState {
 		msg, ok := i.getNextMessage(timeout)
-		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
+		i.logger.Debug("dgk - msg from getNextMessage", "from", msg.From, "signature", msg.Signature, "view", msg.View)
 		//i.logStates()
 		if !ok {
 			// closing
@@ -1117,7 +1117,7 @@ func (i *Ibft) runRoundChangeState() {
 	timeout := exponentialTimeout(i.state.view.Round)
 	for i.getState() == RoundChangeState {
 		msg, ok := i.getNextMessage(timeout)
-		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
+		i.logger.Debug("dgk - msg from getNextMessage", "from", msg.From, "signature", msg.Signature, "view", msg.View)
 
 		if !ok {
 			// closing
