@@ -43,6 +43,9 @@ const (
 	PriorityRandomDial uint64 = 10
 )
 
+// regex string  to match against a valid dns/dns4/dns6 addr
+const DNSRegex = `^/?(dns)(4|6)?/[^-|^/][A-Za-z0-9-]([^-|^/]?)+([\\-\\.]{1}[a-z0-9]+)*\\.[A-Za-z]{2,}(/?)$`
+
 var (
 	ErrNoBootnodes  = errors.New("no bootnodes specified")
 	ErrMinBootnodes = errors.New("minimum 1 bootnode is required")
@@ -810,10 +813,10 @@ var (
 	// /ip4/127.0.0.1/tcp/<port>
 	// /ip4/<any other loopback>/tcp/<port>
 	// /ip6/<any loopback>/tcp/<port>
-	// /dns/some.dns.foo/tpc/<port>
-	//nolint:lll
+	// /dns/foobar.com/tcp/<port>
 	loopbackRegex = regexp.MustCompile(
-		`^\/ip4\/127(?:\.[0-9]+){0,2}\.[0-9]+\/tcp\/\d+$|^\/ip4\/localhost\/tcp\/\d+$|^\/ip6\/(?:0*\:)*?:?0*1\/tcp\/\d+$|^\/dns\/[^-|^/][A-Za-z0-9-]([^-|^/]?)+([\\-\\.]{1}[a-z0-9]+)*\\.[A-Za-z]{2,}(/?)$`,
+		//nolint:lll
+		fmt.Sprintf(`^\/ip4\/127(?:\.[0-9]+){0,2}\.[0-9]+\/tcp\/\d+$|^\/ip4\/localhost\/tcp\/\d+$|^\/ip6\/(?:0*\:)*?:?0*1\/tcp\/\d+$|%s`, DNSRegex),
 	)
 )
 
