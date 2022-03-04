@@ -218,7 +218,7 @@ func NewServer(logger hclog.Logger, config *Config) (*Server, error) {
 	srv.identity.setup()
 
 	// start gossip protocol
-	ps, err := pubsub.NewGossipSub(context.Background(), host)
+	ps, err := pubsub.NewGossipSub(context.Background(), host, pubsub.WithPeerOutboundQueueSize(512), pubsub.WithValidateQueueSize(512))
 	if err != nil {
 		return nil, err
 	}
