@@ -823,7 +823,9 @@ func (i *Ibft) runAcceptState() { // start new round
 
 	for i.getState() == AcceptState {
 		msg, ok := i.getNextMessage(timeout)
-		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
+		/*
+			i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
+		*/
 
 		if !ok {
 			i.logger.Debug("dgk - accept state - getNextMsg not ok, continuing in acceptState loop...")
@@ -917,8 +919,10 @@ func (i *Ibft) runValidateState() {
 
 	for i.getState() == ValidateState {
 		msg, ok := i.getNextMessage(timeout)
-		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
-		//i.logStates()
+		/*
+			i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
+		*/
+
 		if !ok {
 			// closing
 			return
@@ -1111,7 +1115,9 @@ func (i *Ibft) runRoundChangeState() {
 	timeout := exponentialTimeout(i.state.view.Round)
 	for i.getState() == RoundChangeState {
 		msg, ok := i.getNextMessage(timeout)
-		i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
+		/*
+			i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
+		*/
 
 		if !ok {
 			// closing
@@ -1368,7 +1374,9 @@ func (i *Ibft) getNextMessage(timeout time.Duration) (*proto.MessageReq, bool) {
 	for {
 		msg := i.msgQueue.readMessage(i.getState(), i.state.view)
 		if msg != nil {
-			i.logger.Debug("dgk - getNextMessage return", "view", msg.view, "msg", msg.msg, "obj", msg.obj)
+			/*
+				i.logger.Debug("dgk - getNextMessage return", "view", msg.view, "msg", msg.msg, "obj", msg.obj)
+			*/
 
 			return msg.obj, true
 		}
