@@ -352,7 +352,7 @@ func (d *discovery) bootnodeDiscovery() {
 
 		return
 	}
-
+	//nolint:forcetypeassert
 	clt := proto.NewDiscoveryClient(stream.(*rawGrpc.ClientConn))
 
 	resp, err := clt.FindPeers(context.Background(), &proto.FindPeersReq{Count: defaultPeerReqCount})
@@ -361,7 +361,7 @@ func (d *discovery) bootnodeDiscovery() {
 
 		return
 	}
-
+	//nolint:forcetypeassert
 	if err := stream.(*rawGrpc.ClientConn).Close(); err != nil {
 		d.srv.logger.Error("Error closing grpc stream", "peer", bootnode.ID, "err", err)
 

@@ -63,6 +63,7 @@ func (i *identity) isPending(id peer.ID) bool {
 
 func (i *identity) delPending(id peer.ID) {
 	if value, loaded := i.pending.LoadAndDelete(id); loaded {
+		//nolint:forcetypeassert
 		i.updatePendingCount(value.(network.Direction), -1)
 	}
 }

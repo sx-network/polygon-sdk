@@ -54,16 +54,16 @@ type JSONRPCStore interface {
 	filterManagerStore
 }
 
-type RpcNrConfig struct {
-	RpcNrAppName    string
-	RpcNrLicenseKey string
+type RPCNrConfig struct {
+	RPCNrAppName    string
+	RPCNrLicenseKey string
 }
 
 type Config struct {
 	Store                    JSONRPCStore
 	Addr                     *net.TCPAddr
 	ChainID                  uint64
-	RpcNrConfig              *RpcNrConfig
+	RPCNrConfig              *RPCNrConfig
 	AccessControlAllowOrigin []string
 }
 
@@ -93,10 +93,10 @@ func (j *JSONRPC) setupHTTP() error {
 
 	mux := http.DefaultServeMux
 
-	if j.config.RpcNrConfig != nil && j.config.RpcNrConfig.RpcNrLicenseKey != "" {
+	if j.config.RPCNrConfig != nil && j.config.RPCNrConfig.RPCNrLicenseKey != "" {
 		newRelicApp, err := newrelic.NewApplication(
-			newrelic.ConfigAppName(j.config.RpcNrConfig.RpcNrAppName),
-			newrelic.ConfigLicense(j.config.RpcNrConfig.RpcNrLicenseKey),
+			newrelic.ConfigAppName(j.config.RPCNrConfig.RPCNrAppName),
+			newrelic.ConfigLicense(j.config.RPCNrConfig.RPCNrLicenseKey),
 			func(cfg *newrelic.Config) {
 				cfg.ErrorCollector.RecordPanics = true
 			},

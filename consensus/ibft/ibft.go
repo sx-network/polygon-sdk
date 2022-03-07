@@ -722,12 +722,6 @@ func (i *Ibft) runAcceptState() { // start new round
 	// set consensus_rounds metric output
 	i.metrics.Rounds.Set(float64(i.state.view.Round + 1))
 
-	/*
-		for ind, peer := range i.network.Peers() {
-			i.logger.Debug("dgk - acceptState", "total peers", len(i.network.Peers()), "current peer #", ind, "current peer ID", peer.Info.ID) //nolint:lll
-		}
-	*/
-
 	// This is the state in which we either propose a block or wait for the pre-prepare message
 	parent := i.blockchain.Header()
 	number := parent.Number + 1
@@ -1136,12 +1130,6 @@ func (i *Ibft) runRoundChangeState() {
 		// we only expect RoundChange messages right now
 		num := i.state.AddRoundMessage(msg)
 		i.logger.Debug("dgk - roundchange state received msg", "roundLength", num, "round", msg.View.Round, "from", msg.From)
-
-		/*
-			for ind, peer := range i.network.Peers() {
-				i.logger.Debug("dgk - roundchange", "total peers", len(i.network.Peers()), "current peer #", ind, "current peer ID", peer.Info.ID) //nolint:lll
-			}
-		*/
 
 		if num == i.state.NumValid() {
 			// start a new round immediately

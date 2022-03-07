@@ -220,23 +220,27 @@ func (d *Dispatcher) HandleWs(reqBody []byte, conn wsConn) ([]byte, error) {
 }
 
 func (d *Dispatcher) Handle(reqBody []byte, txn *newrelic.Transaction) ([]byte, error) {
-	invalidJsonError := NewInvalidRequestError("Invalid json request")
+	invalidJSONError := NewInvalidRequestError("Invalid json request")
+
 	x := bytes.TrimLeft(reqBody, " \t\r\n")
 	if len(x) == 0 {
-		txn.NoticeError(invalidJsonError)
-		return NewRPCResponse(nil, "2.0", nil, invalidJsonError).Bytes()
+		txn.NoticeError(invalidJSONError)
+
+		return NewRPCResponse(nil, "2.0", nil, invalidJSONError).Bytes()
 	}
 
 	if x[0] == '{' {
 		var req Request
 		if err := json.Unmarshal(reqBody, &req); err != nil {
-			txn.NoticeError(invalidJsonError)
-			return NewRPCResponse(nil, "2.0", nil, invalidJsonError).Bytes()
+			txn.NoticeError(invalidJSONError)
+
+			return NewRPCResponse(nil, "2.0", nil, invalidJSONError).Bytes()
 		}
 
 		if req.Method == "" {
-			txn.NoticeError(invalidJsonError)
-			return NewRPCResponse(req.ID, "2.0", nil, invalidJsonError).Bytes()
+			txn.NoticeError(invalidJSONError)
+
+			return NewRPCResponse(req.ID, "2.0", nil, invalidJSONError).Bytes()
 		}
 
 		txn.SetName(req.Method)
@@ -252,14 +256,16 @@ func (d *Dispatcher) Handle(reqBody []byte, txn *newrelic.Transaction) ([]byte, 
 	// handle batch requests
 	var requests []Request
 	if err := json.Unmarshal(reqBody, &requests); err != nil {
-		txn.NoticeError(invalidJsonError)
-		return NewRPCResponse(nil, "2.0", nil, invalidJsonError).Bytes()
+		txn.NoticeError(invalidJSONError)
+
+		return NewRPCResponse(nil, "2.0", nil, invalidJSONError).Bytes()
 	}
 
 	responses := make([]Response, 0)
 
 	for _, req := range requests {
 		txn.SetName(req.Method)
+
 		var response, err = d.handleReq(req)
 		if err != nil {
 			txn.NoticeError(err)
@@ -276,6 +282,7 @@ func (d *Dispatcher) Handle(reqBody []byte, txn *newrelic.Transaction) ([]byte, 
 	respBytes, err := json.Marshal(responses)
 	if err != nil {
 		txn.NoticeError(err)
+
 		return NewRPCResponse(nil, "2.0", nil, NewInternalError("Internal error")).Bytes()
 	}
 
