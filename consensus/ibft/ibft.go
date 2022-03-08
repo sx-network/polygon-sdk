@@ -1374,10 +1374,6 @@ func (i *Ibft) getNextMessage(timeout time.Duration) (*proto.MessageReq, bool) {
 	for {
 		msg := i.msgQueue.readMessage(i.getState(), i.state.view)
 		if msg != nil {
-			/*
-				i.logger.Debug("dgk - getNextMessage return", "view", msg.view, "msg", msg.msg, "obj", msg.obj)
-			*/
-
 			return msg.obj, true
 		}
 
