@@ -99,6 +99,7 @@ func (j *JSONRPC) setupHTTP() error {
 			newrelic.ConfigLicense(j.config.RPCNrConfig.RPCNrLicenseKey),
 			func(cfg *newrelic.Config) {
 				cfg.ErrorCollector.RecordPanics = true
+				cfg.TransactionEvents.MaxSamplesStored = 600
 			},
 		)
 
