@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/0xPolygon/polygon-edge/network/event"
 	"math"
 	"math/big"
 	"sync"
@@ -19,8 +20,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
-	any "google.golang.org/protobuf/types/known/anypb"
-	empty "google.golang.org/protobuf/types/known/emptypb"
+	anypb "google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
@@ -327,7 +328,7 @@ func (s *Syncer) Broadcast(b *types.Block) {
 			Number:     b.Number(),
 			Difficulty: td.String(),
 		},
-		Raw: &any.Any{
+		Raw: &anypb.Any{
 			Value: b.MarshalRLP(),
 		},
 	}
@@ -362,7 +363,7 @@ func (s *Syncer) Start() {
 	grpcStream := libp2pGrpc.NewGrpcStream()
 	proto.RegisterV1Server(grpcStream.GrpcServer(), s.serviceV1)
 	grpcStream.Serve()
-	s.server.Register(syncerV1, grpcStream)
+	s.server.RegisterProtocol(syncerV1, grpcStream)
 
 	s.setupPeers()
 
@@ -395,11 +396,11 @@ func (s *Syncer) handlePeerEvent() {
 			}
 
 			switch evnt.Type {
-			case network.PeerConnected:
+			case event.PeerConnected:
 				if err := s.AddPeer(evnt.PeerID); err != nil {
 					s.logger.Error("failed to add peer", "err", err)
 				}
-			case network.PeerDisconnected:
+			case event.PeerDisconnected:
 				if err := s.DeletePeer(evnt.PeerID); err != nil {
 					s.logger.Error("failed to delete user", "err", err)
 				}
@@ -464,7 +465,7 @@ func (s *Syncer) AddPeer(peerID peer.ID) error {
 	// watch for changes of the other node first
 	clt := proto.NewV1Client(conn)
 
-	rawStatus, err := clt.GetCurrent(context.Background(), &empty.Empty{})
+	rawStatus, err := clt.GetCurrent(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		return err
 	}
