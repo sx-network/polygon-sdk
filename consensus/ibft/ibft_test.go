@@ -18,7 +18,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/hashicorp/go-hclog"
 	"github.com/stretchr/testify/assert"
-	any "google.golang.org/protobuf/types/known/anypb"
+	anypb "google.golang.org/protobuf/types/known/anypb"
 )
 
 func TestTransition_ValidateState_Prepare(t *testing.T) {
@@ -170,7 +170,7 @@ func TestTransition_AcceptState_Validator_VerifyCorrect(t *testing.T) {
 	i.emitMsg(&proto.MessageReq{
 		From: "A",
 		Type: proto.MessageReq_Preprepare,
-		Proposal: &any.Any{
+		Proposal: &anypb.Any{
 			Value: block.MarshalRLP(),
 		},
 		View: proto.ViewMsg(1, 0),
@@ -203,7 +203,7 @@ func TestTransition_AcceptState_Validator_VerifyFails(t *testing.T) {
 	i.emitMsg(&proto.MessageReq{
 		From: "A",
 		Type: proto.MessageReq_Preprepare,
-		Proposal: &any.Any{
+		Proposal: &anypb.Any{
 			Value: block.MarshalRLP(),
 		},
 		View: proto.ViewMsg(1, 0),
@@ -228,7 +228,7 @@ func TestTransition_AcceptState_Validator_ProposerInvalid(t *testing.T) {
 	i.emitMsg(&proto.MessageReq{
 		From: "C",
 		Type: proto.MessageReq_Preprepare,
-		Proposal: &any.Any{
+		Proposal: &anypb.Any{
 			Value: i.DummyBlock().MarshalRLP(),
 		},
 		View: proto.ViewMsg(1, 0),
@@ -264,7 +264,7 @@ func TestTransition_AcceptState_Validator_LockWrong(t *testing.T) {
 	i.emitMsg(&proto.MessageReq{
 		From: "A",
 		Type: proto.MessageReq_Preprepare,
-		Proposal: &any.Any{
+		Proposal: &anypb.Any{
 			Value: block1.MarshalRLP(),
 		},
 		View: proto.ViewMsg(1, 0),
@@ -296,7 +296,7 @@ func TestTransition_AcceptState_Validator_LockCorrect(t *testing.T) {
 	i.emitMsg(&proto.MessageReq{
 		From: "A",
 		Type: proto.MessageReq_Preprepare,
-		Proposal: &any.Any{
+		Proposal: &anypb.Any{
 			Value: block.MarshalRLP(),
 		},
 		View: proto.ViewMsg(1, 0),
