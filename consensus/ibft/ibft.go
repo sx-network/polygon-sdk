@@ -448,12 +448,7 @@ func (i *Ibft) isValidSnapshot() bool {
 	snap, err := i.getSnapshot(header.Number)
 
 	if err != nil {
-		i.logger.Debug("dgk - Error in getting snapshot for current node", "err", err)
 		return false
-	}
-
-	for index, validatorAddress := range snap.Set {
-		i.logger.Debug("dgk - current snapshot validators", "index", index, "validatorAddress", validatorAddress)
 	}
 
 	if snap.Set.Includes(i.validatorKeyAddr) {
@@ -465,7 +460,6 @@ func (i *Ibft) isValidSnapshot() bool {
 		return true
 	}
 
-	i.logger.Debug("dgk - Snapshot does not include current node")
 	return false
 }
 
