@@ -1355,7 +1355,7 @@ func (i *Ibft) IsIbftStateStale() bool {
 	if i.isState(SyncState) {
 		if bestPeer, diff := i.syncer.BestPeer(); diff != nil {
 			// return diff.Cmp(big.NewInt(5)) >= 0
-			return bestPeer.Number()-i.state.block.Number() >= 5
+			return bestPeer.Number()-i.store.getLastBlock() >= 5
 		}
 
 		return false
