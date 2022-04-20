@@ -1353,8 +1353,9 @@ func (i *Ibft) Close() error {
 func (i *Ibft) IsIbftStateStale() bool {
 	// if syncState (validators and non-sealing), ensure we are within 5 blocks old
 	if i.isState(SyncState) {
-		if _, diff := i.syncer.BestPeer(); diff != nil {
-			return diff.Cmp(big.NewInt(5)) >= 0
+		if bestPeer, diff := i.syncer.BestPeer(); diff != nil {
+			// return diff.Cmp(big.NewInt(5)) >= 0
+			return bestPeer.Number()-i.state.block.Number() >= 5
 		}
 
 		return false
