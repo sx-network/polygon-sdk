@@ -903,7 +903,10 @@ func (e *Eth) getBlockHeader(number BlockNumber) (*types.Header, error) {
 		return header, nil
 
 	case PendingBlockNumber:
-		return nil, fmt.Errorf("fetching the pending header is not supported")
+		//return nil, fmt.Errorf("fetching the pending header is not supported")
+
+		// return latest block for now to support gnosis-safe
+		return e.store.Header(), nil
 
 	default:
 		// Convert the block number from hex to uint64
