@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/0xPolygon/polygon-edge/network/event"
 	"math"
 	"math/big"
 	"sync"
 	"time"
+
+	"github.com/0xPolygon/polygon-edge/network/event"
 
 	"github.com/0xPolygon/polygon-edge/blockchain"
 	"github.com/0xPolygon/polygon-edge/helper/progress"
@@ -415,6 +416,17 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 
 	var bestTd *big.Int
 
+	// helper function for logging
+	countMap := func(m *sync.Map) int {
+		count := 0
+		m.Range(func(key, value interface{}) bool {
+			count++
+			return true
+		})
+		return count
+	}
+
+	s.logger.Debug("rpc debug - BestPeer", "s.peers length", countMap(&s.peers))
 	s.peers.Range(func(peerID, peer interface{}) bool {
 		syncPeer, ok := peer.(*SyncPeer)
 		if !ok {
@@ -422,6 +434,7 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 		}
 
 		status := syncPeer.status
+		s.logger.Debug("rpc debug - BestPeer", "peer", syncPeer.peer, "difficulty", status.Difficulty.String())
 		if bestPeer == nil || status.Difficulty.Cmp(bestTd) > 0 {
 			var correctAssertion bool
 
@@ -441,6 +454,7 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 	}
 
 	curDiff := s.blockchain.CurrentTD()
+	s.logger.Debug("rpc debug - BestPeer", "best peer", bestPeer.peer, "best peer difficulty", bestTd.String(), "s.blockchain.CurrentTD()", curDiff.String())
 	if bestTd.Cmp(curDiff) <= 0 {
 		return nil, nil
 	}
