@@ -41,6 +41,7 @@ var (
 
 // SyncPeer is a representation of the peer the node is syncing with
 type SyncPeer struct {
+	logger hclog.Logger
 	peer   peer.ID
 	conn   *grpc.ClientConn
 	client proto.V1Client
@@ -69,12 +70,15 @@ func (s *SyncPeer) IsClosed() bool {
 // purgeBlocks purges the cache of broadcasted blocks the node has written so far
 // from the SyncPeer
 func (s *SyncPeer) purgeBlocks(lastSeen types.Hash) {
+	s.logger.Debug("rpc debug - purgeBlocks()", "lastSeen hash", lastSeen.String())
 	s.enqueueLock.Lock()
 	defer s.enqueueLock.Unlock()
 
 	indx := -1
 
+	s.logger.Debug("rpc debug - purgeBlocks()", "s.enqueue length", len(s.enqueue))
 	for i, b := range s.enqueue {
+		s.logger.Debug("rpc debug - purgeBlocks()", "index", i, "queued hash", b.Hash().String())
 		if b.Hash() == lastSeen {
 			indx = i
 		}
@@ -82,6 +86,7 @@ func (s *SyncPeer) purgeBlocks(lastSeen types.Hash) {
 
 	if indx != -1 {
 		s.enqueue = s.enqueue[indx+1:]
+		s.logger.Debug("rpc debug - purgeBlocks()", "indx", indx)
 	}
 }
 
@@ -92,6 +97,7 @@ func (s *SyncPeer) popBlock(timeout time.Duration) (b *types.Block, err error) {
 	for {
 		if !s.IsClosed() {
 			s.enqueueLock.Lock()
+			s.logger.Debug("rpc debug - popBlock()", "s.enqueue length", len(s.enqueue))
 			if len(s.enqueue) != 0 {
 				b, s.enqueue = s.enqueue[0], s.enqueue[1:]
 				s.enqueueLock.Unlock()
