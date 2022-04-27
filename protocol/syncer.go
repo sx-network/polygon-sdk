@@ -70,7 +70,7 @@ func (s *SyncPeer) IsClosed() bool {
 // purgeBlocks purges the cache of broadcasted blocks the node has written so far
 // from the SyncPeer
 func (s *SyncPeer) purgeBlocks(lastSeen types.Hash) {
-	s.logger.Debug("rpc debug - purgeBlocks()", "lastSeen hash", lastSeen.String())
+	s.logger.Debug("rpc debug - purgeBlocks()", "lastSeen hash", lastSeen)
 	s.enqueueLock.Lock()
 	defer s.enqueueLock.Unlock()
 
@@ -78,7 +78,7 @@ func (s *SyncPeer) purgeBlocks(lastSeen types.Hash) {
 
 	s.logger.Debug("rpc debug - purgeBlocks()", "s.enqueue length", len(s.enqueue))
 	for i, b := range s.enqueue {
-		s.logger.Debug("rpc debug - purgeBlocks()", "index", i, "queued hash", b.Hash().String())
+		s.logger.Debug("rpc debug - purgeBlocks()", "index", i, "queued hash", b.Hash())
 		if b.Hash() == lastSeen {
 			indx = i
 		}
@@ -497,6 +497,7 @@ func (s *Syncer) AddPeer(peerID peer.ID) error {
 	}
 
 	s.peers.Store(peerID, &SyncPeer{
+		logger:    s.logger.Named("syncPeer"),
 		peer:      peerID,
 		conn:      conn,
 		client:    clt,
