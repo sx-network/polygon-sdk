@@ -3,7 +3,7 @@ module github.com/0xPolygon/polygon-edge
 go 1.16
 
 require (
-	github.com/btcsuite/btcd v0.22.0-beta
+	github.com/btcsuite/btcd v0.22.1
 	github.com/containerd/cgroups v1.0.2 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
 	github.com/go-kit/kit v0.12.0
@@ -53,7 +53,6 @@ require (
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/valyala/fastjson v1.6.3 // indirect
 	go.uber.org/zap v1.20.0 // indirect
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
 	golang.org/x/tools v0.1.9 // indirect
 	google.golang.org/genproto v0.0.0-20211208223120-3a66f561d7aa // indirect
