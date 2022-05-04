@@ -494,6 +494,7 @@ func (i *Ibft) runSyncState() {
 
 				i.setState(AcceptState)
 			} else {
+				i.logger.Debug("rpc debug - nil bestPeer, sleeping..")
 				time.Sleep(1 * time.Second)
 			}
 
@@ -1351,20 +1352,24 @@ func (i *Ibft) Close() error {
 
 // IsIbftStateStale returns whether or not ibft node is stale
 func (i *Ibft) IsIbftStateStale() bool {
-	// if syncState (validators and non-sealing), ensure we are within 5 blocks old
-	if i.isState(SyncState) {
-		if _, diff := i.syncer.BestPeer(); diff != nil {
-			return diff.Cmp(big.NewInt(5)) >= 0
+	return false
+	/*
+		// if syncState (validators and non-sealing), ensure we are within 5 blocks old
+		if i.isState(SyncState) {
+			if bestPeer, diff := i.syncer.BestPeer(); diff != nil {
+				// return diff.Cmp(big.NewInt(5)) >= 0
+				return bestPeer.Number()-i.store.getLastBlock() >= 5
+			}
+
+			return false
+		}
+
+		if i.isState(RoundChangeState) {
+			return true
 		}
 
 		return false
-	}
-
-	if i.isState(RoundChangeState) {
-		return true
-	}
-
-	return false
+	*/
 }
 
 // getNextMessage reads a new message from the message queue

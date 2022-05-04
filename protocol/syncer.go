@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/0xPolygon/polygon-edge/network/event"
 	"math"
 	"math/big"
 	"sync"
 	"time"
+
+	"github.com/0xPolygon/polygon-edge/network/event"
 
 	"github.com/0xPolygon/polygon-edge/blockchain"
 	"github.com/0xPolygon/polygon-edge/helper/progress"
@@ -40,6 +41,7 @@ var (
 
 // SyncPeer is a representation of the peer the node is syncing with
 type SyncPeer struct {
+	logger hclog.Logger
 	peer   peer.ID
 	conn   *grpc.ClientConn
 	client proto.V1Client
@@ -68,12 +70,15 @@ func (s *SyncPeer) IsClosed() bool {
 // purgeBlocks purges the cache of broadcasted blocks the node has written so far
 // from the SyncPeer
 func (s *SyncPeer) purgeBlocks(lastSeen types.Hash) {
+	s.logger.Debug("rpc debug - purgeBlocks()", "lastSeen hash", lastSeen)
 	s.enqueueLock.Lock()
 	defer s.enqueueLock.Unlock()
 
 	indx := -1
 
+	s.logger.Debug("rpc debug - purgeBlocks()", "s.enqueue length", len(s.enqueue))
 	for i, b := range s.enqueue {
+		s.logger.Debug("rpc debug - purgeBlocks()", "index", i, "queued hash", b.Hash())
 		if b.Hash() == lastSeen {
 			indx = i
 		}
@@ -81,6 +86,7 @@ func (s *SyncPeer) purgeBlocks(lastSeen types.Hash) {
 
 	if indx != -1 {
 		s.enqueue = s.enqueue[indx+1:]
+		s.logger.Debug("rpc debug - purgeBlocks()", "indx", indx)
 	}
 }
 
@@ -91,6 +97,7 @@ func (s *SyncPeer) popBlock(timeout time.Duration) (b *types.Block, err error) {
 	for {
 		if !s.IsClosed() {
 			s.enqueueLock.Lock()
+			s.logger.Debug("rpc debug - popBlock()", "s.enqueue length", len(s.enqueue))
 			if len(s.enqueue) != 0 {
 				b, s.enqueue = s.enqueue[0], s.enqueue[1:]
 				s.enqueueLock.Unlock()
@@ -415,6 +422,17 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 
 	var bestTd *big.Int
 
+	// helper function for logging
+	countMap := func(m *sync.Map) int {
+		count := 0
+		m.Range(func(key, value interface{}) bool {
+			count++
+			return true
+		})
+		return count
+	}
+
+	s.logger.Debug("rpc debug - BestPeer", "s.peers length", countMap(&s.peers))
 	s.peers.Range(func(peerID, peer interface{}) bool {
 		syncPeer, ok := peer.(*SyncPeer)
 		if !ok {
@@ -422,6 +440,7 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 		}
 
 		status := syncPeer.status
+		s.logger.Debug("rpc debug - BestPeer", "peer", syncPeer.peer, "difficulty", status.Difficulty.String())
 		if bestPeer == nil || status.Difficulty.Cmp(bestTd) > 0 {
 			var correctAssertion bool
 
@@ -441,6 +460,7 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 	}
 
 	curDiff := s.blockchain.CurrentTD()
+	s.logger.Debug("rpc debug - BestPeer", "best peer", bestPeer.peer, "best peer difficulty", bestTd.String(), "s.blockchain.CurrentTD()", curDiff.String())
 	if bestTd.Cmp(curDiff) <= 0 {
 		return nil, nil
 	}
@@ -477,6 +497,7 @@ func (s *Syncer) AddPeer(peerID peer.ID) error {
 	}
 
 	s.peers.Store(peerID, &SyncPeer{
+		logger:    s.logger.Named("syncPeer"),
 		peer:      peerID,
 		conn:      conn,
 		client:    clt,
