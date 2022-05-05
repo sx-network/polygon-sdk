@@ -306,7 +306,7 @@ func (j *JSONRPC) handle(w http.ResponseWriter, req *http.Request) {
 
 	if req.Method == "GET" {
 		//nolint
-		w.Write([]byte("Polygon Edge JSON-RPC"))
+		w.Write([]byte("SX Network JSON-RPC"))
 
 		return
 	}
