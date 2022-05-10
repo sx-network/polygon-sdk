@@ -301,7 +301,8 @@ func (s *Syncer) updatePeerStatus(peerID peer.ID, status *Status) {
 		"latest block number",
 		status.Number,
 		"latest block hash",
-		status.Hash, "difficulty",
+		status.Hash,
+		"difficulty",
 		status.Difficulty,
 	)
 
