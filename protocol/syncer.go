@@ -317,6 +317,10 @@ func (s *Syncer) updatePeerStatus(peerID peer.ID, status *Status) {
 	}
 }
 
+var (
+	notifyTimeout = 10 * time.Second
+)
+
 // Broadcast broadcasts a block to all peers
 func (s *Syncer) Broadcast(b *types.Block) {
 	// Get the chain difficulty associated with block
@@ -341,7 +345,10 @@ func (s *Syncer) Broadcast(b *types.Block) {
 	}
 
 	s.peers.Range(func(peerID, peer interface{}) bool {
-		if _, err := peer.(*SyncPeer).client.Notify(context.Background(), req); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), notifyTimeout)
+		defer cancel()
+
+		if _, err := peer.(*SyncPeer).client.Notify(ctx, req); err != nil {
 			s.logger.Error("failed to notify", "err", err)
 		}
 
@@ -418,9 +425,10 @@ func (s *Syncer) handlePeerEvent() {
 
 // BestPeer returns the best peer by difficulty (if any)
 func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
-	var bestPeer *SyncPeer
-
-	var bestTd *big.Int
+	var (
+		bestPeer        *SyncPeer
+		bestBlockNumber uint64
+	)
 
 	// helper function for logging
 	countMap := func(m *sync.Map) int {
@@ -440,8 +448,11 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 		}
 
 		status := syncPeer.status
-		s.logger.Debug("rpc debug - BestPeer", "peer", syncPeer.peer, "difficulty", status.Difficulty.String())
-		if bestPeer == nil || status.Difficulty.Cmp(bestTd) > 0 {
+		s.logger.Debug("rpc debug - BestPeer", "peer", syncPeer.peer, "number", status.Number)
+		if bestPeer == nil || status.Number > bestBlockNumber {
+			// There is currently no best peer set, or the peer's block number
+			// is currently the highest
+
 			var correctAssertion bool
 
 			bestPeer, correctAssertion = peer.(*SyncPeer)
@@ -449,7 +460,7 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 				return false
 			}
 
-			bestTd = status.Difficulty
+			bestBlockNumber = status.Number
 		}
 
 		return true
@@ -459,13 +470,12 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 		return nil, nil
 	}
 
-	curDiff := s.blockchain.CurrentTD()
-	s.logger.Debug("rpc debug - BestPeer", "best peer", bestPeer.peer, "best peer difficulty", bestTd.String(), "s.blockchain.CurrentTD()", curDiff.String())
-	if bestTd.Cmp(curDiff) <= 0 {
-		return nil, nil
+	// Fetch the highest local block height
+	if bestBlockNumber < s.blockchain.Header().Number {
+		bestPeer = nil
 	}
 
-	return bestPeer, big.NewInt(0).Sub(bestTd, curDiff)
+	return bestPeer, big.NewInt(0)
 }
 
 // AddPeer establishes new connection with the given peer
