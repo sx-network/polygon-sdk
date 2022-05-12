@@ -432,16 +432,16 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 	)
 
 	// helper function for logging
-	countMap := func(m *sync.Map) int {
-		count := 0
-		m.Range(func(key, value interface{}) bool {
-			count++
-			return true
-		})
-		return count
-	}
+	// countMap := func(m *sync.Map) int {
+	// 	count := 0
+	// 	m.Range(func(key, value interface{}) bool {
+	// 		count++
+	// 		return true
+	// 	})
+	// 	return count
+	// }
 
-	s.logger.Debug("rpc debug - BestPeer", "s.peers length", countMap(&s.peers))
+	// s.logger.Debug("rpc debug - BestPeer", "s.peers length", countMap(&s.peers))
 	s.peers.Range(func(peerID, peer interface{}) bool {
 		syncPeer, ok := peer.(*SyncPeer)
 		if !ok {
@@ -449,7 +449,7 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 		}
 
 		status := syncPeer.status
-		s.logger.Debug("rpc debug - BestPeer", "peer", syncPeer.peer, "number", status.Number)
+		// s.logger.Debug("rpc debug - BestPeer", "peer", syncPeer.peer, "number", status.Number)
 		if bestPeer == nil || status.Number > bestBlockNumber {
 			// There is currently no best peer set, or the peer's block number
 			// is currently the highest
