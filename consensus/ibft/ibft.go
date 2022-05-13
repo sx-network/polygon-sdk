@@ -946,12 +946,12 @@ func (i *Ibft) runValidateState() {
 			panic(fmt.Sprintf("BUG: %s", reflect.TypeOf(msg.Type)))
 		}
 
-		if i.state.numPrepared() >= i.state.validators.QuorumSize() {
+		if i.state.numPrepared() >= i.quorumSize(i.state.view.Sequence)(i.state.validators) {
 			// we have received enough pre-prepare messages
 			sendCommit()
 		}
 
-		if i.state.numCommitted() >= i.state.validators.QuorumSize() {
+		if i.state.numCommitted() >= i.quorumSize(i.state.view.Sequence)(i.state.validators) {
 			// we have received enough commit messages
 			sendCommit()
 
@@ -1143,7 +1143,7 @@ func (i *Ibft) runRoundChangeState() {
 			// update timer
 			timeout = exponentialTimeout(i.state.view.Round)
 			sendRoundChange(msg.View.Round)
-		} else if num == i.state.validators.QuorumSize() {
+		} else if num == i.quorumSize(i.state.view.Sequence)(i.state.validators) {
 			// start a new round immediately
 			i.state.view.Round = msg.View.Round
 			i.setState(AcceptState)
@@ -1287,11 +1287,29 @@ func (i *Ibft) VerifyHeader(parent, header *types.Header) error {
 	}
 
 	// verify the committed seals
-	if err := verifyCommitedFields(snap, header); err != nil {
+	if err := verifyCommitedFields(snap, header, i.quorumSize(header.Number)); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (i *Ibft) quorumSize(blockNumber uint64) QuorumImplementation {
+	rawUint64, ok := i.config.Config["quorumSizeBlockNum"]
+	if !ok {
+		return OptimalQuorumSize
+	}
+
+	cfgQuorumSizeBlockNum, ok := rawUint64.(float64)
+	if !ok {
+		panic("invalid block number format")
+	}
+
+	if blockNumber < uint64(cfgQuorumSizeBlockNum) {
+		return LegacyQuorumSize
+	} else {
+		return OptimalQuorumSize
+	}
 }
 
 // ProcessHeaders updates the snapshot based on previously verified headers
