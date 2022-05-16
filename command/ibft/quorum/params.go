@@ -3,11 +3,12 @@ package quorum
 import (
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/0xPolygon/polygon-edge/chain"
 	"github.com/0xPolygon/polygon-edge/command"
 	"github.com/0xPolygon/polygon-edge/command/helper"
 	"github.com/0xPolygon/polygon-edge/helper/common"
-	"os"
 )
 
 const (
@@ -41,11 +42,7 @@ func (p *quorumParams) initChain() error {
 }
 
 func (p *quorumParams) initRawParams() error {
-	if err := p.initChain(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.initChain()
 }
 
 func (p *quorumParams) getRequiredFlags() []string {
@@ -79,12 +76,10 @@ func (p *quorumParams) overrideGenesisConfig() error {
 }
 
 func (p *quorumParams) getResult() command.CommandResult {
-	result := &IBFTQuorumResult{
+	return &IBFTQuorumResult{
 		Chain: p.genesisPath,
 		From:  common.JSONNumber{Value: p.from},
 	}
-
-	return result
 }
 
 func appendIBFTQuorum(
