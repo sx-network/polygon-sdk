@@ -449,7 +449,7 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 		}
 
 		status := syncPeer.status
-		// s.logger.Debug("rpc debug - BestPeer", "peer", syncPeer.peer, "number", status.Number)
+		s.logger.Debug("rpc debug - BestPeer", "peer", syncPeer.peer, "number", status.Number)
 		if bestPeer == nil || status.Number > bestBlockNumber {
 			// There is currently no best peer set, or the peer's block number
 			// is currently the highest
@@ -468,6 +468,7 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 	})
 
 	if bestPeer == nil {
+		s.logger.Debug("rpc debug - BestPeer", "output", "nil bestPeer")
 		return nil, nil
 	}
 
@@ -476,6 +477,7 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 		bestPeer = nil
 	}
 
+	s.logger.Debug("rpc debug - BestPeer", "output", bestPeer.peer, "number", bestPeer.status.Number)
 	return bestPeer, big.NewInt(0)
 }
 
