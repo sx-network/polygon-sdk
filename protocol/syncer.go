@@ -95,24 +95,27 @@ func (s *SyncPeer) popBlock(timeout time.Duration) (b *types.Block, err error) {
 	timeoutCh := time.After(timeout)
 
 	for {
-		if !s.IsClosed() {
-			s.enqueueLock.Lock()
-			s.logger.Debug("rpc debug - popBlock()", "s.enqueue length", len(s.enqueue))
-			if len(s.enqueue) != 0 {
-				b, s.enqueue = s.enqueue[0], s.enqueue[1:]
-				s.enqueueLock.Unlock()
-
-				return
-			}
-
-			s.enqueueLock.Unlock()
-			select {
-			case <-s.enqueueCh:
-			case <-timeoutCh:
-				return nil, ErrPopTimeout
-			}
-		} else {
+		if s.IsClosed() {
 			return nil, ErrConnectionClosed
+		}
+
+		s.enqueueLock.Lock()
+		fmt.Println("pop block:", "enqueued=", len(s.enqueue))
+
+		if len(s.enqueue) != 0 {
+			b, s.enqueue = s.enqueue[0], s.enqueue[1:]
+			fmt.Println("pop block:", "number=", b.Number(), "enqueued=", len(s.enqueue))
+			s.enqueueLock.Unlock()
+
+			return
+		}
+
+		s.enqueueLock.Unlock()
+		select {
+		case <-s.enqueueCh:
+			fmt.Println("pop block:", "new block from peer")
+		case <-timeoutCh:
+			return nil, ErrPopTimeout
 		}
 	}
 }
@@ -345,13 +348,25 @@ func (s *Syncer) Broadcast(b *types.Block) {
 		},
 	}
 
-	s.peers.Range(func(peerID, peer interface{}) bool {
+	//	notify all peers of new block
+	go s.requestNotifyFromPeers(req)
+}
+
+func (s *Syncer) requestNotifyFromPeers(req *proto.NotifyReq) {
+	s.peers.Range(func(peerID, syncpeer interface{}) bool {
 		ctx, cancel := context.WithTimeout(context.Background(), notifyTimeout)
 		defer cancel()
 
-		if _, err := peer.(*SyncPeer).client.Notify(ctx, req); err != nil {
+		startTime := time.Now()
+
+		if _, err := syncpeer.(*SyncPeer).client.Notify(ctx, req); err != nil {
 			s.logger.Error("failed to notify", "err", err)
 		}
+
+		duration := time.Since(startTime)
+
+		peerID, _ = peerID.(peer.ID)
+		s.logger.Debug("notify peer", "id", peerID, "duration", duration.Seconds())
 
 		return true
 	})
@@ -474,11 +489,12 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 
 	// Fetch the highest local block height
 	if bestBlockNumber < s.blockchain.Header().Number {
-		bestPeer = nil
+		return nil, nil
 	}
 
-	s.logger.Debug("rpc debug - BestPeer", "output", bestPeer.peer, "number", bestPeer.status.Number)
-	return bestPeer, big.NewInt(0)
+	s.logger.Debug("found best peer", "id", bestPeer.peer.String(), "number", bestBlockNumber)
+
+	return bestPeer, nil
 }
 
 // AddPeer establishes new connection with the given peer
@@ -616,10 +632,14 @@ func (s *Syncer) findCommonAncestor(clt proto.V1Client, status *Status) (*types.
 
 // WatchSyncWithPeer subscribes and adds peer's latest block
 func (s *Syncer) WatchSyncWithPeer(p *SyncPeer, handler func(b *types.Block) bool) {
+	s.logger.Debug("entering watch sync with peer", "id", p.peer.String())
+	defer s.logger.Debug("exiting watch sync")
+
 	// purge from the cache of broadcasted blocks all the ones we have written so far
 	header := s.blockchain.Header()
 	p.purgeBlocks(header.Hash)
 
+	s.logger.Debug("Watch Sync: local block number", header.Number)
 	// listen and enqueue the messages
 	for {
 		if p.IsClosed() {
