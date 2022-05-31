@@ -38,6 +38,7 @@ func TestFilterLog(t *testing.T) {
 								},
 							},
 						},
+						TxHash: hash3,
 					},
 				},
 			},
@@ -56,6 +57,7 @@ func TestFilterLog(t *testing.T) {
 								},
 							},
 						},
+						TxHash: hash3,
 					},
 				},
 			},
@@ -160,7 +162,7 @@ func TestFilterWebsocket(t *testing.T) {
 
 	// we cannot call get filter changes for a websocket filter
 	_, err := m.GetFilterChanges(id)
-	assert.Equal(t, err, ErrFilterDoesNotExists)
+	assert.Equal(t, err, ErrWSFilterDoesNotSupportGetChanges)
 
 	// emit two events
 	store.emitEvent(&mockEvent{

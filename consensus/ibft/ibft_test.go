@@ -343,7 +343,7 @@ func TestTransition_RoundChangeState_CatchupRound(t *testing.T) {
 	m.expect(expectResult{
 		sequence: 1,
 		round:    2,
-		outgoing: 1, // our new round change
+		outgoing: 2, // our new round change
 		state:    AcceptState,
 	})
 }
@@ -690,9 +690,13 @@ func (s *mockSyncer) BulkSyncWithPeer(p *protocol.SyncPeer, handler func(block *
 	return nil
 }
 
-func (s *mockSyncer) WatchSyncWithPeer(p *protocol.SyncPeer, handler func(b *types.Block) bool) {
+func (s *mockSyncer) WatchSyncWithPeer(
+	p *protocol.SyncPeer,
+	newBlockHandler func(b *types.Block) bool,
+	blockTimeout time.Duration,
+) {
 	if s.receivedNewHeadFromPeer != nil {
-		handler(s.receivedNewHeadFromPeer)
+		newBlockHandler(s.receivedNewHeadFromPeer)
 	}
 }
 
@@ -1295,6 +1299,63 @@ func TestGetIBFTForks(t *testing.T) {
 			forks, err := GetIBFTForks(testcase.ibftConfig)
 			assert.Equal(t, testcase.forks, forks)
 			assert.Equal(t, testcase.err, err)
+		})
+	}
+}
+
+func TestQuorumSizeSwitch(t *testing.T) {
+	t.Parallel()
+
+	testTable := []struct {
+		name           string
+		switchBlock    uint64
+		currentBlock   uint64
+		set            ValidatorSet
+		expectedQuorum int
+	}{
+		{
+			"use old quorum calculation",
+			10,
+			5,
+			[]types.Address{
+				types.ZeroAddress,
+				types.ZeroAddress,
+				types.ZeroAddress,
+				types.ZeroAddress,
+				types.ZeroAddress,
+				types.ZeroAddress,
+			},
+			3,
+		},
+		{
+			"use new quorum calculation",
+			10,
+			15,
+			[]types.Address{
+				types.ZeroAddress,
+				types.ZeroAddress,
+				types.ZeroAddress,
+				types.ZeroAddress,
+				types.ZeroAddress,
+				types.ZeroAddress,
+			},
+			4,
+		},
+	}
+
+	for _, test := range testTable {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			ibft := &Ibft{
+				quorumSizeBlockNum: test.switchBlock,
+			}
+
+			assert.Equal(t,
+				test.expectedQuorum,
+				ibft.quorumSize(test.currentBlock)(test.set),
+			)
 		})
 	}
 }

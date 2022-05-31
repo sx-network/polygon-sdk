@@ -57,6 +57,7 @@ type gasPriceAverage struct {
 
 type Verifier interface {
 	VerifyHeader(parent, header *types.Header) error
+	ProcessHeaders(headers []*types.Header) error
 	GetBlockCreator(header *types.Header) (types.Address, error)
 	PreStateCommit(header *types.Header, txn *state.Transition) error
 }
@@ -700,6 +701,11 @@ func (b *Blockchain) WriteBlock(block *types.Block) error {
 		return err
 	}
 
+	//	update snapshot
+	if err := b.consensus.ProcessHeaders([]*types.Header{header}); err != nil {
+		return err
+	}
+
 	b.dispatchEvent(evnt)
 
 	// Update the average gas price
@@ -1092,7 +1098,7 @@ func (b *Blockchain) GetBlockByHash(hash types.Hash, full bool) (*types.Block, b
 		Header: header,
 	}
 
-	if !full {
+	if !full || header.Number == 0 {
 		return block, true
 	}
 

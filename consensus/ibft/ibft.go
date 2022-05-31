@@ -56,7 +56,7 @@ type syncerInterface interface {
 	Start()
 	BestPeer() (*protocol.SyncPeer, *big.Int)
 	BulkSyncWithPeer(p *protocol.SyncPeer, newBlockHandler func(block *types.Block)) error
-	WatchSyncWithPeer(p *protocol.SyncPeer, newBlockHandler func(b *types.Block) bool)
+	WatchSyncWithPeer(p *protocol.SyncPeer, newBlockHandler func(b *types.Block) bool, blockTimeout time.Duration)
 	GetSyncProgression() *progress.Progression
 	Broadcast(b *types.Block)
 }
@@ -79,8 +79,9 @@ type Ibft struct {
 
 	txpool txPoolInterface // Reference to the transaction pool
 
-	store     *snapshotStore // Snapshot store that keeps track of all snapshots
-	epochSize uint64
+	store              *snapshotStore // Snapshot store that keeps track of all snapshots
+	epochSize          uint64
+	quorumSizeBlockNum uint64
 
 	msgQueue *msgQueue     // Structure containing different message queues
 	updateCh chan struct{} // Update channel
@@ -134,11 +135,13 @@ func (i *Ibft) runHook(hookName HookType, height uint64, hookParam interface{}) 
 func Factory(
 	params *consensus.ConsensusParams,
 ) (consensus.Consensus, error) {
-	var epochSize uint64
-	if definedEpochSize, ok := params.Config.Config["epochSize"]; !ok {
-		// No epoch size defined, use the default one
-		epochSize = DefaultEpochSize
-	} else {
+	//	defaults for user set fields in genesis
+	var (
+		epochSize          = uint64(DefaultEpochSize)
+		quorumSizeBlockNum = uint64(0)
+	)
+
+	if definedEpochSize, ok := params.Config.Config["epochSize"]; ok {
 		// Epoch size is defined, use the passed in one
 		readSize, ok := definedEpochSize.(float64)
 		if !ok {
@@ -148,21 +151,32 @@ func Factory(
 		epochSize = uint64(readSize)
 	}
 
+	if rawBlockNum, ok := params.Config.Config["quorumSizeBlockNum"]; ok {
+		//	Block number specified for quorum size switch
+		readBlockNum, ok := rawBlockNum.(float64)
+		if !ok {
+			return nil, errors.New("invalid type assertion")
+		}
+
+		quorumSizeBlockNum = uint64(readBlockNum)
+	}
+
 	p := &Ibft{
-		logger:         params.Logger.Named("ibft"),
-		config:         params.Config,
-		Grpc:           params.Grpc,
-		blockchain:     params.Blockchain,
-		executor:       params.Executor,
-		closeCh:        make(chan struct{}),
-		txpool:         params.Txpool,
-		state:          &currentState{},
-		network:        params.Network,
-		epochSize:      epochSize,
-		sealing:        params.Seal,
-		metrics:        params.Metrics,
-		secretsManager: params.SecretsManager,
-		blockTime:      time.Duration(params.BlockTime) * time.Second,
+		logger:             params.Logger.Named("ibft"),
+		config:             params.Config,
+		Grpc:               params.Grpc,
+		blockchain:         params.Blockchain,
+		executor:           params.Executor,
+		closeCh:            make(chan struct{}),
+		txpool:             params.Txpool,
+		state:              &currentState{},
+		network:            params.Network,
+		epochSize:          epochSize,
+		quorumSizeBlockNum: quorumSizeBlockNum,
+		sealing:            params.Seal,
+		metrics:            params.Metrics,
+		secretsManager:     params.SecretsManager,
+		blockTime:          time.Duration(params.BlockTime) * time.Second,
 	}
 
 	// Initialize the mechanism
@@ -494,7 +508,7 @@ func (i *Ibft) runSyncState() {
 
 				i.setState(AcceptState)
 			} else {
-				i.logger.Debug("rpc debug - nil bestPeer, sleeping..")
+				i.logger.Debug("best peer not found. Retrying in 1 sec...")
 				time.Sleep(1 * time.Second)
 			}
 
@@ -532,7 +546,7 @@ func (i *Ibft) runSyncState() {
 			isValidator = i.isValidSnapshot()
 
 			return isValidator
-		})
+		}, i.blockTime)
 
 		if isValidator {
 			// at this point, we are in sync with the latest chain we know of
@@ -946,12 +960,12 @@ func (i *Ibft) runValidateState() {
 			panic(fmt.Sprintf("BUG: %s", reflect.TypeOf(msg.Type)))
 		}
 
-		if i.state.numPrepared() > i.state.NumValid() {
+		if i.state.numPrepared() >= i.quorumSize(i.state.view.Sequence)(i.state.validators) {
 			// we have received enough pre-prepare messages
 			sendCommit()
 		}
 
-		if i.state.numCommitted() > i.state.NumValid() {
+		if i.state.numCommitted() >= i.quorumSize(i.state.view.Sequence)(i.state.validators) {
 			// we have received enough commit messages
 			sendCommit()
 
@@ -1138,17 +1152,15 @@ func (i *Ibft) runRoundChangeState() {
 		num := i.state.AddRoundMessage(msg)
 		i.logger.Debug("dgk - roundchange state received msg", "roundLength", num, "round", msg.View.Round, "from", msg.From)
 
-		if num == i.state.NumValid() {
+		if num == i.state.validators.MaxFaultyNodes()+1 && i.state.view.Round < msg.View.Round {
+			// weak certificate, try to catch up if our round number is smaller
+			// update timer
+			timeout = exponentialTimeout(i.state.view.Round)
+			sendRoundChange(msg.View.Round)
+		} else if num == i.quorumSize(i.state.view.Sequence)(i.state.validators) {
 			// start a new round immediately
 			i.state.view.Round = msg.View.Round
 			i.setState(AcceptState)
-		} else if num == i.state.validators.MaxFaultyNodes()+1 {
-			// weak certificate, try to catch up if our round number is smaller
-			if i.state.view.Round < msg.View.Round {
-				// update timer
-				timeout = exponentialTimeout(i.state.view.Round)
-				sendRoundChange(msg.View.Round)
-			}
 		}
 	}
 }
@@ -1289,16 +1301,27 @@ func (i *Ibft) VerifyHeader(parent, header *types.Header) error {
 	}
 
 	// verify the committed seals
-	if err := verifyCommitedFields(snap, header); err != nil {
-		return err
-	}
-
-	// process the new block in order to update the snapshot
-	if err := i.processHeaders([]*types.Header{header}); err != nil {
+	if err := verifyCommitedFields(snap, header, i.quorumSize(header.Number)); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+//	quorumSize returns a callback that when executed on a ValidatorSet computes
+//	number of votes required to reach quorum based on the size of the set.
+//	The blockNumber argument indicates which formula was used to calculate the result (see PRs #513, #549)
+func (i *Ibft) quorumSize(blockNumber uint64) QuorumImplementation {
+	if blockNumber < i.quorumSizeBlockNum {
+		return LegacyQuorumSize
+	}
+
+	return OptimalQuorumSize
+}
+
+// ProcessHeaders updates the snapshot based on previously verified headers
+func (i *Ibft) ProcessHeaders(headers []*types.Header) error {
+	return i.processHeaders(headers)
 }
 
 // GetBlockCreator retrieves the block signer from the extra data field

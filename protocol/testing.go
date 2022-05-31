@@ -298,7 +298,7 @@ func (b *mockBlockchain) GetReceiptsByHash(types.Hash) ([]*types.Receipt, error)
 }
 
 func (b *mockBlockchain) GetBodyByHash(types.Hash) (*types.Body, bool) {
-	panic("not implement")
+	return &types.Body{}, true
 }
 
 func (b *mockBlockchain) GetHeaderByHash(h types.Hash) (*types.Header, bool) {
@@ -352,10 +352,9 @@ func NewMockSubscription() *mockSubscription {
 }
 
 func (s *mockSubscription) AppendBlock(block *types.Block) {
-	status := HeaderToStatus(block.Header)
 	s.eventCh <- &blockchain.Event{
-		Difficulty: status.Difficulty,
 		NewChain:   []*types.Header{block.Header},
+		Difficulty: HeaderToStatus(block.Header).Difficulty,
 	}
 }
 
