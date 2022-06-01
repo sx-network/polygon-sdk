@@ -307,6 +307,7 @@ func (t *Transition) Commit() (Snapshot, types.Hash) {
 func (t *Transition) subGasPool(amount uint64) error {
 	if t.gasPool < amount {
 		t.logger.Debug("rpc debug - executer.subGasPool() - Block gas limit reached", "gasPool", t.gasPool, "msgGas", amount)
+
 		return ErrBlockLimitReached
 	}
 

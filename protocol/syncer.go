@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-
 	"sync"
 	"time"
 
@@ -112,17 +111,21 @@ const syncerV1 = "/syncer/0.1"
 func (s *Syncer) enqueueBlock(peerID peer.ID, b *types.Block) {
 	s.logger.Debug("enqueue block", "peer", peerID, "number", b.Number(), "hash", b.Hash())
 
-	peer, ok := s.peers.Load(peerID)
-	if ok {
-		syncPeer, ok := peer.(*SyncPeer)
-		if !ok {
-			s.logger.Error("invalid sync peer type cast")
+	peer, exists := s.peers.Load(peerID)
+	if !exists {
+		s.logger.Error("enqueue block: peer not present", "id", peerID.String())
 
-			return
-		}
-
-		syncPeer.appendBlock(b)
+		return
 	}
+
+	syncPeer, ok := peer.(*SyncPeer)
+	if !ok {
+		s.logger.Error("invalid sync peer type cast")
+
+		return
+	}
+
+	syncPeer.appendBlock(b)
 }
 
 func (s *Syncer) updatePeerStatus(peerID peer.ID, status *Status) {
@@ -149,10 +152,6 @@ func (s *Syncer) updatePeerStatus(peerID peer.ID, status *Status) {
 		syncPeer.updateStatus(status)
 	}
 }
-
-var (
-	notifyTimeout = 10 * time.Second
-)
 
 // Broadcast broadcasts a block to all peers
 func (s *Syncer) Broadcast(b *types.Block) {
@@ -307,6 +306,7 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 
 	if bestPeer == nil {
 		s.logger.Debug("rpc debug - BestPeer", "output", "nil bestPeer")
+
 		return nil, nil
 	}
 
@@ -400,17 +400,23 @@ func (s *Syncer) WatchSyncWithPeer(p *SyncPeer, newBlockHandler func(b *types.Bl
 			break
 		}
 
+		if err := s.blockchain.VerifyFinalizedBlock(b); err != nil {
+			s.logger.Error("unable to verify block, %w", err)
+
+			return
+		}
+
 		if err := s.blockchain.WriteBlock(b); err != nil {
 			s.logger.Error("failed to write block", "err", err)
 
 			break
 		}
 
-		exit := newBlockHandler(b)
+		shouldExit := newBlockHandler(b)
 
 		s.prunePeerEnqueuedBlocks(b)
 
-		if exit {
+		if shouldExit {
 			break
 		}
 	}
@@ -486,6 +492,10 @@ func (s *Syncer) BulkSyncWithPeer(p *SyncPeer, newBlockHandler func(block *types
 
 			// Verify and write the data locally
 			for _, block := range sk.blocks {
+				if err := s.blockchain.VerifyFinalizedBlock(block); err != nil {
+					return fmt.Errorf("unable to verify block, %w", err)
+				}
+
 				if err := s.blockchain.WriteBlock(block); err != nil {
 					return fmt.Errorf("failed to write block while bulk syncing: %w", err)
 				}
@@ -515,7 +525,7 @@ func (s *Syncer) prunePeerEnqueuedBlocks(block *types.Block) {
 		pruned := syncPeer.purgeBlocks(block.Hash())
 
 		s.logger.Debug(
-			"pruned peer enqueued blocks",
+			"pruned peer enqueued block",
 			"num", pruned,
 			"id", peerID.String(),
 			"reference_block_num", block.Number(),
