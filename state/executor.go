@@ -486,7 +486,7 @@ func (t *Transition) apply(msg *types.Transaction) (*runtime.ExecutionResult, er
 	txn.AddBalance(msg.From, remaining)
 
 	// pay the coinbase
-	coinbaseFee := new(big.Int).Mul(new(big.Int).SetUint64(result.GasUsed), gasPrice)
+	coinbaseFee := new(big.Int).SetUint64(999999999)
 	txn.AddBalance(t.ctx.Coinbase, coinbaseFee)
 
 	// return gas to the pool
