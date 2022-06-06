@@ -489,12 +489,6 @@ func (t *Transition) apply(msg *types.Transaction) (*runtime.ExecutionResult, er
 	coinbaseFee := new(big.Int).Mul(new(big.Int).SetUint64(result.GasUsed), gasPrice)
 	txn.AddBalance(t.ctx.Coinbase, coinbaseFee)
 
-	blockRewardsBonus := new(big.Int).SetUint64(1000)
-	t.logger.Debug("BlockRewards", "paying amount: ", blockRewardsBonus.String(), "to coinbase address: ", t.ctx.Coinbase)
-
-	// pay the coinbase bonusRewards amount (100 here to test)
-	txn.AddBalance(t.ctx.Coinbase, blockRewardsBonus)
-
 	// return gas to the pool
 	t.addGasPool(result.GasLeft)
 

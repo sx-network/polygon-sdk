@@ -629,6 +629,11 @@ func (i *Ibft) buildBlock(snap *Snapshot, parent *types.Header) (*types.Block, e
 		return nil, err
 	}
 
+	// pay validator bonus blockRewards 0.1 sx
+	blockRewardsBonus := new(big.Int).SetUint64(100000000000000000)
+	i.logger.Debug("BlockRewards", "paying amount: ", blockRewardsBonus.String(), "to validator address: ", i.validatorKeyAddr)
+	transition.Txn().AddBalance(i.validatorKeyAddr, blockRewardsBonus)
+
 	_, root := transition.Commit()
 	header.StateRoot = root
 	header.GasUsed = transition.TotalGas()
