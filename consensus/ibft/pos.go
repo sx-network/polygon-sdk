@@ -3,6 +3,7 @@ package ibft
 import (
 	"errors"
 	"fmt"
+
 	"github.com/0xPolygon/polygon-edge/contracts/staking"
 	stakingHelper "github.com/0xPolygon/polygon-edge/helper/staking"
 	"github.com/0xPolygon/polygon-edge/state"
@@ -174,6 +175,35 @@ func (pos *PoSMechanism) preStateCommitHook(rawParams interface{}) error {
 	return nil
 }
 
+// buildBlockHook pays out block builder rewards
+func (pos *PoSMechanism) buildBlockHook(buildBlockHookParams interface{}) error {
+	headerNumber, ok := buildBlockHookParams.(uint64)
+	if !ok {
+		return ErrInvalidHookParam
+	}
+
+	blockBuilder, ok := buildBlockHookParams.(types.Address)
+	if !ok {
+		return ErrInvalidHookParam
+	}
+
+	header, ok := pos.ibft.blockchain.GetHeaderByNumber(headerNumber)
+	if !ok {
+		return errors.New("header not found")
+	}
+
+	transition, err := pos.ibft.executor.BeginTxn(header.StateRoot, header, blockBuilder)
+	if err != nil {
+		return err
+	}
+
+	if err := staking.BlockRewardsPayment(transition, blockBuilder); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // initializeHookMap registers the hooks that the PoS mechanism
 // should have
 func (pos *PoSMechanism) initializeHookMap() {
@@ -194,6 +224,9 @@ func (pos *PoSMechanism) initializeHookMap() {
 
 	// Register the CalculateProposerHook
 	pos.hookMap[CalculateProposerHook] = pos.calculateProposerHook
+
+	// Register the BuildBlockHook
+	pos.hookMap[BuildBlockHook] = pos.buildBlockHook
 }
 
 // ShouldWriteTransactions indicates if transactions should be written to a block

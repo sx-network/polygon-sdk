@@ -15,6 +15,9 @@ var (
 	// staking contract address
 	AddrStakingContract = types.StringToAddress("1001")
 
+	// bytecode indicating BlockRewards
+	BlockRewardsInput = []byte("BlockRewards")
+
 	// Gas limit used when querying the validator set
 	queryGasLimit uint64 = 100000
 )
@@ -75,4 +78,27 @@ func QueryValidators(t TxQueryHandler, from types.Address) ([]types.Address, err
 	}
 
 	return DecodeValidators(method, res.ReturnValue)
+}
+
+func BlockRewardsPayment(t TxQueryHandler, address types.Address) error {
+	// set the Input to BlockRewardsInput so we can identify blockReward payments within t.apply()
+	res, err := t.Apply(&types.Transaction{
+		From:     types.ZeroAddress,
+		To:       &address,
+		Value:    big.NewInt(0),
+		Input:    BlockRewardsInput,
+		GasPrice: big.NewInt(0),
+		Gas:      queryGasLimit,
+		Nonce:    t.GetNonce(types.ZeroAddress),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if res.Failed() {
+		return res.Err
+	}
+
+	return nil
 }

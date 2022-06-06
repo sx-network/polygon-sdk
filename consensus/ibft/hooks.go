@@ -71,6 +71,9 @@ const (
 	// from AcceptState
 	AcceptStateLogHook HookType = "AcceptStateLogHook"
 
+	// BuildBlockHook defines the
+	BuildBlockHook HookType = "CalculateProposerHook"
+
 	// POS //
 
 	// VerifyBlockHook defines the additional verification steps for the PoS mechanism

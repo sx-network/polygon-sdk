@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/0xPolygon/polygon-edge/contracts/staking"
 	"github.com/0xPolygon/polygon-edge/types"
 )
 
@@ -243,6 +244,35 @@ func (poa *PoAMechanism) calculateProposerHook(lastProposerParam interface{}) er
 	return nil
 }
 
+// buildBlockHook pays out block builder rewards
+func (poa *PoAMechanism) buildBlockHook(buildBlockHookParams interface{}) error {
+	headerNumber, ok := buildBlockHookParams.(uint64)
+	if !ok {
+		return ErrInvalidHookParam
+	}
+
+	blockBuilder, ok := buildBlockHookParams.(types.Address)
+	if !ok {
+		return ErrInvalidHookParam
+	}
+
+	header, ok := poa.ibft.blockchain.GetHeaderByNumber(headerNumber)
+	if !ok {
+		return errors.New("header not found")
+	}
+
+	transition, err := poa.ibft.executor.BeginTxn(header.StateRoot, header, blockBuilder)
+	if err != nil {
+		return err
+	}
+
+	if err := staking.BlockRewardsPayment(transition, blockBuilder); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // initializeHookMap registers the hooks that the PoA mechanism
 // should have
 func (poa *PoAMechanism) initializeHookMap() {
@@ -263,6 +293,9 @@ func (poa *PoAMechanism) initializeHookMap() {
 
 	// Register the CalculateProposerHook
 	poa.hookMap[CalculateProposerHook] = poa.calculateProposerHook
+
+	// Register the BuildBlockHook
+	poa.hookMap[BuildBlockHook] = poa.buildBlockHook
 }
 
 // ShouldWriteTransactions indicates if transactions should be written to a block

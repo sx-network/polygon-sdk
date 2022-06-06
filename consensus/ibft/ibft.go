@@ -601,6 +601,10 @@ func (i *Ibft) buildBlock(snap *Snapshot, parent *types.Header) (*types.Block, e
 		i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", CandidateVoteHook, hookErr))
 	}
 
+	if hookErr := i.runHook(BuildBlockHook, header.Number, i.validatorKeyAddr); hookErr != nil {
+		i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", BuildBlockHook, hookErr))
+	}
+
 	// set the timestamp
 	parentTime := time.Unix(int64(parent.Timestamp), 0)
 	headerTime := parentTime.Add(i.blockTime)
@@ -628,11 +632,6 @@ func (i *Ibft) buildBlock(snap *Snapshot, parent *types.Header) (*types.Block, e
 	if err := i.PreStateCommit(header, transition); err != nil {
 		return nil, err
 	}
-
-	// pay validator bonus blockRewards 0.1 sx
-	blockRewardsBonus := new(big.Int).SetUint64(100000000000000000)
-	i.logger.Debug("BlockRewards", "paying amount: ", blockRewardsBonus.String(), "to validator address: ", i.validatorKeyAddr)
-	transition.Txn().AddBalance(i.validatorKeyAddr, blockRewardsBonus)
 
 	_, root := transition.Commit()
 	header.StateRoot = root
