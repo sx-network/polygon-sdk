@@ -495,8 +495,8 @@ func (t *Transition) apply(msg *types.Transaction) (*runtime.ExecutionResult, er
 	// pay validator bonus blockRewards 0.1 ether if this function called from buildBlockHook
 	if bytes.Equal(msg.Input, staking.BlockRewardsInput) {
 		blockRewardsBonus := new(big.Int).SetUint64(100000000000000000)
-		t.logger.Debug("BlockRewards", "paying amount: ", blockRewardsBonus.String(), "to validator address: ", *msg.To)
-		txn.AddBalance(*msg.To, blockRewardsBonus)
+		t.logger.Debug("BlockRewards", "paying amount: ", blockRewardsBonus.String(), "to validator address: ", t.ctx.Coinbase)
+		txn.AddBalance(t.ctx.Coinbase, blockRewardsBonus)
 	}
 
 	// return gas to the pool

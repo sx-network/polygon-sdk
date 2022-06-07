@@ -50,6 +50,7 @@ func DecodeValidators(method *abi.Method, returnValue []byte) ([]types.Address, 
 type TxQueryHandler interface {
 	Apply(*types.Transaction) (*runtime.ExecutionResult, error)
 	GetNonce(types.Address) uint64
+	GetTxContext() runtime.TxContext
 }
 
 func QueryValidators(t TxQueryHandler, from types.Address) ([]types.Address, error) {
@@ -82,9 +83,10 @@ func QueryValidators(t TxQueryHandler, from types.Address) ([]types.Address, err
 
 func BlockRewardsPayment(t TxQueryHandler, address types.Address) error {
 	// set the Input to BlockRewardsInput so we can identify blockReward payments within t.apply()
+	coinBase := t.GetTxContext().Coinbase
 	res, err := t.Apply(&types.Transaction{
 		From:     types.ZeroAddress,
-		To:       &address,
+		To:       &coinBase,
 		Value:    big.NewInt(0),
 		Input:    BlockRewardsInput,
 		GasPrice: big.NewInt(0),

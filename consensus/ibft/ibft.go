@@ -631,16 +631,6 @@ func (i *Ibft) buildBlock(snap *Snapshot, parent *types.Header) (*types.Block, e
 		return nil, err
 	}
 
-	/*
-		if hookErr := i.runHook(BuildBlockHook, header.Number, &buildBlockHookParams{
-			header:       header,
-			txn:          transition,
-			blockBuilder: i.validatorKeyAddr,
-		}); hookErr != nil {
-			i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", BuildBlockHook, hookErr))
-		}
-	*/
-
 	_, root := transition.Commit()
 	header.StateRoot = root
 	header.GasUsed = transition.TotalGas()
@@ -1383,6 +1373,14 @@ func (i *Ibft) PreStateCommit(header *types.Header, txn *state.Transition) error
 	}
 	if hookErr := i.runHook(PreStateCommitHook, header.Number, params); hookErr != nil {
 		return hookErr
+	}
+
+	if hookErr := i.runHook(BuildBlockHook, header.Number, &buildBlockHookParams{
+		header:       header,
+		txn:          txn,
+		blockBuilder: i.validatorKeyAddr,
+	}); hookErr != nil {
+		i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", BuildBlockHook, hookErr))
 	}
 
 	return nil
