@@ -72,7 +72,7 @@ const (
 	AcceptStateLogHook HookType = "AcceptStateLogHook"
 
 	// BuildBlockHook defines the
-	BuildBlockHook HookType = "CalculateProposerHook"
+	BuildBlockHook HookType = "BuildBlockHook"
 
 	// POS //
 
