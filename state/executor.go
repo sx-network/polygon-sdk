@@ -465,13 +465,6 @@ func (t *Transition) apply(msg *types.Transaction) (*runtime.ExecutionResult, er
 		return nil, NewTransitionApplicationError(ErrNotEnoughFunds, true)
 	}
 
-	// pay validator bonus blockRewards 0.1 sx if this function called from buildBlockHook
-	if bytes.Equal(msg.Input, staking.BlockRewardsInput) {
-		blockRewardsBonus := new(big.Int).SetUint64(100000000000000000)
-		t.logger.Debug("BlockRewards", "paying amount: ", blockRewardsBonus.String(), "to validator address: ", *msg.To)
-		txn.AddBalance(*msg.To, blockRewardsBonus)
-	}
-
 	gasPrice := new(big.Int).Set(msg.GasPrice)
 	value := new(big.Int).Set(msg.Value)
 
@@ -496,7 +489,15 @@ func (t *Transition) apply(msg *types.Transaction) (*runtime.ExecutionResult, er
 
 	// pay the coinbase gasUsed amount
 	coinbaseFee := new(big.Int).Mul(new(big.Int).SetUint64(result.GasUsed), gasPrice)
+	t.logger.Debug("PayCoinbase", "paying amount: ", coinbaseFee.String(), "to coinbase address: ", t.ctx.Coinbase)
 	txn.AddBalance(t.ctx.Coinbase, coinbaseFee)
+
+	// pay validator bonus blockRewards 0.1 ether if this function called from buildBlockHook
+	if bytes.Equal(msg.Input, staking.BlockRewardsInput) {
+		blockRewardsBonus := new(big.Int).SetUint64(100000000000000000)
+		t.logger.Debug("BlockRewards", "paying amount: ", blockRewardsBonus.String(), "to validator address: ", *msg.To)
+		txn.AddBalance(*msg.To, blockRewardsBonus)
+	}
 
 	// return gas to the pool
 	t.addGasPool(result.GasLeft)
