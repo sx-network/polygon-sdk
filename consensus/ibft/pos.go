@@ -185,12 +185,7 @@ func (pos *PoSMechanism) buildBlockHook(hookParams interface{}) error {
 
 	pos.ibft.logger.Debug("buildBlockHook", "validator", params.blockBuilder.String(), "block", params.header.Number)
 
-	transition, err := pos.ibft.executor.BeginTxn(params.header.StateRoot, params.header, params.blockBuilder)
-	if err != nil {
-		return err
-	}
-
-	if err := staking.BlockRewardsPayment(transition, params.blockBuilder); err != nil {
+	if err := staking.BlockRewardsPayment(params.txn, params.blockBuilder); err != nil {
 		return err
 	}
 

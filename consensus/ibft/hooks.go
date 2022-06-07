@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/0xPolygon/polygon-edge/helper/common"
+	"github.com/0xPolygon/polygon-edge/state"
 	"github.com/0xPolygon/polygon-edge/types"
 )
 
@@ -190,5 +191,6 @@ var mechanismBackends = map[MechanismType]ConsensusMechanismFactory{
 // referenced within PoA and PoS, buildBlockHookParams are the params passed into the buildBlockHook
 type buildBlockHookParams struct {
 	header       *types.Header
+	txn          *state.Transition
 	blockBuilder types.Address
 }
