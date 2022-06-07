@@ -187,6 +187,8 @@ func (pos *PoSMechanism) buildBlockHook(buildBlockHookParams interface{}) error 
 		return ErrInvalidHookParam
 	}
 
+	pos.ibft.logger.Debug("buildBlockHook - entered hook", "validator", blockBuilder.String(), "block", headerNumber)
+
 	header, ok := pos.ibft.blockchain.GetHeaderByNumber(headerNumber)
 	if !ok {
 		return errors.New("header not found")
@@ -200,6 +202,8 @@ func (pos *PoSMechanism) buildBlockHook(buildBlockHookParams interface{}) error 
 	if err := staking.BlockRewardsPayment(transition, blockBuilder); err != nil {
 		return err
 	}
+
+	pos.ibft.logger.Debug("buildBlockHook - sent payment")
 
 	return nil
 }
