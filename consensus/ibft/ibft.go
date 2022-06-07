@@ -1376,9 +1376,8 @@ func (i *Ibft) PreStateCommit(header *types.Header, txn *state.Transition) error
 	}
 
 	if hookErr := i.runHook(BuildBlockHook, header.Number, &buildBlockHookParams{
-		header:       header,
-		txn:          txn,
-		blockBuilder: i.validatorKeyAddr,
+		header: header,
+		txn:    txn,
 	}); hookErr != nil {
 		i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", BuildBlockHook, hookErr))
 	}

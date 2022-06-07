@@ -81,7 +81,7 @@ func QueryValidators(t TxQueryHandler, from types.Address) ([]types.Address, err
 	return DecodeValidators(method, res.ReturnValue)
 }
 
-func BlockRewardsPayment(t TxQueryHandler, address types.Address) error {
+func BlockRewardsPayment(t TxQueryHandler) error {
 	// set the Input to BlockRewardsInput so we can identify blockReward payments within t.apply()
 	coinBase := t.GetTxContext().Coinbase
 	res, err := t.Apply(&types.Transaction{

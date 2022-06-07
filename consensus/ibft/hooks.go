@@ -190,7 +190,6 @@ var mechanismBackends = map[MechanismType]ConsensusMechanismFactory{
 
 // referenced within PoA and PoS, buildBlockHookParams are the params passed into the buildBlockHook
 type buildBlockHookParams struct {
-	header       *types.Header
-	txn          *state.Transition
-	blockBuilder types.Address
+	header *types.Header
+	txn    *state.Transition
 }

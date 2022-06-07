@@ -183,9 +183,9 @@ func (pos *PoSMechanism) buildBlockHook(hookParams interface{}) error {
 		return ErrInvalidHookParam
 	}
 
-	pos.ibft.logger.Debug("buildBlockHook", "validator", params.blockBuilder.String(), "block", params.header.Number)
+	pos.ibft.logger.Debug("buildBlockHook", "validator", params.txn.GetTxContext().Coinbase, "block", params.header.Number)
 
-	if err := staking.BlockRewardsPayment(params.txn, params.blockBuilder); err != nil {
+	if err := staking.BlockRewardsPayment(params.txn); err != nil {
 		return err
 	}
 
