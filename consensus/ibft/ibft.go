@@ -586,6 +586,8 @@ func (i *Ibft) buildBlock(snap *Snapshot, parent *types.Header) (*types.Block, e
 		GasLimit:   parent.GasLimit, // Inherit from parent for now, will need to adjust dynamically later.
 	}
 
+	i.logger.Debug("buildBlock - building block..", "validator", i.validatorKeyAddr)
+
 	// calculate gas limit based on parent header
 	gasLimit, err := i.blockchain.CalculateGasLimit(header.Number)
 	if err != nil {
@@ -604,6 +606,8 @@ func (i *Ibft) buildBlock(snap *Snapshot, parent *types.Header) (*types.Block, e
 	if hookErr := i.runHook(BuildBlockHook, header.Number, i.validatorKeyAddr); hookErr != nil {
 		i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", BuildBlockHook, hookErr))
 	}
+
+	i.logger.Debug("buildBlock - buildBlockHook called")
 
 	// set the timestamp
 	parentTime := time.Unix(int64(parent.Timestamp), 0)
