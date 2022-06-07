@@ -631,13 +631,15 @@ func (i *Ibft) buildBlock(snap *Snapshot, parent *types.Header) (*types.Block, e
 		return nil, err
 	}
 
-	if hookErr := i.runHook(BuildBlockHook, header.Number, &buildBlockHookParams{
-		header:       header,
-		txn:          transition,
-		blockBuilder: i.validatorKeyAddr,
-	}); hookErr != nil {
-		i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", BuildBlockHook, hookErr))
-	}
+	/*
+		if hookErr := i.runHook(BuildBlockHook, header.Number, &buildBlockHookParams{
+			header:       header,
+			txn:          transition,
+			blockBuilder: i.validatorKeyAddr,
+		}); hookErr != nil {
+			i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", BuildBlockHook, hookErr))
+		}
+	*/
 
 	_, root := transition.Commit()
 	header.StateRoot = root
