@@ -176,37 +176,23 @@ func (pos *PoSMechanism) preStateCommitHook(rawParams interface{}) error {
 }
 
 // buildBlockHook pays out block builder rewards
-func (pos *PoSMechanism) buildBlockHook(buildBlockHookParams interface{}) error {
-
-	pos.ibft.logger.Debug("buildBlockHook - entered hook", "validator")
-
-	headerNumber, ok := buildBlockHookParams.(uint64)
+func (pos *PoSMechanism) buildBlockHook(hookParams interface{}) error {
+	// Cast the params to buildBlockHookParams
+	params, ok := hookParams.(*buildBlockHookParams)
 	if !ok {
 		return ErrInvalidHookParam
 	}
 
-	blockBuilder, ok := buildBlockHookParams.(types.Address)
-	if !ok {
-		return ErrInvalidHookParam
-	}
+	pos.ibft.logger.Debug("buildBlockHook", "validator", params.blockBuilder.String(), "block", params.header.Number)
 
-	pos.ibft.logger.Debug("buildBlockHook - mid function", "validator", blockBuilder.String(), "block", headerNumber)
-
-	header, ok := pos.ibft.blockchain.GetHeaderByNumber(headerNumber)
-	if !ok {
-		return errors.New("header not found")
-	}
-
-	transition, err := pos.ibft.executor.BeginTxn(header.StateRoot, header, blockBuilder)
+	transition, err := pos.ibft.executor.BeginTxn(params.header.StateRoot, params.header, params.blockBuilder)
 	if err != nil {
 		return err
 	}
 
-	if err := staking.BlockRewardsPayment(transition, blockBuilder); err != nil {
+	if err := staking.BlockRewardsPayment(transition, params.blockBuilder); err != nil {
 		return err
 	}
-
-	pos.ibft.logger.Debug("buildBlockHook - sent payment")
 
 	return nil
 }

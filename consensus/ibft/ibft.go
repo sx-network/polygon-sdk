@@ -603,7 +603,10 @@ func (i *Ibft) buildBlock(snap *Snapshot, parent *types.Header) (*types.Block, e
 		i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", CandidateVoteHook, hookErr))
 	}
 
-	if hookErr := i.runHook(BuildBlockHook, header.Number, i.validatorKeyAddr); hookErr != nil {
+	if hookErr := i.runHook(BuildBlockHook, header.Number, &buildBlockHookParams{
+		header:       header,
+		blockBuilder: i.validatorKeyAddr,
+	}); hookErr != nil {
 		i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", BuildBlockHook, hookErr))
 	}
 

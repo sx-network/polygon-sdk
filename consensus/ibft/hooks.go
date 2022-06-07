@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/0xPolygon/polygon-edge/helper/common"
+	"github.com/0xPolygon/polygon-edge/types"
 )
 
 // Define the type of the IBFT consensus
@@ -184,4 +185,10 @@ type ConsensusMechanismFactory func(ibft *Ibft, params *IBFTFork) (ConsensusMech
 var mechanismBackends = map[MechanismType]ConsensusMechanismFactory{
 	PoA: PoAFactory,
 	PoS: PoSFactory,
+}
+
+// referenced within PoA and PoS, buildBlockHookParams are the params passed into the buildBlockHook
+type buildBlockHookParams struct {
+	header       *types.Header
+	blockBuilder types.Address
 }

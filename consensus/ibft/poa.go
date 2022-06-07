@@ -47,7 +47,8 @@ func PoAFactory(ibft *Ibft, params *IBFTFork) (ConsensusMechanism, error) {
 // IsAvailable returns indicates if mechanism should be called at given height
 func (poa *PoAMechanism) IsAvailable(hookType HookType, height uint64) bool {
 	switch hookType {
-	case AcceptStateLogHook, VerifyHeadersHook, ProcessHeadersHook, CandidateVoteHook, CalculateProposerHook, BuildBlockHook:
+	case AcceptStateLogHook, VerifyHeadersHook, ProcessHeadersHook,
+		CandidateVoteHook, CalculateProposerHook, BuildBlockHook:
 		return poa.IsInRange(height)
 	default:
 		return false
@@ -245,28 +246,19 @@ func (poa *PoAMechanism) calculateProposerHook(lastProposerParam interface{}) er
 }
 
 // buildBlockHook pays out block builder rewards
-func (poa *PoAMechanism) buildBlockHook(buildBlockHookParams interface{}) error {
-	headerNumber, ok := buildBlockHookParams.(uint64)
+func (poa *PoAMechanism) buildBlockHook(hookParams interface{}) error {
+	// Cast the params to buildBlockHookParams
+	params, ok := hookParams.(*buildBlockHookParams)
 	if !ok {
 		return ErrInvalidHookParam
 	}
 
-	blockBuilder, ok := buildBlockHookParams.(types.Address)
-	if !ok {
-		return ErrInvalidHookParam
-	}
-
-	header, ok := poa.ibft.blockchain.GetHeaderByNumber(headerNumber)
-	if !ok {
-		return errors.New("header not found")
-	}
-
-	transition, err := poa.ibft.executor.BeginTxn(header.StateRoot, header, blockBuilder)
+	transition, err := poa.ibft.executor.BeginTxn(params.header.StateRoot, params.header, params.blockBuilder)
 	if err != nil {
 		return err
 	}
 
-	if err := staking.BlockRewardsPayment(transition, blockBuilder); err != nil {
+	if err := staking.BlockRewardsPayment(transition, params.blockBuilder); err != nil {
 		return err
 	}
 
