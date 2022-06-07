@@ -177,6 +177,9 @@ func (pos *PoSMechanism) preStateCommitHook(rawParams interface{}) error {
 
 // buildBlockHook pays out block builder rewards
 func (pos *PoSMechanism) buildBlockHook(buildBlockHookParams interface{}) error {
+
+	pos.ibft.logger.Debug("buildBlockHook - entered hook", "validator")
+
 	headerNumber, ok := buildBlockHookParams.(uint64)
 	if !ok {
 		return ErrInvalidHookParam
@@ -187,7 +190,7 @@ func (pos *PoSMechanism) buildBlockHook(buildBlockHookParams interface{}) error 
 		return ErrInvalidHookParam
 	}
 
-	pos.ibft.logger.Debug("buildBlockHook - entered hook", "validator", blockBuilder.String(), "block", headerNumber)
+	pos.ibft.logger.Debug("buildBlockHook - mid function", "validator", blockBuilder.String(), "block", headerNumber)
 
 	header, ok := pos.ibft.blockchain.GetHeaderByNumber(headerNumber)
 	if !ok {
