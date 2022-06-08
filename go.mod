@@ -41,7 +41,6 @@ require (
 )
 
 require (
-	cloud.google.com/go v0.100.2 // indirect
 	cloud.google.com/go/secretmanager v1.4.0
 	github.com/armon/go-metrics v0.3.10 // indirect
 	github.com/aws/aws-sdk-go v1.44.14
@@ -53,6 +52,7 @@ require (
 	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
+	github.com/umbracle/ethgo v0.1.2
 	github.com/valyala/fastjson v1.6.3 // indirect
 	go.uber.org/zap v1.20.0 // indirect
 	golang.org/x/tools v0.1.9 // indirect

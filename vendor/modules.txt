@@ -1,5 +1,4 @@
 # cloud.google.com/go v0.100.2
-## explicit
 cloud.google.com/go
 # cloud.google.com/go/compute v1.5.0
 cloud.google.com/go/compute/metadata
@@ -65,6 +64,15 @@ github.com/beorn7/perks/quantile
 # github.com/btcsuite/btcd v0.22.1
 ## explicit
 github.com/btcsuite/btcd/btcec
+github.com/btcsuite/btcd/chaincfg
+github.com/btcsuite/btcd/wire
+# github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1
+github.com/btcsuite/btcd/chaincfg/chainhash
+# github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
+github.com/btcsuite/btcutil
+github.com/btcsuite/btcutil/base58
+github.com/btcsuite/btcutil/bech32
+github.com/btcsuite/btcutil/hdkeychain
 # github.com/cenkalti/backoff/v3 v3.0.0
 github.com/cenkalti/backoff/v3
 # github.com/cespare/xxhash/v2 v2.1.2
@@ -574,6 +582,19 @@ github.com/syndtr/goleveldb/leveldb/opt
 github.com/syndtr/goleveldb/leveldb/storage
 github.com/syndtr/goleveldb/leveldb/table
 github.com/syndtr/goleveldb/leveldb/util
+# github.com/tyler-smith/go-bip39 v1.1.0
+github.com/tyler-smith/go-bip39
+github.com/tyler-smith/go-bip39/wordlists
+# github.com/umbracle/ethgo v0.1.2
+## explicit
+github.com/umbracle/ethgo
+github.com/umbracle/ethgo/abi
+github.com/umbracle/ethgo/contract
+github.com/umbracle/ethgo/jsonrpc
+github.com/umbracle/ethgo/jsonrpc/codec
+github.com/umbracle/ethgo/jsonrpc/transport
+github.com/umbracle/ethgo/keystore
+github.com/umbracle/ethgo/wallet
 # github.com/umbracle/fastrlp v0.0.0-20211229195328-c1416904ae17
 ## explicit
 github.com/umbracle/fastrlp
@@ -647,6 +668,7 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/poly1305
 golang.org/x/crypto/ripemd160
 golang.org/x/crypto/salsa20/salsa
+golang.org/x/crypto/scrypt
 golang.org/x/crypto/sha3
 # golang.org/x/mod v0.5.1
 golang.org/x/mod/internal/lazyregexp

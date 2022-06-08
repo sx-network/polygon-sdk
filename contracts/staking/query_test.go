@@ -113,6 +113,14 @@ func Test_decodeValidators(t *testing.T) {
 	}
 }
 
+func TestGetDecimals(t *testing.T) {
+	t.Run("It should interact with contract", func(t *testing.T) {
+		res, _ := GetDecimals()
+		assert.Equal(t, 19, res)
+
+	})
+}
+
 func TestQueryValidators(t *testing.T) {
 	method := abis.StakingABI.Methods["validators"]
 	if method == nil {

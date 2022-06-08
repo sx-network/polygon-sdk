@@ -2,11 +2,18 @@ package staking
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/0xPolygon/polygon-edge/contracts/abis"
 	"github.com/0xPolygon/polygon-edge/state/runtime"
 	"github.com/0xPolygon/polygon-edge/types"
+
+	"github.com/umbracle/ethgo"
+	ethgoabi "github.com/umbracle/ethgo/abi"
+	"github.com/umbracle/ethgo/contract"
+	"github.com/umbracle/ethgo/jsonrpc"
+
 	"github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/abi"
 )
@@ -17,6 +24,9 @@ var (
 
 	// Gas limit used when querying the validator set
 	queryGasLimit uint64 = 100000
+
+	AddrUSDCContract = ethgo.HexToAddress("0x5147891461a7C81075950f8eE6384e019e39ab98")
+	// types.StringToAddress("0x5147891461a7C81075950f8eE6384e019e39ab98")
 )
 
 func DecodeValidators(method *abi.Method, returnValue []byte) ([]types.Address, error) {
@@ -75,4 +85,18 @@ func QueryValidators(t TxQueryHandler, from types.Address) ([]types.Address, err
 	}
 
 	return DecodeValidators(method, res.ReturnValue)
+}
+
+func getContract(contractAddr ethgo.Address, contractABI *ethgoabi.ABI, client *jsonrpc.Client) *contract.Contract {
+	return contract.NewContract(contractAddr, contractABI, contract.WithJsonRPC(client.Eth()))
+}
+
+func GetDecimals() (map[string]interface{}, error) {
+	client, _ := jsonrpc.NewClient("https://rpc.toronto.sx.technology")
+	usdcContract := getContract(AddrUSDCContract, abis.USDCContractABI, client)
+	res, _ := usdcContract.Call("symbol", ethgo.Latest)
+	for k, v := range res {
+		fmt.Printf("%s value is %v", k, v)
+	}
+	return res, nil
 }
