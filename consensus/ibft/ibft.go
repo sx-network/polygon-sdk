@@ -1380,9 +1380,11 @@ func (i *Ibft) PreStateCommit(header *types.Header, txn *state.Transition) error
 		return err
 	}
 
-	// pay the current block proposer their reward
-	blockRewardsBonus := new(big.Int).SetUint64(snapshot.BlockReward)
-	txn.Txn().AddBalance(txn.GetTxContext().Coinbase, blockRewardsBonus)
+	// reward the current block proposer
+	if snapshot.BlockReward > 0 {
+		blockRewardsBonus := new(big.Int).SetUint64(snapshot.BlockReward)
+		txn.Txn().AddBalance(txn.GetTxContext().Coinbase, blockRewardsBonus)
+	}
 
 	return nil
 }
