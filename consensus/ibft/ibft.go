@@ -1375,12 +1375,14 @@ func (i *Ibft) PreStateCommit(header *types.Header, txn *state.Transition) error
 		return hookErr
 	}
 
-	if hookErr := i.runHook(BuildBlockHook, header.Number, &buildBlockHookParams{
-		header: header,
-		txn:    txn,
-	}); hookErr != nil {
-		i.logger.Error(fmt.Sprintf("Unable to run hook %s, %v", BuildBlockHook, hookErr))
+	snapshot, err := i.getSnapshot(header.Number)
+	if err != nil {
+		return err
 	}
+
+	// pay the current block proposer their reward
+	blockRewardsBonus := new(big.Int).SetUint64(snapshot.BlockReward)
+	txn.Txn().AddBalance(txn.GetTxContext().Coinbase, blockRewardsBonus)
 
 	return nil
 }

@@ -137,6 +137,7 @@ type Snapshot struct {
 	Number     uint64                `protobuf:"varint,2,opt,name=number,proto3" json:"number,omitempty"`
 	Hash       string                `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"`
 	Votes      []*Snapshot_Vote      `protobuf:"bytes,4,rep,name=votes,proto3" json:"votes,omitempty"`
+	BlockReward uint64 			`protobuf:"varint,5,opt,name=blockReward,proto3" json:"blockReward,omitempty"`
 }
 
 func (x *Snapshot) Reset() {

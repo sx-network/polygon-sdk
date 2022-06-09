@@ -1,7 +1,6 @@
 package state
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"math"
@@ -10,7 +9,6 @@ import (
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/0xPolygon/polygon-edge/chain"
-	"github.com/0xPolygon/polygon-edge/contracts/staking"
 	"github.com/0xPolygon/polygon-edge/crypto"
 	"github.com/0xPolygon/polygon-edge/state/runtime"
 	"github.com/0xPolygon/polygon-edge/types"
@@ -492,13 +490,20 @@ func (t *Transition) apply(msg *types.Transaction) (*runtime.ExecutionResult, er
 	t.logger.Debug("PayCoinbase", "paying amount: ", coinbaseFee.String(), "to coinbase address: ", t.ctx.Coinbase)
 	txn.AddBalance(t.ctx.Coinbase, coinbaseFee)
 
-	// pay validator bonus blockRewards 0.1 ether if this function called from buildBlockHook
-	if bytes.Equal(msg.Input, staking.BlockRewardsInput) {
-		blockRewardsBonus := new(big.Int).SetUint64(100000000000000000)
-		t.logger.Debug("BlockRewards", "paying amount: ", blockRewardsBonus.String(), "to validator address: ", t.ctx.Coinbase,
-			"for block: ", t.ctx.Number, "at time: ", t.ctx.Timestamp, "msg.To: ", msg.To.String())
-		txn.AddBalance(t.ctx.Coinbase, blockRewardsBonus)
-	}
+	/*
+		// pay validator bonus blockRewards 0.1 ether if this function called from buildBlockHook (stakedAmount was the function called)
+		method, ok := abis.StakingABI.Methods["stakedAmount"]
+		if !ok {
+			return nil, errors.New("stakedAmount method doesn't exist in Staking contract ABI")
+		}
+
+		if bytes.Equal(msg.Input, method.ID()) {
+			blockRewardsBonus := new(big.Int).SetUint64(100000000000000000)
+			t.logger.Debug("BlockRewards", "paying amount: ", blockRewardsBonus.String(), "to validator address: ", t.ctx.Coinbase,
+				"for block: ", t.ctx.Number, "at time: ", t.ctx.Timestamp, "msg.To: ", msg.To.String())
+			txn.AddBalance(t.ctx.Coinbase, blockRewardsBonus)
+		}
+	*/
 
 	// return gas to the pool
 	t.addGasPool(result.GasLeft)

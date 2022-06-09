@@ -41,7 +41,7 @@ func PoSFactory(ibft *Ibft, params *IBFTFork) (ConsensusMechanism, error) {
 // IsAvailable returns indicates if mechanism should be called at given height
 func (pos *PoSMechanism) IsAvailable(hookType HookType, height uint64) bool {
 	switch hookType {
-	case AcceptStateLogHook, VerifyBlockHook, CalculateProposerHook, BuildBlockHook:
+	case AcceptStateLogHook, VerifyBlockHook, CalculateProposerHook:
 		return pos.IsInRange(height)
 	case PreStateCommitHook:
 		// deploy contract on ContractDeployment
@@ -175,23 +175,6 @@ func (pos *PoSMechanism) preStateCommitHook(rawParams interface{}) error {
 	return nil
 }
 
-// buildBlockHook pays out block builder rewards
-func (pos *PoSMechanism) buildBlockHook(hookParams interface{}) error {
-	// Cast the params to buildBlockHookParams
-	params, ok := hookParams.(*buildBlockHookParams)
-	if !ok {
-		return ErrInvalidHookParam
-	}
-
-	pos.ibft.logger.Debug("buildBlockHook", "validator", params.txn.GetTxContext().Coinbase, "block", params.header.Number)
-
-	if err := staking.BlockRewardsPayment(params.txn); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // initializeHookMap registers the hooks that the PoS mechanism
 // should have
 func (pos *PoSMechanism) initializeHookMap() {
@@ -212,9 +195,6 @@ func (pos *PoSMechanism) initializeHookMap() {
 
 	// Register the CalculateProposerHook
 	pos.hookMap[CalculateProposerHook] = pos.calculateProposerHook
-
-	// Register the BuildBlockHook
-	pos.hookMap[BuildBlockHook] = pos.buildBlockHook
 }
 
 // ShouldWriteTransactions indicates if transactions should be written to a block
@@ -234,6 +214,16 @@ func (pos *PoSMechanism) getNextValidators(header *types.Header) (ValidatorSet, 
 	return staking.QueryValidators(transition, pos.ibft.validatorKeyAddr)
 }
 
+// getNextBlockRewards is a helper function for fetching the current blockReward value from the Staking SC
+func (pos *PoSMechanism) getNextBlockRewards(header *types.Header) (uint64, error) {
+	transition, err := pos.ibft.executor.BeginTxn(header.StateRoot, header, types.ZeroAddress)
+	if err != nil {
+		return 0, err
+	}
+
+	return staking.QueryBlockRewardsPayment(transition, pos.ibft.validatorKeyAddr)
+}
+
 // updateSnapshotValidators updates validators in snapshot at given height
 func (pos *PoSMechanism) updateValidators(num uint64) error {
 	header, ok := pos.ibft.blockchain.GetHeaderByNumber(num)
@@ -242,6 +232,11 @@ func (pos *PoSMechanism) updateValidators(num uint64) error {
 	}
 
 	validators, err := pos.getNextValidators(header)
+	if err != nil {
+		return err
+	}
+
+	blockRewardsPayment, err := pos.getNextBlockRewards(header)
 	if err != nil {
 		return err
 	}
@@ -260,6 +255,7 @@ func (pos *PoSMechanism) updateValidators(num uint64) error {
 		newSnap.Set = validators
 		newSnap.Number = header.Number
 		newSnap.Hash = header.Hash.String()
+		newSnap.BlockReward = blockRewardsPayment
 
 		if snap.Number != header.Number {
 			pos.ibft.store.add(newSnap)
