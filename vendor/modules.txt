@@ -1,5 +1,4 @@
 # cloud.google.com/go v0.100.2
-## explicit
 cloud.google.com/go
 # cloud.google.com/go/compute v1.5.0
 cloud.google.com/go/compute/metadata
