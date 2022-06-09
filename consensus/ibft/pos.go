@@ -250,18 +250,15 @@ func (pos *PoSMechanism) updateValidators(num uint64) error {
 		return fmt.Errorf("cannot find snapshot at %d", header.Number)
 	}
 
-	if !snap.Set.Equal(&validators) {
-		newSnap := snap.Copy()
-		newSnap.Set = validators
-		newSnap.Number = header.Number
-		newSnap.Hash = header.Hash.String()
-		newSnap.BlockReward = blockRewardsPayment
-
-		if snap.Number != header.Number {
-			pos.ibft.store.add(newSnap)
-		} else {
-			pos.ibft.store.replace(newSnap)
-		}
+	newSnap := snap.Copy()
+	newSnap.Number = header.Number
+	newSnap.Hash = header.Hash.String()
+	newSnap.BlockReward = blockRewardsPayment
+	newSnap.Set = validators
+	if snap.Number != header.Number {
+		pos.ibft.store.add(newSnap)
+	} else {
+		pos.ibft.store.replace(newSnap)
 	}
 
 	return nil
