@@ -30,8 +30,6 @@ message Snapshot {
     string hash = 3;
 
     repeated Vote votes = 4;
-
-    uint64 blockReward = 5;
     
     message Validator {
         string address = 1;
