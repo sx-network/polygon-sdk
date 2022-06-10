@@ -3,6 +3,7 @@ package ibft
 import (
 	"errors"
 	"fmt"
+
 	"github.com/0xPolygon/polygon-edge/contracts/staking"
 	stakingHelper "github.com/0xPolygon/polygon-edge/helper/staking"
 	"github.com/0xPolygon/polygon-edge/state"
@@ -213,6 +214,16 @@ func (pos *PoSMechanism) getNextValidators(header *types.Header) (ValidatorSet, 
 	return staking.QueryValidators(transition, pos.ibft.validatorKeyAddr)
 }
 
+// getNextBlockRewards is a helper function for fetching the current blockReward value from the Staking SC
+func (pos *PoSMechanism) getNextBlockRewards(header *types.Header) (uint64, error) {
+	transition, err := pos.ibft.executor.BeginTxn(header.StateRoot, header, types.ZeroAddress)
+	if err != nil {
+		return 0, err
+	}
+
+	return staking.QueryBlockRewardsPayment(transition, pos.ibft.validatorKeyAddr)
+}
+
 // updateSnapshotValidators updates validators in snapshot at given height
 func (pos *PoSMechanism) updateValidators(num uint64) error {
 	header, ok := pos.ibft.blockchain.GetHeaderByNumber(num)
@@ -221,6 +232,11 @@ func (pos *PoSMechanism) updateValidators(num uint64) error {
 	}
 
 	validators, err := pos.getNextValidators(header)
+	if err != nil {
+		return err
+	}
+
+	blockRewardsPayment, err := pos.getNextBlockRewards(header)
 	if err != nil {
 		return err
 	}
@@ -234,17 +250,15 @@ func (pos *PoSMechanism) updateValidators(num uint64) error {
 		return fmt.Errorf("cannot find snapshot at %d", header.Number)
 	}
 
-	if !snap.Set.Equal(&validators) {
-		newSnap := snap.Copy()
-		newSnap.Set = validators
-		newSnap.Number = header.Number
-		newSnap.Hash = header.Hash.String()
-
-		if snap.Number != header.Number {
-			pos.ibft.store.add(newSnap)
-		} else {
-			pos.ibft.store.replace(newSnap)
-		}
+	newSnap := snap.Copy()
+	newSnap.Number = header.Number
+	newSnap.Hash = header.Hash.String()
+	newSnap.BlockReward = blockRewardsPayment
+	newSnap.Set = validators
+	if snap.Number != header.Number {
+		pos.ibft.store.add(newSnap)
+	} else {
+		pos.ibft.store.replace(newSnap)
 	}
 
 	return nil

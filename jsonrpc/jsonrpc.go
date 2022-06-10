@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-hclog"
+	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
 type serverType int
@@ -41,7 +42,7 @@ type JSONRPC struct {
 
 type dispatcher interface {
 	HandleWs(reqBody []byte, conn wsConn) ([]byte, error)
-	Handle(reqBody []byte) ([]byte, error)
+	Handle(reqBody []byte, txn *newrelic.Transaction) ([]byte, error)
 }
 
 // JSONRPCStore defines all the methods required
@@ -53,10 +54,16 @@ type JSONRPCStore interface {
 	filterManagerStore
 }
 
+type RPCNrConfig struct {
+	RPCNrAppName    string
+	RPCNrLicenseKey string
+}
+
 type Config struct {
 	Store                    JSONRPCStore
 	Addr                     *net.TCPAddr
 	ChainID                  uint64
+	RPCNrConfig              *RPCNrConfig
 	AccessControlAllowOrigin []string
 }
 
@@ -86,11 +93,31 @@ func (j *JSONRPC) setupHTTP() error {
 
 	mux := http.DefaultServeMux
 
-	// The middleware factory returns a handler, so we need to wrap the handler function properly.
-	jsonRPCHandler := http.HandlerFunc(j.handle)
-	mux.Handle("/", middlewareFactory(j.config)(jsonRPCHandler))
+	if j.config.RPCNrConfig != nil && j.config.RPCNrConfig.RPCNrLicenseKey != "" {
+		newRelicApp, err := newrelic.NewApplication(
+			newrelic.ConfigAppName(j.config.RPCNrConfig.RPCNrAppName),
+			newrelic.ConfigLicense(j.config.RPCNrConfig.RPCNrLicenseKey),
+			func(cfg *newrelic.Config) {
+				cfg.ErrorCollector.RecordPanics = true
+			},
+		)
 
-	mux.HandleFunc("/ws", j.handleWs)
+		if err != nil {
+			return err
+		}
+
+		jsonRPCHandler := http.HandlerFunc(j.handle)
+		wrapCorsHandler := middlewareFactory(j.config)(jsonRPCHandler)
+		mux.Handle(newrelic.WrapHandle(newRelicApp, "/", wrapCorsHandler))
+		mux.HandleFunc(newrelic.WrapHandleFunc(newRelicApp, "/ws", j.handleWs))
+		mux.HandleFunc(newrelic.WrapHandleFunc(newRelicApp, "/health", j.handleHealth))
+	} else {
+		// The middleware factory returns a handler, so we need to wrap the handler function properly.
+		jsonRPCHandler := http.HandlerFunc(j.handle)
+		mux.Handle("/", middlewareFactory(j.config)(jsonRPCHandler))
+		mux.HandleFunc("/ws", j.handleWs)
+		mux.HandleFunc("/health", j.handleHealth)
+	}
 
 	srv := http.Server{
 		Handler: mux,
@@ -230,6 +257,38 @@ func (j *JSONRPC) handleWs(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func (j *JSONRPC) handleHealth(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers",
+		"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+
+	if (*req).Method == "OPTIONS" {
+		return
+	}
+
+	if req.Method != "GET" {
+		w.WriteHeader(http.StatusBadRequest)
+		//nolint
+		w.Write([]byte("method " + req.Method + " not allowed"))
+
+		return
+	}
+
+	if j.config.Store.IsIbftStateStale() {
+		w.WriteHeader(http.StatusTooEarly)
+		//nolint
+		w.Write([]byte("IBFT node in stale state, try again shortly.."))
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	//nolint
+	w.Write(nil)
+}
+
 func (j *JSONRPC) handle(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
@@ -238,13 +297,16 @@ func (j *JSONRPC) handle(w http.ResponseWriter, req *http.Request) {
 		"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization",
 	)
 
+	txn := newrelic.FromContext(req.Context())
+	txn.SetName("JSON-RPC Method")
+
 	if (*req).Method == "OPTIONS" {
 		return
 	}
 
 	if req.Method == "GET" {
 		//nolint
-		w.Write([]byte("Polygon Edge JSON-RPC"))
+		w.Write([]byte("SX Network JSON-RPC"))
 
 		return
 	}
@@ -259,6 +321,7 @@ func (j *JSONRPC) handle(w http.ResponseWriter, req *http.Request) {
 	data, err := ioutil.ReadAll(req.Body)
 
 	if err != nil {
+		txn.NoticeError(err)
 		//nolint
 		w.Write([]byte(err.Error()))
 
@@ -268,9 +331,10 @@ func (j *JSONRPC) handle(w http.ResponseWriter, req *http.Request) {
 	// log request
 	j.logger.Debug("handle", "request", string(data))
 
-	resp, err := j.dispatcher.Handle(data)
+	resp, err := j.dispatcher.Handle(data, txn)
 
 	if err != nil {
+		txn.NoticeError(err)
 		//nolint
 		w.Write([]byte(err.Error()))
 	} else {

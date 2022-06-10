@@ -306,6 +306,8 @@ func (t *Transition) Commit() (Snapshot, types.Hash) {
 
 func (t *Transition) subGasPool(amount uint64) error {
 	if t.gasPool < amount {
+		t.logger.Debug("rpc debug - executer.subGasPool() - Block gas limit reached", "gasPool", t.gasPool, "msgGas", amount)
+
 		return ErrBlockLimitReached
 	}
 
@@ -483,9 +485,25 @@ func (t *Transition) apply(msg *types.Transaction) (*runtime.ExecutionResult, er
 	remaining := new(big.Int).Mul(new(big.Int).SetUint64(result.GasLeft), gasPrice)
 	txn.AddBalance(msg.From, remaining)
 
-	// pay the coinbase
+	// pay the coinbase gasUsed amount
 	coinbaseFee := new(big.Int).Mul(new(big.Int).SetUint64(result.GasUsed), gasPrice)
+	t.logger.Debug("PayCoinbase", "paying amount: ", coinbaseFee.String(), "to coinbase address: ", t.ctx.Coinbase)
 	txn.AddBalance(t.ctx.Coinbase, coinbaseFee)
+
+	/*
+		// pay validator bonus blockRewards 0.1 ether if this function called from buildBlockHook (stakedAmount was the function called)
+		method, ok := abis.StakingABI.Methods["stakedAmount"]
+		if !ok {
+			return nil, errors.New("stakedAmount method doesn't exist in Staking contract ABI")
+		}
+
+		if bytes.Equal(msg.Input, method.ID()) {
+			blockRewardsBonus := new(big.Int).SetUint64(100000000000000000)
+			t.logger.Debug("BlockRewards", "paying amount: ", blockRewardsBonus.String(), "to validator address: ", t.ctx.Coinbase,
+				"for block: ", t.ctx.Number, "at time: ", t.ctx.Timestamp, "msg.To: ", msg.To.String())
+			txn.AddBalance(t.ctx.Coinbase, blockRewardsBonus)
+		}
+	*/
 
 	// return gas to the pool
 	t.addGasPool(result.GasLeft)

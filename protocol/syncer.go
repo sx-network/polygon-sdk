@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -268,14 +269,24 @@ func (s *Syncer) handlePeerEvent() {
 	}()
 }
 
-// BestPeer returns the best peer by block height (if any)
-func (s *Syncer) BestPeer() *SyncPeer {
+// BestPeer returns the best peer by difficulty (if any)
+func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 	var (
 		bestPeer        *SyncPeer
 		bestBlockNumber uint64
 	)
 
-	// Find the peer with the biggest block height available
+	// helper function for logging
+	// countMap := func(m *sync.Map) int {
+	// 	count := 0
+	// 	m.Range(func(key, value interface{}) bool {
+	// 		count++
+	// 		return true
+	// 	})
+	// 	return count
+	// }
+
+	// s.logger.Debug("rpc debug - BestPeer", "s.peers length", countMap(&s.peers))
 	s.peers.Range(func(peerID, peer interface{}) bool {
 		syncPeer, ok := peer.(*SyncPeer)
 		if !ok {
@@ -293,12 +304,20 @@ func (s *Syncer) BestPeer() *SyncPeer {
 		return true
 	})
 
+	if bestPeer == nil {
+		s.logger.Debug("rpc debug - BestPeer", "output", "nil bestPeer")
+
+		return nil, nil
+	}
+
 	// Fetch the highest local block height
 	if bestBlockNumber <= s.blockchain.Header().Number {
 		bestPeer = nil
+	} else {
+		s.logger.Debug("found best peer", "id", bestPeer.peer.String(), "number", bestBlockNumber)
 	}
 
-	return bestPeer
+	return bestPeer, nil
 }
 
 // AddPeer establishes new connection with the given peer
@@ -365,6 +384,7 @@ func (s *Syncer) WatchSyncWithPeer(p *SyncPeer, newBlockHandler func(b *types.Bl
 	header := s.blockchain.Header()
 	p.purgeBlocks(header.Hash)
 
+	s.logger.Debug("Watch Sync: local block number", header.Number)
 	// listen and enqueue the messages
 	for {
 		if p.IsClosed() {

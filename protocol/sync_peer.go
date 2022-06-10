@@ -2,14 +2,15 @@ package protocol
 
 import (
 	"errors"
+	"math/big"
+	"sync"
+	"time"
+
 	"github.com/0xPolygon/polygon-edge/protocol/proto"
 	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
-	"math/big"
-	"sync"
-	"time"
 )
 
 var (

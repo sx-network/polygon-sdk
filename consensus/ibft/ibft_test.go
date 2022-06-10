@@ -3,6 +3,7 @@ package ibft
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"testing"
 	"time"
 
@@ -677,8 +678,8 @@ type mockSyncer struct {
 
 func (s *mockSyncer) Start() {}
 
-func (s *mockSyncer) BestPeer() *protocol.SyncPeer {
-	return &protocol.SyncPeer{}
+func (s *mockSyncer) BestPeer() (*protocol.SyncPeer, *big.Int) {
+	return &protocol.SyncPeer{}, big.NewInt(0)
 }
 
 func (s *mockSyncer) BulkSyncWithPeer(p *protocol.SyncPeer, handler func(block *types.Block)) error {

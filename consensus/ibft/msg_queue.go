@@ -2,6 +2,7 @@ package ibft
 
 import (
 	"container/heap"
+	"fmt"
 	"sync"
 
 	"github.com/0xPolygon/polygon-edge/consensus/ibft/proto"
@@ -40,16 +41,20 @@ func (m *msgQueue) readMessage(state IbftState, current *proto.View) *msgTask {
 
 	for {
 		if queue.Len() == 0 {
+			fmt.Println("dgk - readMessage - queue is empty, returning nil")
+
 			return nil
 		}
 
 		msg := queue.head()
+		fmt.Println("dgk - getNextMessage", "view", msg.view, "msg", msg.msg, "obj", msg.obj)
 
 		// check if the message is from the future
 		if state == RoundChangeState {
 			// if we are in RoundChangeState we only care about sequence
 			// since we are interested in knowing all the possible rounds
 			if msg.view.Sequence > current.Sequence {
+				fmt.Println("dgk - readMessage - sequence is too high, returning nil")
 				// future message
 				return nil
 			}
@@ -57,6 +62,8 @@ func (m *msgQueue) readMessage(state IbftState, current *proto.View) *msgTask {
 			// otherwise, we compare both sequence and round
 			if cmpView(msg.view, current) > 0 {
 				// future message
+				fmt.Println("dgk - readMessage - message is in the future, returning nil")
+
 				return nil
 			}
 		}
@@ -66,6 +73,7 @@ func (m *msgQueue) readMessage(state IbftState, current *proto.View) *msgTask {
 		heap.Pop(queue)
 
 		if cmpView(msg.view, current) < 0 {
+			fmt.Println("dgk - readMessage - Message is old ", "view", msg.view, "msg", msg.msg, "obj", msg.obj)
 			// old value, try again
 			continue
 		}

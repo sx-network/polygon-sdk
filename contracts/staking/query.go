@@ -47,6 +47,7 @@ func DecodeValidators(method *abi.Method, returnValue []byte) ([]types.Address, 
 type TxQueryHandler interface {
 	Apply(*types.Transaction) (*runtime.ExecutionResult, error)
 	GetNonce(types.Address) uint64
+	GetTxContext() runtime.TxContext
 }
 
 func QueryValidators(t TxQueryHandler, from types.Address) ([]types.Address, error) {
@@ -75,4 +76,36 @@ func QueryValidators(t TxQueryHandler, from types.Address) ([]types.Address, err
 	}
 
 	return DecodeValidators(method, res.ReturnValue)
+}
+
+func QueryBlockRewardsPayment(t TxQueryHandler, from types.Address) (uint64, error) {
+
+	//TODO: call a new function 'blockRewardAmount' instead of 'stakedAmount' which will return the admin defined block reward
+	method, ok := abis.StakingABI.Methods["stakedAmount"]
+	if !ok {
+		return 0, errors.New("stakedAmount method doesn't exist in Staking contract ABI")
+	}
+
+	selector := method.ID()
+	res, err := t.Apply(&types.Transaction{
+		From:     from,
+		To:       &AddrStakingContract,
+		Value:    big.NewInt(0),
+		Input:    selector,
+		GasPrice: big.NewInt(0),
+		Gas:      queryGasLimit,
+		Nonce:    t.GetNonce(from),
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	if res.Failed() {
+		return 0, res.Err
+	}
+
+	//TODO: use res.ReturnValue to derive the block reward amount and pay the proposer
+	// here this is 0.1 ether
+	return 100000000000000000, nil
 }

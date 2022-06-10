@@ -3,12 +3,13 @@ package network
 import (
 	"context"
 	"fmt"
-	"github.com/0xPolygon/polygon-edge/network/common"
-	peerEvent "github.com/0xPolygon/polygon-edge/network/event"
 	"net"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/0xPolygon/polygon-edge/network/common"
+	peerEvent "github.com/0xPolygon/polygon-edge/network/event"
 
 	"github.com/0xPolygon/polygon-edge/helper/tests"
 
@@ -24,7 +25,6 @@ func TestConnLimit_Inbound(t *testing.T) {
 	defaultConfig := &CreateServerParams{
 		ConfigCallback: func(c *Config) {
 			c.MaxInboundPeers = 1
-			c.MaxOutboundPeers = 1
 			c.NoDiscover = true
 		},
 	}
@@ -78,7 +78,6 @@ func TestConnLimit_Outbound(t *testing.T) {
 	// we should not try to make connections if we are already connected to max peers
 	defaultConfig := &CreateServerParams{
 		ConfigCallback: func(c *Config) {
-			c.MaxInboundPeers = 1
 			c.MaxOutboundPeers = 1
 			c.NoDiscover = true
 		},

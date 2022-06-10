@@ -247,3 +247,7 @@ func (d *Dev) Close() error {
 
 	return nil
 }
+
+func (d *Dev) IsIbftStateStale() bool {
+	return false
+}

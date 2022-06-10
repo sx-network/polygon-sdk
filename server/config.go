@@ -31,6 +31,9 @@ type Config struct {
 	DataDir     string
 	RestoreFile *string
 
+	RPCNrAppName    string
+	RPCNrLicenseKey string
+
 	Seal bool
 
 	SecretsManager *secrets.SecretsManagerConfig

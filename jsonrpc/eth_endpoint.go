@@ -60,6 +60,9 @@ type ethBlockchainStore interface {
 
 	// GetSyncProgression retrieves the current sync progression, if any
 	GetSyncProgression() *progress.Progression
+
+	// IsIbftStateStale returns whether or not ibft node is stale
+	IsIbftStateStale() bool
 }
 
 // ethStore provides access to the methods needed by eth endpoint
@@ -826,8 +829,10 @@ func (e *Eth) getBlockHeader(number BlockNumber) (*types.Header, error) {
 
 		return header, nil
 
+	// return latest block for now to support gnosis-safe
 	case PendingBlockNumber:
-		return nil, fmt.Errorf("fetching the pending header is not supported")
+		return e.store.Header(), nil
+		// return nil, fmt.Errorf("fetching the pending header is not supported")
 
 	default:
 		// Convert the block number from hex to uint64

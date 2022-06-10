@@ -183,6 +183,20 @@ func setFlags(cmd *cobra.Command) {
 		"minimum block time in seconds (at least 1s)",
 	)
 
+	cmd.Flags().StringVar(
+		&params.rpcNRAppName,
+		rpcNRAppNameFlag,
+		"",
+		"the New Relic Agent App Name, used for reporting json-rpc metrics.",
+	)
+
+	cmd.Flags().StringVar(
+		&params.rpcNRLicenseKey,
+		rpcNRLicenseKeyFlag,
+		"",
+		"the New Relic Agent License Key, used for reporting json-rpc metrics.",
+	)
+
 	cmd.Flags().StringArrayVar(
 		&params.corsAllowedOrigins,
 		corsOriginFlag,

@@ -517,6 +517,10 @@ func (j *jsonRPCHub) ApplyTxn(
 	return
 }
 
+func (j *jsonRPCHub) IsIbftStateStale() bool {
+	return j.Consensus.IsIbftStateStale()
+}
+
 func (j *jsonRPCHub) GetSyncProgression() *progress.Progression {
 	// restore progression
 	if restoreProg := j.restoreProgression.GetProgression(); restoreProg != nil {
@@ -550,6 +554,10 @@ func (s *Server) setupJSONRPC() error {
 		Addr:                     s.config.JSONRPC.JSONRPCAddr,
 		ChainID:                  uint64(s.config.Chain.Params.ChainID),
 		AccessControlAllowOrigin: s.config.JSONRPC.AccessControlAllowOrigin,
+		RPCNrConfig: &jsonrpc.RPCNrConfig{
+			RPCNrAppName:    s.config.RPCNrAppName,
+			RPCNrLicenseKey: s.config.RPCNrLicenseKey,
+		},
 	}
 
 	srv, err := jsonrpc.NewJSONRPC(s.logger, conf)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"reflect"
 	"time"
 
@@ -54,7 +55,7 @@ type txPoolInterface interface {
 
 type syncerInterface interface {
 	Start()
-	BestPeer() *protocol.SyncPeer
+	BestPeer() (*protocol.SyncPeer, *big.Int)
 	BulkSyncWithPeer(p *protocol.SyncPeer, newBlockHandler func(block *types.Block)) error
 	WatchSyncWithPeer(p *protocol.SyncPeer, newBlockHandler func(b *types.Block) bool, blockTimeout time.Duration)
 	GetSyncProgression() *progress.Progression
@@ -417,6 +418,8 @@ func (i *Ibft) start() {
 	for {
 		select {
 		case <-i.closeCh:
+			i.logger.Debug("dgk - closeCh start")
+
 			return
 		default: // Default is here because we would block until we receive something in the closeCh
 		}
@@ -489,7 +492,7 @@ func (i *Ibft) runSyncState() {
 
 	for i.isState(SyncState) {
 		// try to sync with the best-suited peer
-		p := i.syncer.BestPeer()
+		p, _ := i.syncer.BestPeer()
 		if p == nil {
 			// if we do not have any peers, and we have been a validator
 			// we can start now. In case we start on another fork this will be
@@ -506,6 +509,7 @@ func (i *Ibft) runSyncState() {
 
 				i.setState(AcceptState)
 			} else {
+				i.logger.Debug("best peer not found. Retrying in 1 sec...")
 				time.Sleep(1 * time.Second)
 			}
 
@@ -538,6 +542,7 @@ func (i *Ibft) runSyncState() {
 			callInsertBlockHook(newBlock.Number())
 
 			i.syncer.Broadcast(newBlock)
+			i.logger.Debug("dgk - resetWithHeaders called from runSyncState()")
 			i.txpool.ResetWithHeaders(newBlock.Header)
 			isValidator = i.isValidSnapshot()
 
@@ -580,6 +585,8 @@ func (i *Ibft) buildBlock(snap *Snapshot, parent *types.Header) (*types.Block, e
 		Sha3Uncles: types.EmptyUncleHash,
 		GasLimit:   parent.GasLimit, // Inherit from parent for now, will need to adjust dynamically later.
 	}
+
+	i.logger.Debug("buildBlock - building block..", "validator", i.validatorKeyAddr)
 
 	// calculate gas limit based on parent header
 	gasLimit, err := i.blockchain.CalculateGasLimit(header.Number)
@@ -764,8 +771,13 @@ func (i *Ibft) runAcceptState() { // start new round
 
 	i.state.validators = snap.Set
 
+	i.logger.Debug("dgk - acceptState messages", "prepared msg length", len(i.state.prepared))
+	i.logger.Debug("dgk - acceptState messages", "committed msg length", len(i.state.committed))
+	i.logger.Debug("dgk - acceptState messages", "roundMessages msg length", len(i.state.roundMessages))
+
 	//Update the No.of validator metric
 	i.metrics.Validators.Set(float64(len(snap.Set)))
+
 	// reset round messages
 	i.state.resetRoundMsgs()
 
@@ -798,6 +810,8 @@ func (i *Ibft) runAcceptState() { // start new round
 			select {
 			case <-time.After(delay):
 			case <-i.closeCh:
+				i.logger.Debug("dgk - closeCh runAcceptState")
+
 				return
 			}
 		}
@@ -820,13 +834,22 @@ func (i *Ibft) runAcceptState() { // start new round
 	// for a pre-prepare message from the proposer
 
 	timeout := exponentialTimeout(i.state.view.Round)
+	i.logger.Debug("dgk - acceptState timeout", timeout)
+
 	for i.getState() == AcceptState {
 		msg, ok := i.getNextMessage(timeout)
+		/*
+			i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
+		*/
+
 		if !ok {
+			i.logger.Debug("dgk - accept state - getNextMsg not ok, continuing in acceptState loop...")
+
 			return
 		}
 
 		if msg == nil {
+			i.logger.Debug("dgk - Msg is nil, booting to round change state.")
 			i.setState(RoundChangeState)
 
 			continue
@@ -848,6 +871,7 @@ func (i *Ibft) runAcceptState() { // start new round
 		}
 
 		if i.state.locked {
+			i.logger.Debug("dgk - state is locked")
 			// the state is locked, we need to receive the same block
 			if block.Hash() == i.state.block.Hash() {
 				// fast-track and send a commit message and wait for validations
@@ -857,6 +881,8 @@ func (i *Ibft) runAcceptState() { // start new round
 				i.handleStateErr(errIncorrectBlockLocked)
 			}
 		} else {
+			i.logger.Debug("dgk - state is not locked")
+
 			// since it's a new block, we have to verify it first
 			if err := i.verifyHeaderImpl(snap, parent, block.Header); err != nil {
 				i.logger.Error("block header verification failed", "err", err)
@@ -912,8 +938,14 @@ func (i *Ibft) runValidateState() {
 	}
 
 	timeout := exponentialTimeout(i.state.view.Round)
+	i.logger.Debug("dgk - validateState timeout", timeout)
+
 	for i.getState() == ValidateState {
 		msg, ok := i.getNextMessage(timeout)
+		/*
+			i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
+		*/
+
 		if !ok {
 			// closing
 			return
@@ -1052,6 +1084,7 @@ func (i *Ibft) insertBlock(block *types.Block) error {
 
 	// after the block has been written we reset the txpool so that
 	// the old transactions are removed
+	i.logger.Debug("dgk - resetWithHeaders called from insertBlock()")
 	i.txpool.ResetWithHeaders(block.Header)
 
 	return nil
@@ -1086,7 +1119,7 @@ func (i *Ibft) runRoundChangeState() {
 	checkTimeout := func() {
 		// check if there is any peer that is really advanced and we might need to sync with it first
 		if i.syncer != nil {
-			bestPeer := i.syncer.BestPeer()
+			bestPeer, _ := i.syncer.BestPeer()
 			if bestPeer != nil {
 				lastProposal := i.blockchain.Header()
 				if bestPeer.Number() > lastProposal.Number {
@@ -1125,6 +1158,10 @@ func (i *Ibft) runRoundChangeState() {
 	timeout := exponentialTimeout(i.state.view.Round)
 	for i.getState() == RoundChangeState {
 		msg, ok := i.getNextMessage(timeout)
+		/*
+			i.logger.Debug("dgk - msg from getNextMessage", "message", msg)
+		*/
+
 		if !ok {
 			// closing
 			return
@@ -1141,6 +1178,7 @@ func (i *Ibft) runRoundChangeState() {
 
 		// we only expect RoundChange messages right now
 		num := i.state.AddRoundMessage(msg)
+		i.logger.Debug("dgk - roundchange state received msg", "roundLength", num, "round", msg.View.Round, "from", msg.From)
 
 		if num == i.state.validators.MaxFaultyNodes()+1 && i.state.view.Round < msg.View.Round {
 			// weak certificate, try to catch up if our round number is smaller
@@ -1212,6 +1250,8 @@ func (i *Ibft) gossip(typ proto.MessageReq_Type) {
 
 		return
 	}
+
+	i.logger.Debug("Gossiping message", "message", msg)
 
 	if err := i.transport.Gossip(msg); err != nil {
 		i.logger.Error("failed to gossip", "err", err)
@@ -1335,6 +1375,17 @@ func (i *Ibft) PreStateCommit(header *types.Header, txn *state.Transition) error
 		return hookErr
 	}
 
+	snapshot, err := i.getSnapshot(header.Number)
+	if err != nil {
+		return err
+	}
+
+	// reward the current block proposer
+	if snapshot.BlockReward > 0 {
+		blockRewardsBonus := new(big.Int).SetUint64(snapshot.BlockReward)
+		txn.Txn().AddBalance(txn.GetTxContext().Coinbase, blockRewardsBonus)
+	}
+
 	return nil
 }
 
@@ -1356,6 +1407,8 @@ func (i *Ibft) IsLastOfEpoch(number uint64) bool {
 func (i *Ibft) Close() error {
 	close(i.closeCh)
 
+	i.logger.Debug("dgk - ibft.Close() called")
+
 	if i.config.Path != "" {
 		err := i.store.saveToPath(i.config.Path)
 
@@ -1365,6 +1418,11 @@ func (i *Ibft) Close() error {
 	}
 
 	return nil
+}
+
+// IsIbftStateStale returns whether or not ibft node is stale
+func (i *Ibft) IsIbftStateStale() bool {
+	return false
 }
 
 // getNextMessage reads a new message from the message queue
@@ -1391,6 +1449,8 @@ func (i *Ibft) getNextMessage(timeout time.Duration) (*proto.MessageReq, bool) {
 
 			return nil, true
 		case <-i.closeCh:
+			i.logger.Debug("dgk - closeCh getNextMessage")
+
 			return nil, false
 		case <-i.updateCh:
 		}
