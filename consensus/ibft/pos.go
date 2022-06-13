@@ -3,6 +3,7 @@ package ibft
 import (
 	"errors"
 	"fmt"
+
 	"github.com/0xPolygon/polygon-edge/contracts/staking"
 	stakingHelper "github.com/0xPolygon/polygon-edge/helper/staking"
 	"github.com/0xPolygon/polygon-edge/state"
@@ -16,6 +17,7 @@ type PoSMechanism struct {
 	ContractDeployment uint64 // The height when deploying staking contract
 	MaxValidatorCount  uint64
 	MinValidatorCount  uint64
+	PoSContractAddress types.Address
 }
 
 // PoSFactory initializes the required data
@@ -85,6 +87,8 @@ func (pos *PoSMechanism) initializeParams(params *IBFTFork) error {
 		} else {
 			pos.MinValidatorCount = params.MinValidatorCount.Value
 		}
+
+		pos.PoSContractAddress = types.StringToAddress(params.PoSContractAddress)
 	}
 
 	return nil
@@ -210,7 +214,8 @@ func (pos *PoSMechanism) getNextValidators(header *types.Header) (ValidatorSet, 
 		return nil, err
 	}
 
-	return staking.QueryValidators(transition, pos.ibft.validatorKeyAddr)
+	contractAddress := staking.GetStakingContractAddress(pos.PoSContractAddress)
+	return staking.QueryValidators(transition, *contractAddress, pos.ibft.validatorKeyAddr)
 }
 
 // updateSnapshotValidators updates validators in snapshot at given height
