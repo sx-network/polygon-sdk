@@ -17,6 +17,7 @@ type PoSMechanism struct {
 	ContractDeployment uint64 // The height when deploying staking contract
 	MaxValidatorCount  uint64
 	MinValidatorCount  uint64
+	PoSContractAddress types.Address
 }
 
 // PoSFactory initializes the required data
@@ -86,6 +87,8 @@ func (pos *PoSMechanism) initializeParams(params *IBFTFork) error {
 		} else {
 			pos.MinValidatorCount = params.MinValidatorCount.Value
 		}
+
+		pos.PoSContractAddress = types.StringToAddress(params.PoSContractAddress)
 	}
 
 	return nil
@@ -211,7 +214,8 @@ func (pos *PoSMechanism) getNextValidators(header *types.Header) (ValidatorSet, 
 		return nil, err
 	}
 
-	return staking.QueryValidators(transition, pos.ibft.validatorKeyAddr)
+	contractAddress := staking.GetStakingContractAddress(pos.PoSContractAddress)
+	return staking.QueryValidators(transition, *contractAddress, pos.ibft.validatorKeyAddr)
 }
 
 // getNextBlockRewards is a helper function for fetching the current blockReward value from the Staking SC
@@ -221,7 +225,8 @@ func (pos *PoSMechanism) getNextBlockRewards(header *types.Header) (uint64, erro
 		return 0, err
 	}
 
-	return staking.QueryBlockRewardsPayment(transition, pos.ibft.validatorKeyAddr)
+	contractAddress := staking.GetStakingContractAddress(pos.PoSContractAddress)
+	return staking.QueryBlockRewardsPayment(transition, *contractAddress, pos.ibft.validatorKeyAddr)
 }
 
 // updateSnapshotValidators updates validators in snapshot at given height
