@@ -215,6 +215,8 @@ func (pos *PoSMechanism) getNextValidators(header *types.Header) (ValidatorSet, 
 	}
 
 	contractAddress := staking.GetStakingContractAddress(pos.PoSContractAddress)
+	pos.ibft.logger.Debug("~staking", "getNextValidtors", "calling getNextValidators from address", contractAddress)
+
 	return staking.QueryValidators(transition, *contractAddress, pos.ibft.validatorKeyAddr)
 }
 
@@ -226,6 +228,8 @@ func (pos *PoSMechanism) getNextBlockRewards(header *types.Header) (uint64, erro
 	}
 
 	contractAddress := staking.GetStakingContractAddress(pos.PoSContractAddress)
+	pos.ibft.logger.Debug("~staking", "getNextBlockRewards", "calling getNextBlockRewards from address", contractAddress)
+
 	return staking.QueryBlockRewardsPayment(transition, *contractAddress, pos.ibft.validatorKeyAddr)
 }
 
