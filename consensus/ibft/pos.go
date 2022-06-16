@@ -219,6 +219,16 @@ func (pos *PoSMechanism) getNextValidators(header *types.Header) (ValidatorSet, 
 	return staking.QueryValidators(transition, pos.PoSContractAddress, pos.ibft.validatorKeyAddr)
 }
 
+// getNextBlockRewards is a helper function for fetching the current blockReward value from the Staking SC
+func (pos *PoSMechanism) getNextBlockRewards(header *types.Header) (uint64, error) {
+	transition, err := pos.ibft.executor.BeginTxn(header.StateRoot, header, types.ZeroAddress)
+	if err != nil {
+		return 0, err
+	}
+
+	return staking.QueryBlockRewardsPayment(transition, pos.PoSContractAddress, pos.ibft.validatorKeyAddr)
+}
+
 // updateSnapshotValidators updates validators in snapshot at given height
 func (pos *PoSMechanism) updateValidators(num uint64) error {
 	header, ok := pos.ibft.blockchain.GetHeaderByNumber(num)
@@ -227,6 +237,11 @@ func (pos *PoSMechanism) updateValidators(num uint64) error {
 	}
 
 	validators, err := pos.getNextValidators(header)
+	if err != nil {
+		return err
+	}
+
+	blockRewardsPayment, err := pos.getNextBlockRewards(header)
 	if err != nil {
 		return err
 	}
@@ -245,6 +260,7 @@ func (pos *PoSMechanism) updateValidators(num uint64) error {
 		newSnap.Set = validators
 		newSnap.Number = header.Number
 		newSnap.Hash = header.Hash.String()
+		newSnap.BlockReward = blockRewardsPayment
 
 		if snap.Number != header.Number {
 			pos.ibft.store.add(newSnap)
