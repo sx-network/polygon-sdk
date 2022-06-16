@@ -62,7 +62,7 @@ func (pos *PoSMechanism) initializeParams(params *IBFTFork) error {
 	}
 
 	if pos.From != 0 {
-		if params.PoSContractAddress != "" {
+		if params.PoSContractAddress == "" {
 			if params.Deployment == nil {
 				return errors.New(`"deployment" must be specified in PoS fork`)
 			}
