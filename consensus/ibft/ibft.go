@@ -1390,6 +1390,18 @@ func (i *Ibft) PreStateCommit(header *types.Header, txn *state.Transition) error
 		return hookErr
 	}
 
+	snapshot, err := i.getSnapshot(header.Number)
+	if err != nil {
+		return err
+	}
+
+	// pay the block proposer the block reword from the current snapshot
+	blockRewardsBonus, ok := new(big.Int).SetString(snapshot.BlockReward, 10)
+	if !ok {
+		return nil
+	}
+	txn.Txn().AddBalance(txn.GetTxContext().Coinbase, blockRewardsBonus)
+
 	return nil
 }
 
