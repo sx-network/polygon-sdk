@@ -118,9 +118,14 @@ func QueryBlockRewardsPayment(t TxQueryHandler, contract types.Address, from typ
 		return "0", err
 	}
 
-	blockReward, ok := result.(big.Int)
+	outputMap, ok := result.(map[string]interface{})
 	if !ok {
-		return "0", errors.New("failed type assertion from getBlockReward returnValue to uint64")
+		return "0", errors.New("failed type assertion from getBlockReward returnValue to map")
+	}
+
+	blockReward, ok := outputMap["0"].(*big.Int)
+	if !ok {
+		return "0", errors.New("failed type assertion from outputMap[0] to big.Int")
 	}
 
 	return blockReward.String(), nil
