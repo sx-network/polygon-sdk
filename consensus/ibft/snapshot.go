@@ -110,7 +110,7 @@ func (i *Ibft) addHeaderSnap(header *types.Header) error {
 		Number:      header.Number,
 		Votes:       []*Vote{},
 		Set:         extra.Validators,
-		BlockReward: 0,
+		BlockReward: "0",
 	}
 
 	i.store.add(snap)
