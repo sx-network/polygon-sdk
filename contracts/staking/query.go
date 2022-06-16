@@ -50,24 +50,21 @@ type TxQueryHandler interface {
 	GetNonce(types.Address) uint64
 }
 
-func GetStakingContractAddress(customStakingContract types.Address) *types.Address {
-	stakingContract := AddrStakingContract
-	if customStakingContract != types.ZeroAddress {
-		return &customStakingContract
-	}
-	return &stakingContract
-}
-
 func QueryValidators(t TxQueryHandler, contract types.Address, from types.Address) ([]types.Address, error) {
 	method, ok := abis.StakingABI.Methods["validators"]
 	if !ok {
 		return nil, errors.New("validators method doesn't exist in Staking contract ABI")
 	}
 
+	stakingContract := AddrStakingContract
+	if contract != types.ZeroAddress {
+		stakingContract = contract
+	}
+
 	selector := method.ID()
 	res, err := t.Apply(&types.Transaction{
 		From:     from,
-		To:       &contract,
+		To:       &stakingContract,
 		Value:    big.NewInt(0),
 		Input:    selector,
 		GasPrice: big.NewInt(0),

@@ -216,8 +216,7 @@ func (pos *PoSMechanism) getNextValidators(header *types.Header) (ValidatorSet, 
 		return nil, err
 	}
 
-	contractAddress := staking.GetStakingContractAddress(pos.PoSContractAddress)
-	return staking.QueryValidators(transition, *contractAddress, pos.ibft.validatorKeyAddr)
+	return staking.QueryValidators(transition, pos.PoSContractAddress, pos.ibft.validatorKeyAddr)
 }
 
 // updateSnapshotValidators updates validators in snapshot at given height
