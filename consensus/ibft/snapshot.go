@@ -258,7 +258,7 @@ type Snapshot struct {
 	Set ValidatorSet
 
 	// blockReward amount
-	BlockReward uint64
+	BlockReward string
 }
 
 // snapshotMetadata defines the metadata for the snapshot

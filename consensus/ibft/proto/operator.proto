@@ -31,7 +31,7 @@ message Snapshot {
 
     repeated Vote votes = 4;
 
-    uint64 blockReward = 5;
+    string blockReward = 5;
     
     message Validator {
         string address = 1;

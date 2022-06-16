@@ -83,10 +83,10 @@ func QueryValidators(t TxQueryHandler, contract types.Address, from types.Addres
 	return DecodeValidators(method, res.ReturnValue)
 }
 
-func QueryBlockRewardsPayment(t TxQueryHandler, contract types.Address, from types.Address) (uint64, error) {
+func QueryBlockRewardsPayment(t TxQueryHandler, contract types.Address, from types.Address) (string, error) {
 	method, ok := abis.StakingABI.Methods["getBlockReward"]
 	if !ok {
-		return 0, errors.New("getBlockReward method doesn't exist in Staking contract ABI")
+		return "0", errors.New("getBlockReward method doesn't exist in Staking contract ABI")
 	}
 
 	stakingContract := AddrStakingContract
@@ -106,22 +106,22 @@ func QueryBlockRewardsPayment(t TxQueryHandler, contract types.Address, from typ
 	})
 
 	if err != nil {
-		return 0, err
+		return "0", err
 	}
 
 	if res.Failed() {
-		return 0, res.Err
+		return "0", res.Err
 	}
 
 	result, err := method.Outputs.Decode(res.ReturnValue)
 	if err != nil {
-		return 0, err
+		return "0", err
 	}
 
-	blockReward, ok := result.(uint64)
+	blockReward, ok := result.(*big.Int)
 	if !ok {
-		return 0, errors.New("failed type assertion from getBlockReward returnValue to uint64")
+		return "0", errors.New("failed type assertion from getBlockReward returnValue to uint64")
 	}
 
-	return blockReward, nil
+	return blockReward.String(), nil
 }

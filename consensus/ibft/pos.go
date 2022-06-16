@@ -220,10 +220,10 @@ func (pos *PoSMechanism) getNextValidators(header *types.Header) (ValidatorSet, 
 }
 
 // getNextBlockRewards is a helper function for fetching the current blockReward value from the Staking SC
-func (pos *PoSMechanism) getNextBlockRewards(header *types.Header) (uint64, error) {
+func (pos *PoSMechanism) getNextBlockRewards(header *types.Header) (string, error) {
 	transition, err := pos.ibft.executor.BeginTxn(header.StateRoot, header, types.ZeroAddress)
 	if err != nil {
-		return 0, err
+		return "0", err
 	}
 
 	return staking.QueryBlockRewardsPayment(transition, pos.PoSContractAddress, pos.ibft.validatorKeyAddr)
