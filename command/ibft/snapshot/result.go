@@ -20,7 +20,7 @@ type IBFTSnapshotResult struct {
 	Hash        string             `json:"hash"`
 	Votes       []IBFTSnapshotVote `json:"votes"`
 	Validators  []string           `json:"validators"`
-	BlockReward uint64             `json:"blockReward"`
+	BlockReward string             `json:"blockReward"`
 }
 
 func newIBFTSnapshotResult(resp *ibftOp.Snapshot) *IBFTSnapshotResult {
