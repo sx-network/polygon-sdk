@@ -46,7 +46,7 @@ func (pos *PoSMechanism) IsAvailable(hookType HookType, height uint64) bool {
 		return pos.IsInRange(height)
 	case PreStateCommitHook:
 		// deploy contract on ContractDeployment
-		return height == pos.ContractDeployment
+		return pos.ContractDeployment != 0 && height == pos.ContractDeployment
 	case InsertBlockHook:
 		// update validators when the one before the beginning or the end of epoch
 		return height+1 == pos.From || pos.IsInRange(height) && pos.ibft.IsLastOfEpoch(height)
@@ -62,19 +62,21 @@ func (pos *PoSMechanism) initializeParams(params *IBFTFork) error {
 	}
 
 	if pos.From != 0 {
-		if params.Deployment == nil {
-			return errors.New(`"deployment" must be specified in PoS fork`)
-		}
+		if params.PoSContractAddress != "" {
+			if params.Deployment == nil {
+				return errors.New(`"deployment" must be specified in PoS fork`)
+			}
 
-		if params.Deployment.Value > pos.From {
-			return fmt.Errorf(
-				`"deployment" must be less than or equal to "from": deployment=%d, from=%d`,
-				params.Deployment.Value,
-				pos.From,
-			)
-		}
+			if params.Deployment.Value > pos.From {
+				return fmt.Errorf(
+					`"deployment" must be less than or equal to "from": deployment=%d, from=%d`,
+					params.Deployment.Value,
+					pos.From,
+				)
+			}
 
-		pos.ContractDeployment = params.Deployment.Value
+			pos.ContractDeployment = params.Deployment.Value
+		}
 
 		if params.MaxValidatorCount == nil {
 			pos.MaxValidatorCount = stakingHelper.MaxValidatorCount
