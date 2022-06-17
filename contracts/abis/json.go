@@ -113,7 +113,7 @@ const StakingJSONABI = `[
 				"type": "address[]"
 			}
 		],
-		"stateMutability": "view",
+		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ]`
