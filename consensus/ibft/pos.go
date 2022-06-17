@@ -216,6 +216,7 @@ func (pos *PoSMechanism) getNextValidators(header *types.Header) (ValidatorSet, 
 		return nil, err
 	}
 
+	pos.ibft.logger.Debug("Staking", "querying validators using account", pos.ibft.validatorKeyAddr)
 	return staking.QueryValidators(transition, pos.PoSContractAddress, pos.ibft.validatorKeyAddr)
 }
 
