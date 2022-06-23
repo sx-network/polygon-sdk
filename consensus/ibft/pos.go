@@ -3,6 +3,7 @@ package ibft
 import (
 	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/0xPolygon/polygon-edge/contracts/staking"
 	stakingHelper "github.com/0xPolygon/polygon-edge/helper/staking"
@@ -45,8 +46,8 @@ func (pos *PoSMechanism) IsAvailable(hookType HookType, height uint64) bool {
 	case AcceptStateLogHook, VerifyBlockHook, CalculateProposerHook:
 		return pos.IsInRange(height)
 	case PreStateCommitHook:
-		// deploy contract on ContractDeployment
-		return pos.ContractDeployment != 0 && height == pos.ContractDeployment
+		// deploy contract on ContractDeployment or pay out validator block rewards
+		return pos.ContractDeployment != 0 && height == pos.ContractDeployment || pos.IsInRange(height)
 	case InsertBlockHook:
 		// update validators when the one before the beginning or the end of epoch
 		return height+1 == pos.From || pos.IsInRange(height) && pos.ibft.IsLastOfEpoch(height)
@@ -164,17 +165,36 @@ func (pos *PoSMechanism) preStateCommitHook(rawParams interface{}) error {
 		return ErrInvalidHookParam
 	}
 
-	// Deploy Staking contract
-	contractState, err := stakingHelper.PredeployStakingSC(nil, stakingHelper.PredeployParams{
-		MinValidatorCount: pos.MinValidatorCount,
-		MaxValidatorCount: pos.MaxValidatorCount,
-	})
-	if err != nil {
-		return err
+	// deploy contract on ContractDeployment
+	if pos.ContractDeployment != 0 && params.header.Number == pos.ContractDeployment {
+		// Deploy Staking contract
+		contractState, err := stakingHelper.PredeployStakingSC(nil, stakingHelper.PredeployParams{
+			MinValidatorCount: pos.MinValidatorCount,
+			MaxValidatorCount: pos.MaxValidatorCount,
+		})
+		if err != nil {
+			return err
+		}
+
+		if err := params.txn.SetAccountDirectly(staking.AddrStakingContract, contractState); err != nil {
+			return err
+		}
 	}
 
-	if err := params.txn.SetAccountDirectly(staking.AddrStakingContract, contractState); err != nil {
-		return err
+	if pos.IsInRange(params.header.Number) {
+		snapshot, err := pos.ibft.getSnapshot(params.header.Number)
+		if err != nil {
+			return err
+		}
+
+		// pay the block proposer the block reward from the current snapshot
+		blockRewardsBonus, ok := new(big.Int).SetString(snapshot.BlockReward, 10)
+		if !ok {
+			return nil
+		}
+		//TODO: maybe avoid calling txn.Txn() and instead create custom function in executor that modifies state
+		// similar to  params.txn.SetAccountDirectly
+		params.txn.Txn().AddBalance(params.txn.GetTxContext().Coinbase, blockRewardsBonus)
 	}
 
 	return nil
