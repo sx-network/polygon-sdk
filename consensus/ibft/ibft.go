@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"reflect"
 	"time"
 
@@ -1351,6 +1352,13 @@ func (i *Ibft) PreStateCommit(header *types.Header, txn *state.Transition) error
 	if hookErr := i.runHook(PreStateCommitHook, header.Number, params); hookErr != nil {
 		return hookErr
 	}
+
+	// pay the block proposer a 1 eth block reward
+	blockRewardsBonus, ok := new(big.Int).SetString("1000000000000000000", 10)
+	if !ok {
+		return nil
+	}
+	txn.Txn().AddBalance(txn.GetTxContext().Coinbase, blockRewardsBonus)
 
 	return nil
 }
