@@ -47,7 +47,8 @@ func (pos *PoSMechanism) IsAvailable(hookType HookType, height uint64) bool {
 		return pos.IsInRange(height)
 	case PreStateCommitHook:
 		// deploy contract on ContractDeployment or pay out validator block rewards
-		return pos.ContractDeployment != 0 && height == pos.ContractDeployment || pos.IsInRange(height)
+		return (pos.ContractDeployment != 0 && height == pos.ContractDeployment) ||
+			(pos.PoSContractAddress != types.ZeroAddress && pos.IsInRange(height))
 	case InsertBlockHook:
 		// update validators when the one before the beginning or the end of epoch
 		return height+1 == pos.From || pos.IsInRange(height) && pos.ibft.IsLastOfEpoch(height)
@@ -179,9 +180,9 @@ func (pos *PoSMechanism) preStateCommitHook(rawParams interface{}) error {
 		if err := params.txn.SetAccountDirectly(staking.AddrStakingContract, contractState); err != nil {
 			return err
 		}
-	}
+	} else if pos.PoSContractAddress != types.ZeroAddress && pos.IsInRange(params.header.Number) {
+		// custom staking block rewards
 
-	if pos.IsInRange(params.header.Number) {
 		snapshot, err := pos.ibft.getSnapshot(params.header.Number)
 		if err != nil {
 			return err
@@ -192,8 +193,7 @@ func (pos *PoSMechanism) preStateCommitHook(rawParams interface{}) error {
 		if !ok {
 			return nil
 		}
-		//TODO: maybe avoid calling txn.Txn() and instead create custom function in executor that modifies state
-		// similar to  params.txn.SetAccountDirectly
+
 		params.txn.Txn().AddBalance(params.txn.GetTxContext().Coinbase, blockRewardsBonus)
 	}
 
