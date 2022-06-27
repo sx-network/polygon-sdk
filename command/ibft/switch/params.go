@@ -150,15 +150,6 @@ func (p *switchParams) initDeployment() error {
 		return err
 	}
 
-	if p.customContractAddress != "" {
-		if p.mechanismType != ibft.PoS {
-			return fmt.Errorf(
-				"doesn't support PoS contract address in %s",
-				string(p.mechanismType),
-			)
-		}
-	}
-
 	return nil
 }
 
