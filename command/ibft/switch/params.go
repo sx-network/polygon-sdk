@@ -14,13 +14,13 @@ import (
 )
 
 const (
-	chainFlag          = "chain"
-	typeFlag           = "type"
-	deploymentFlag     = "deployment"
-	fromFlag           = "from"
-	minValidatorCount  = "min-validator-count"
-	maxValidatorCount  = "max-validator-count"
-	posContractAddress = "pos-contract-address"
+	chainFlag             = "chain"
+	typeFlag              = "type"
+	deploymentFlag        = "deployment"
+	fromFlag              = "from"
+	minValidatorCount     = "min-validator-count"
+	maxValidatorCount     = "max-validator-count"
+	customContractAddress = "custom-contract-address"
 )
 
 var (
@@ -47,7 +47,7 @@ type switchParams struct {
 	maxValidatorCount *uint64
 	minValidatorCount *uint64
 
-	posContractAddress string
+	customContractAddress string
 }
 
 func (p *switchParams) getRequiredFlags() []string {
@@ -150,7 +150,7 @@ func (p *switchParams) initDeployment() error {
 		return err
 	}
 
-	if p.posContractAddress != "" {
+	if p.customContractAddress != "" {
 		if p.mechanismType != ibft.PoS {
 			return fmt.Errorf(
 				"doesn't support PoS contract address in %s",
@@ -222,7 +222,7 @@ func (p *switchParams) updateGenesisConfig() error {
 		p.deployment,
 		p.maxValidatorCount,
 		p.minValidatorCount,
-		p.posContractAddress,
+		p.customContractAddress,
 	)
 }
 
@@ -266,8 +266,8 @@ func (p *switchParams) getResult() command.CommandResult {
 		result.MaxValidatorCount = common.JSONNumber{Value: common.MaxSafeJSInt}
 	}
 
-	if p.posContractAddress != "" {
-		result.PoSContractAddress = p.posContractAddress
+	if p.customContractAddress != "" {
+		result.CustomContractAddress = p.customContractAddress
 	}
 
 	return result
@@ -280,7 +280,7 @@ func appendIBFTForks(
 	deployment *uint64,
 	maxValidatorCount *uint64,
 	minValidatorCount *uint64,
-	posContractAddress string,
+	customContractAddress string,
 ) error {
 	ibftConfig, ok := cc.Params.Engine["ibft"].(map[string]interface{})
 	if !ok {
@@ -293,9 +293,11 @@ func appendIBFTForks(
 	}
 
 	lastFork := &ibftForks[len(ibftForks)-1]
-	if mechanismType == lastFork.Type {
-		return errors.New(`cannot specify same IBFT type to the last fork`)
-	}
+	/*
+		if mechanismType == lastFork.Type {
+			return errors.New(`cannot specify same IBFT type to the last fork`)
+		}
+	*/
 
 	if from <= lastFork.From.Value {
 		return errors.New(`"from" must be greater than the beginning height of last fork`)
@@ -324,9 +326,9 @@ func appendIBFTForks(
 		if minValidatorCount != nil {
 			newFork.MinValidatorCount = &common.JSONNumber{Value: *minValidatorCount}
 		}
-
-		newFork.PoSContractAddress = posContractAddress
 	}
+
+	newFork.CustomContractAddress = customContractAddress
 
 	ibftForks = append(ibftForks, newFork)
 	ibftConfig["types"] = ibftForks

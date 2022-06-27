@@ -66,10 +66,10 @@ func setFlags(cmd *cobra.Command) {
 	)
 
 	cmd.Flags().StringVar(
-		&params.posContractAddress,
-		posContractAddress,
+		&params.customContractAddress,
+		customContractAddress,
 		"",
-		"the custom staking contract address to use for PoS",
+		"the custom contract address to use for SC interaction",
 	)
 }
 

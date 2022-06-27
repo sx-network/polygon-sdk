@@ -107,8 +107,10 @@ func (r *IBFTSnapshotResult) writeValidatorData(buffer *bytes.Buffer) {
 }
 
 func (r *IBFTSnapshotResult) writeBlockRewardData(buffer *bytes.Buffer) {
-	buffer.WriteString("\n[BLOCK REWARD]\n")
-	buffer.WriteString(r.BlockReward)
-	buffer.WriteString(" wei")
-	buffer.WriteString("\n")
+	if r.BlockReward != "" {
+		buffer.WriteString("\n[BLOCK REWARD]\n")
+		buffer.WriteString(r.BlockReward)
+		buffer.WriteString(" wei")
+		buffer.WriteString("\n")
+	}
 }

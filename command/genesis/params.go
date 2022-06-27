@@ -26,7 +26,7 @@ const (
 	posFlag                 = "pos"
 	minValidatorCount       = "min-validator-count"
 	maxValidatorCount       = "max-validator-count"
-	posContractAddress      = "pos-contract-address"
+	customContractAddress   = "custom-contract-address"
 )
 
 // Legacy flags that need to be preserved for running clients
