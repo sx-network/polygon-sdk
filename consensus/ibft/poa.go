@@ -281,6 +281,8 @@ func (poa *PoAMechanism) insertBlockHook(numberParam interface{}) error {
 
 	if snap.BlockReward != blockRewardsPayment {
 		newSnap := snap.Copy()
+		newSnap.Number = header.Number
+		newSnap.Hash = header.Hash.String()
 		newSnap.BlockReward = blockRewardsPayment
 
 		if snap.Number != header.Number {
