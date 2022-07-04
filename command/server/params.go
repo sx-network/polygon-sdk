@@ -34,6 +34,7 @@ const (
 	blockTimeFlag         = "block-time"
 	rpcNRAppNameFlag      = "rpc-nr-app-name"
 	rpcNRLicenseKeyFlag   = "rpc-nr-license-key"
+	ibftBaseTimeoutFlag   = "ibft-base-timeout"
 	devIntervalFlag       = "dev-interval"
 	devFlag               = "dev"
 	corsOriginFlag        = "access-control-allow-origins"
@@ -175,6 +176,7 @@ func (p *serverParams) generateConfig() *server.Config {
 		BlockTime:       p.rawConfig.BlockTime,
 		RPCNrAppName:    p.rpcNRAppName,
 		RPCNrLicenseKey: p.rpcNRLicenseKey,
+		IBFTBaseTimeout: p.rawConfig.IBFTBaseTimeout,
 		LogLevel:        hclog.LevelFromString(p.rawConfig.LogLevel),
 		LogFilePath:     p.logFileLocation,
 	}

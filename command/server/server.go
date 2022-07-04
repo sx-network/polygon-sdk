@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+
 	"github.com/0xPolygon/polygon-edge/command"
 	"github.com/0xPolygon/polygon-edge/command/server/config"
 	"github.com/0xPolygon/polygon-edge/command/server/export"
@@ -195,6 +196,17 @@ func setFlags(cmd *cobra.Command) {
 		rpcNRLicenseKeyFlag,
 		"",
 		"the New Relic Agent License Key, used for reporting json-rpc metrics.",
+	)
+
+	cmd.Flags().Uint64Var(
+		&params.rawConfig.IBFTBaseTimeout,
+		ibftBaseTimeoutFlag,
+		// Calculate from block time if it is not given
+		0,
+		fmt.Sprintf(
+			"base IBFT timeout in seconds, it needs to be larger than block time. (block time * %d) is set if it's zero",
+			config.BlockTimeMultiplierForTimeout,
+		),
 	)
 
 	cmd.Flags().StringArrayVar(
