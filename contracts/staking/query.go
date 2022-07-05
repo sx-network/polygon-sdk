@@ -84,20 +84,15 @@ func QueryValidators(t TxQueryHandler, contract types.Address, from types.Addres
 }
 
 func QueryBlockRewardsPayment(t TxQueryHandler, contract types.Address, from types.Address) (string, error) {
-	method, ok := abis.StakingABI.Methods["getBlockReward"]
+	method, ok := abis.CustomABI.Methods["getBlockReward"]
 	if !ok {
 		return "0", errors.New("getBlockReward method doesn't exist in Staking contract ABI")
-	}
-
-	stakingContract := AddrStakingContract
-	if contract != types.ZeroAddress {
-		stakingContract = contract
 	}
 
 	selector := method.ID()
 	res, err := t.Apply(&types.Transaction{
 		From:     from,
-		To:       &stakingContract,
+		To:       &contract,
 		Value:    big.NewInt(0),
 		Input:    selector,
 		GasPrice: big.NewInt(0),
