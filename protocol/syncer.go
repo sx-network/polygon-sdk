@@ -288,9 +288,15 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 
 	// s.logger.Debug("rpc debug - BestPeer", "s.peers length", countMap(&s.peers))
 	s.peers.Range(func(peerID, peer interface{}) bool {
+
 		syncPeer, ok := peer.(*SyncPeer)
 		if !ok {
 			return false
+		}
+
+		// Check if client should ignore this peer when determining best peer to sync to
+		if s.server.ShouldIgnoreSyncToPeer(syncPeer.peer) {
+			return true
 		}
 
 		peerBlockNumber := syncPeer.Number()
