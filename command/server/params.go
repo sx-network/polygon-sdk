@@ -157,6 +157,7 @@ func (p *serverParams) generateConfig() *server.Config {
 		},
 		Network: &network.Config{
 			NoDiscover:       p.rawConfig.Network.NoDiscover,
+			BootnodeOnlySync: p.rawConfig.Network.BootnodeOnlySync,
 			Addr:             p.libp2pAddress,
 			NatAddr:          p.natAddress,
 			DNS:              p.dnsAddress,
