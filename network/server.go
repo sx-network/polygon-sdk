@@ -530,6 +530,7 @@ func (s *Server) ShouldIgnoreSyncToPeer(peerID peer.ID) bool {
 	if ignoreSync {
 		s.logger.Debug("avoid syncing to non-bootnode peer", "id", peerID.String())
 	}
+
 	return ignoreSync
 }
 

@@ -288,7 +288,6 @@ func (s *Syncer) BestPeer() (*SyncPeer, *big.Int) {
 
 	// s.logger.Debug("rpc debug - BestPeer", "s.peers length", countMap(&s.peers))
 	s.peers.Range(func(peerID, peer interface{}) bool {
-
 		syncPeer, ok := peer.(*SyncPeer)
 		if !ok {
 			return false
