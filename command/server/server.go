@@ -140,13 +140,6 @@ func setFlags(cmd *cobra.Command) {
 		"restrict the client to only sync to bootnodes (default: false)",
 	)
 
-	cmd.Flags().BoolVar(
-		&params.rawConfig.Network.BootnodeOnlySync,
-		command.BootnodeOnlySyncFlag,
-		defaultConfig.Network.BootnodeOnlySync,
-		"restrict the client to only sync to bootnodes (default: false)",
-	)
-
 	cmd.Flags().Int64Var(
 		&params.rawConfig.Network.MaxPeers,
 		maxPeersFlag,
