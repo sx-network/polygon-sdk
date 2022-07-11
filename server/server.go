@@ -559,7 +559,9 @@ func (s *Server) setupJSONRPC() error {
 			RPCNrAppName:    s.config.RPCNrAppName,
 			RPCNrLicenseKey: s.config.RPCNrLicenseKey,
 		},
-		PriceLimit: s.config.PriceLimit,
+		PriceLimit:       s.config.PriceLimit,
+		BatchLengthLimit: s.config.JSONRPC.BatchLengthLimit,
+		BlockRangeLimit:  s.config.JSONRPC.BlockRangeLimit,
 	}
 
 	srv, err := jsonrpc.NewJSONRPC(s.logger, conf)

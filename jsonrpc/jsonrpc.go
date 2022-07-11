@@ -66,14 +66,17 @@ type Config struct {
 	RPCNrConfig              *RPCNrConfig
 	AccessControlAllowOrigin []string
 	PriceLimit               uint64
+	BatchLengthLimit         uint64
+	BlockRangeLimit          uint64
 }
 
 // NewJSONRPC returns the JSONRPC http server
 func NewJSONRPC(logger hclog.Logger, config *Config) (*JSONRPC, error) {
 	srv := &JSONRPC{
-		logger:     logger.Named("jsonrpc"),
-		config:     config,
-		dispatcher: newDispatcher(logger, config.Store, config.ChainID, config.PriceLimit),
+		logger: logger.Named("jsonrpc"),
+		config: config,
+		dispatcher: newDispatcher(logger, config.Store, config.ChainID, config.PriceLimit,
+			config.BatchLengthLimit, config.BlockRangeLimit),
 	}
 
 	// start http server
