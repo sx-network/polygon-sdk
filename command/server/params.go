@@ -27,6 +27,8 @@ const (
 	maxInboundPeersFlag   = "max-inbound-peers"
 	maxOutboundPeersFlag  = "max-outbound-peers"
 	priceLimitFlag        = "price-limit"
+	batchRequestLimitFlag = "json-rpc-batch-request-limit"
+	blockRangeLimitFlag   = "json-rpc-block-range-limit"
 	maxSlotsFlag          = "max-slots"
 	blockGasTargetFlag    = "block-gas-target"
 	secretsConfigFlag     = "secrets-config"
@@ -34,6 +36,7 @@ const (
 	blockTimeFlag         = "block-time"
 	rpcNRAppNameFlag      = "rpc-nr-app-name"
 	rpcNRLicenseKeyFlag   = "rpc-nr-license-key"
+	ibftBaseTimeoutFlag   = "ibft-base-timeout"
 	devIntervalFlag       = "dev-interval"
 	devFlag               = "dev"
 	corsOriginFlag        = "access-control-allow-origins"
@@ -55,7 +58,6 @@ var (
 )
 
 var (
-	errInvalidPeerParams = errors.New("both max-peers and max-inbound/outbound flags are set")
 	errInvalidNATAddress = errors.New("could not parse NAT IP address")
 )
 
@@ -79,19 +81,13 @@ type serverParams struct {
 	rpcNRAppName    string
 	rpcNRLicenseKey string
 
+	batchLengthLimit uint64
+	blockRangeLimit  uint64
+
 	genesisConfig *chain.Chain
 	secretsConfig *secrets.SecretsManagerConfig
 
 	logFileLocation string
-}
-
-func (p *serverParams) validateFlags() error {
-	// Validate the max peers configuration
-	if p.isMaxPeersSet() && p.isPeerRangeSet() {
-		return errInvalidPeerParams
-	}
-
-	return nil
 }
 
 func (p *serverParams) isMaxPeersSet() bool {
@@ -149,6 +145,8 @@ func (p *serverParams) generateConfig() *server.Config {
 		JSONRPC: &server.JSONRPC{
 			JSONRPCAddr:              p.jsonRPCAddress,
 			AccessControlAllowOrigin: p.corsAllowedOrigins,
+			BatchLengthLimit:         p.batchLengthLimit,
+			BlockRangeLimit:          p.blockRangeLimit,
 		},
 		GRPCAddr:   p.grpcAddress,
 		LibP2PAddr: p.libp2pAddress,
@@ -176,6 +174,7 @@ func (p *serverParams) generateConfig() *server.Config {
 		BlockTime:       p.rawConfig.BlockTime,
 		RPCNrAppName:    p.rpcNRAppName,
 		RPCNrLicenseKey: p.rpcNRLicenseKey,
+		IBFTBaseTimeout: p.rawConfig.IBFTBaseTimeout,
 		LogLevel:        hclog.LevelFromString(p.rawConfig.LogLevel),
 		LogFilePath:     p.logFileLocation,
 	}

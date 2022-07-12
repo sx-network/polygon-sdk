@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/0xPolygon/polygon-edge/command"
+	"github.com/0xPolygon/polygon-edge/command/helper"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +17,7 @@ func GetCommand() *cobra.Command {
 	}
 
 	setFlags(ibftQuorumCmd)
-	setRequiredFlags(ibftQuorumCmd)
+	helper.SetRequiredFlags(ibftQuorumCmd, params.getRequiredFlags())
 
 	return ibftQuorumCmd
 }
@@ -35,12 +36,6 @@ func setFlags(cmd *cobra.Command) {
 		0,
 		"the height to switch the quorum calculation",
 	)
-}
-
-func setRequiredFlags(cmd *cobra.Command) {
-	for _, requiredFlag := range params.getRequiredFlags() {
-		_ = cmd.MarkFlagRequired(requiredFlag)
-	}
 }
 
 func runPreRun(_ *cobra.Command, _ []string) error {

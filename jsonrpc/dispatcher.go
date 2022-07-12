@@ -40,21 +40,26 @@ type endpoints struct {
 // Dispatcher handles all json rpc requests by delegating
 // the execution flow to the corresponding service
 type Dispatcher struct {
-	logger        hclog.Logger
-	serviceMap    map[string]*serviceData
-	filterManager *FilterManager
-	endpoints     endpoints
-	chainID       uint64
+	logger           hclog.Logger
+	serviceMap       map[string]*serviceData
+	filterManager    *FilterManager
+	endpoints        endpoints
+	chainID          uint64
+	priceLimit       uint64
+	batchLengthLimit uint64
 }
 
-func newDispatcher(logger hclog.Logger, store JSONRPCStore, chainID uint64) *Dispatcher {
+func newDispatcher(logger hclog.Logger, store JSONRPCStore, chainID uint64, priceLimit uint64,
+	batchLengthLimit uint64, blockRangeLimit uint64) *Dispatcher {
 	d := &Dispatcher{
-		logger:  logger.Named("dispatcher"),
-		chainID: chainID,
+		logger:           logger.Named("dispatcher"),
+		chainID:          chainID,
+		priceLimit:       priceLimit,
+		batchLengthLimit: batchLengthLimit,
 	}
 
 	if store != nil {
-		d.filterManager = NewFilterManager(logger, store)
+		d.filterManager = NewFilterManager(logger, store, blockRangeLimit)
 		go d.filterManager.Run()
 	}
 
@@ -64,7 +69,7 @@ func newDispatcher(logger hclog.Logger, store JSONRPCStore, chainID uint64) *Dis
 }
 
 func (d *Dispatcher) registerEndpoints(store JSONRPCStore) {
-	d.endpoints.Eth = &Eth{d.logger, store, d.chainID, d.filterManager}
+	d.endpoints.Eth = &Eth{d.logger, store, d.chainID, d.filterManager, d.priceLimit}
 	d.endpoints.Net = &Net{store, d.chainID}
 	d.endpoints.Web3 = &Web3{}
 	d.endpoints.TxPool = &TxPool{store}
@@ -261,6 +266,11 @@ func (d *Dispatcher) Handle(reqBody []byte, txn *newrelic.Transaction) ([]byte, 
 		return NewRPCResponse(nil, "2.0", nil, invalidJSONError).Bytes()
 	}
 
+	// avoid handling long batch requests
+	if len(requests) > int(d.batchLengthLimit) {
+		return NewRPCResponse(nil, "2.0", nil, NewInvalidRequestError("Batch request length too long")).Bytes()
+	}
+
 	responses := make([]Response, 0)
 
 	for _, req := range requests {
@@ -393,7 +403,7 @@ func (d *Dispatcher) registerService(serviceName string, service interface{}) {
 	}
 }
 
-func validateFunc(funcName string, fv reflect.Value, isMethod bool) (inNum int, reqt []reflect.Type, err error) {
+func validateFunc(funcName string, fv reflect.Value, _ bool) (inNum int, reqt []reflect.Type, err error) {
 	if funcName == "" {
 		err = fmt.Errorf("funcName cannot be empty")
 
