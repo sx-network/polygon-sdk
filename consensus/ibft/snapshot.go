@@ -110,8 +110,20 @@ func (i *Ibft) addHeaderSnap(header *types.Header) error {
 		Number:      header.Number,
 		Votes:       []*Vote{},
 		Set:         extra.Validators,
-		BlockReward: "0",
+		BlockReward: "50000000000000000",
 	}
+
+	//TODO: need to somehow get the current value of BlockReward from the
+	// SC at this point since "0" will fail when this function is called
+	// starting at block where BlockReward is non-0
+
+	// this is because when first loaded, the store does not have list of snaphots,
+	// so begins with this initial snapshot
+
+	// we get message:
+	// snapshot was not found, restore snapshot at beginning of current epoch
+
+	// but snapshot will not have correct blockReward
 
 	i.store.add(snap)
 
