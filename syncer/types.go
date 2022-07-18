@@ -46,6 +46,8 @@ type Network interface {
 	NewTopic(protoID string, obj proto.Message) (*network.Topic, error)
 	// IsConnected returns the node is connecting to the peer associated with the given ID
 	IsConnected(peerID peer.ID) bool
+	// ShouldIgnoreSyncToPeer Check if client should ignore this peer when determining best peer to sync to
+	ShouldIgnoreSyncToPeer(peerID peer.ID) bool
 	// SaveProtocolStream saves stream
 	SaveProtocolStream(protocol string, stream *rawGrpc.ClientConn, peerID peer.ID)
 	// CloseProtocolStream closes stream
