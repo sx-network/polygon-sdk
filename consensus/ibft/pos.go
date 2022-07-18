@@ -267,6 +267,7 @@ func (pos *PoSMechanism) updateValidators(num uint64) error {
 		if err != nil {
 			return err
 		}
+
 		newSnap.BlockReward = blockRewardsPayment
 	}
 
