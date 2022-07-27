@@ -15,6 +15,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/chain"
 	"github.com/0xPolygon/polygon-edge/consensus"
 	"github.com/0xPolygon/polygon-edge/crypto"
+	"github.com/0xPolygon/polygon-edge/datafeed"
 	"github.com/0xPolygon/polygon-edge/helper/common"
 	"github.com/0xPolygon/polygon-edge/helper/keccak"
 	"github.com/0xPolygon/polygon-edge/helper/progress"
@@ -53,6 +54,9 @@ type Server struct {
 
 	// jsonrpc stack
 	jsonrpcServer *jsonrpc.JSONRPC
+
+	// datafeedConsumer
+	datafeedConsumer *datafeed.DataFeed
 
 	// system grpc server
 	grpcServer *grpc.Server
@@ -244,6 +248,11 @@ func NewServer(config *Config) (*Server, error) {
 
 	// setup and start jsonrpc server
 	if err := m.setupJSONRPC(); err != nil {
+		return nil, err
+	}
+
+	// setup and start datafeed consumer
+	if err := m.setupDataFeedConsumer(); err != nil {
 		return nil, err
 	}
 
@@ -566,6 +575,31 @@ func (s *Server) setupJSONRPC() error {
 	}
 
 	s.jsonrpcServer = srv
+
+	return nil
+}
+
+// setupDataFeedConsumer set up and start datafeed consumer
+func (s *Server) setupDataFeedConsumer() error {
+
+	conf := &datafeed.Config{
+		MQConfig: &datafeed.MQConfig{
+			//TODO: have server flag s.config.DataFeedMQHostUrl / --datafeed-mq-host configured
+			HostUrl: "amqps://admin:GpQi4V-MtcYLXJ@b-da6c3d13-3518-47f6-98f2-babf1af26167.mq.us-east-1.amazonaws.com:5671/",
+			QueueConfig: &datafeed.QueueConfig{
+				QueueName:    "MYQueue",
+				RoutingKey:   "test-routing-key",
+				ExchangeName: "exchange-name",
+			},
+		},
+	}
+
+	datafeedConsumer, err := datafeed.NewDataFeedService(s.logger, conf)
+	if err != nil {
+		return err
+	}
+
+	s.datafeedConsumer = datafeedConsumer
 
 	return nil
 }
