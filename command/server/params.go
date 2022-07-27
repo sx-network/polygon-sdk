@@ -15,29 +15,31 @@ import (
 )
 
 const (
-	configFlag            = "config"
-	genesisPathFlag       = "chain"
-	dataDirFlag           = "data-dir"
-	libp2pAddressFlag     = "libp2p"
-	prometheusAddressFlag = "prometheus"
-	natFlag               = "nat"
-	dnsFlag               = "dns"
-	sealFlag              = "seal"
-	maxPeersFlag          = "max-peers"
-	maxInboundPeersFlag   = "max-inbound-peers"
-	maxOutboundPeersFlag  = "max-outbound-peers"
-	priceLimitFlag        = "price-limit"
-	maxSlotsFlag          = "max-slots"
-	blockGasTargetFlag    = "block-gas-target"
-	secretsConfigFlag     = "secrets-config"
-	restoreFlag           = "restore"
-	blockTimeFlag         = "block-time"
-	rpcNRAppNameFlag      = "rpc-nr-app-name"
-	rpcNRLicenseKeyFlag   = "rpc-nr-license-key"
-	devIntervalFlag       = "dev-interval"
-	devFlag               = "dev"
-	corsOriginFlag        = "access-control-allow-origins"
-	logFileLocationFlag   = "log-to"
+	configFlag                = "config"
+	genesisPathFlag           = "chain"
+	dataDirFlag               = "data-dir"
+	libp2pAddressFlag         = "libp2p"
+	prometheusAddressFlag     = "prometheus"
+	natFlag                   = "nat"
+	dnsFlag                   = "dns"
+	sealFlag                  = "seal"
+	maxPeersFlag              = "max-peers"
+	maxInboundPeersFlag       = "max-inbound-peers"
+	maxOutboundPeersFlag      = "max-outbound-peers"
+	priceLimitFlag            = "price-limit"
+	maxSlotsFlag              = "max-slots"
+	blockGasTargetFlag        = "block-gas-target"
+	secretsConfigFlag         = "secrets-config"
+	restoreFlag               = "restore"
+	blockTimeFlag             = "block-time"
+	rpcNRAppNameFlag          = "rpc-nr-app-name"
+	rpcNRLicenseKeyFlag       = "rpc-nr-license-key"
+	devIntervalFlag           = "dev-interval"
+	devFlag                   = "dev"
+	corsOriginFlag            = "access-control-allow-origins"
+	logFileLocationFlag       = "log-to"
+	dataFeedAMQPURIFlag       = "data-feed-amqp-uri"
+	dataFeedAMQPQueueNameFlag = "data-feed-amqp-queue-name"
 )
 
 const (
@@ -78,6 +80,9 @@ type serverParams struct {
 
 	rpcNRAppName    string
 	rpcNRLicenseKey string
+
+	dataFeedAMQPURI       string
+	dataFeedAMQPQueueName string
 
 	genesisConfig *chain.Chain
 	secretsConfig *secrets.SecretsManagerConfig
@@ -165,6 +170,10 @@ func (p *serverParams) generateConfig() *server.Config {
 			MaxInboundPeers:  p.rawConfig.Network.MaxInboundPeers,
 			MaxOutboundPeers: p.rawConfig.Network.MaxOutboundPeers,
 			Chain:            p.genesisConfig,
+		},
+		DataFeed: &server.DataFeed{
+			DataFeedAMQPURI:       p.dataFeedAMQPURI,
+			DataFeedAMQPQueueName: p.dataFeedAMQPQueueName,
 		},
 		DataDir:         p.rawConfig.DataDir,
 		Seal:            p.rawConfig.ShouldSeal,

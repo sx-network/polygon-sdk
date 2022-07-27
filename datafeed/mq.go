@@ -25,14 +25,12 @@ type Connection struct {
 
 // QueueConfig
 type QueueConfig struct {
-	QueueName    string
-	RoutingKey   string
-	ExchangeName string
+	QueueName string
 }
 
 func newMQService(logger hclog.Logger, config *MQConfig, datafeedService *DataFeed) (*MQService, error) {
 	conn, err := getConnection(
-		config.HostUrl,
+		config.AMQPURI,
 	)
 	if err != nil {
 		return nil, err
@@ -51,16 +49,12 @@ func newMQService(logger hclog.Logger, config *MQConfig, datafeedService *DataFe
 }
 
 // startConsumeLoop
-//TODO: inspirations:
-//TODO: start rabbitMQ service here - see https://codereview.stackexchange.com/questions/199814/golang-rabbitmq-message-consumer for worker
-//TODO: also see https://github.com/MarioCarrion/todo-api-microservice-example/blob/65c10bd4cfb1e4d6c24bc1c541b8a6b1e3554cfe/cmd/elasticsearch-indexer-rabbitmq/main.go
-//TODO: also see https://blog.boot.dev/golang/connecting-to-rabbitmq-in-golang/
-//TODO: https://sourcegraph.com/github.com/PacktPublishing/Cloud-Native-programming-with-Golang@0aad1453f9667565c8d7c5712723d0979a69651a/-/blob/Chapter04/src/lib/msgqueue/amqp/listener.go?L73#tab=def
 func (mq *MQService) startConsumeLoop() {
 	mq.logger.Debug("listening for MQ messages...")
-	ctx, cfunc := context.WithCancel(context.Background())
 
+	ctx, cfunc := context.WithCancel(context.Background())
 	messages, errors, err := mq.startConsumer(ctx, 1)
+
 	if err != nil {
 		panic(err)
 	}
@@ -85,6 +79,7 @@ func getConnection(rabbitMQURL string) (Connection, error) {
 	}
 
 	ch, err := conn.Channel()
+
 	return Connection{
 		Channel: ch,
 	}, err
@@ -95,9 +90,7 @@ func getConnection(rabbitMQURL string) (Connection, error) {
 func (mq *MQService) startConsumer(
 	ctx context.Context, concurrency int,
 ) (<-chan string, <-chan error, error) {
-
 	mq.logger.Debug("Starting MQConsumerService...")
-
 	// bind the queue to the routing key - optional
 	// err = ch.QueueBind(queueName, routingKey, exchangeName, false, nil)
 	// if err != nil {
@@ -106,6 +99,7 @@ func (mq *MQService) startConsumer(
 
 	// prefetch 4x as many messages as we can handle at once
 	prefetchCount := concurrency * 4
+
 	err := mq.connection.Channel.Qos(prefetchCount, 0, false)
 	if err != nil {
 		return nil, nil, err
@@ -121,6 +115,7 @@ func (mq *MQService) startConsumer(
 		false,                           // no-wait
 		nil,                             // args
 	)
+
 	if err != nil {
 		return nil, nil, err
 	}
@@ -134,9 +129,10 @@ func (mq *MQService) startConsumer(
 				message, err := mq.parseDelivery(delivery)
 				if err != nil {
 					errors <- err
-					delivery.Nack(false, true)
+
+					delivery.Nack(false, true) //nolint:errcheck
 				} else {
-					delivery.Ack(false)
+					delivery.Ack(false) //nolint:errcheck
 					messages <- message
 				}
 			}
@@ -146,7 +142,8 @@ func (mq *MQService) startConsumer(
 	// stop the consumer upon sigterm
 	go func() {
 		<-ctx.Done()
-		mq.connection.Channel.Cancel(uuid, false) // stop consumer quickly
+		// stop consumer quickly
+		mq.connection.Channel.Cancel(uuid, false) //nolint:errcheck
 	}()
 
 	return messages, errors, nil
@@ -155,10 +152,13 @@ func (mq *MQService) startConsumer(
 // parseDelivery returns body of message or error if one occurred during parsing
 func (mq *MQService) parseDelivery(delivery amqp.Delivery) (string, error) {
 	if delivery.Body == nil {
-		err := fmt.Errorf("Error, no message body!")
+		err := fmt.Errorf("error, no message body")
+
 		return "", err
 	}
+
 	body := string(delivery.Body)
 	mq.logger.Debug("MQ message received", "message", body)
+
 	return body, nil
 }

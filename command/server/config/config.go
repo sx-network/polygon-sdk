@@ -22,6 +22,7 @@ type Config struct {
 	JSONRPCAddr       string     `json:"jsonrpc_addr" yaml:"jsonrpc_addr"`
 	Telemetry         *Telemetry `json:"telemetry" yaml:"telemetry"`
 	Network           *Network   `json:"network" yaml:"network"`
+	DataFeed          *DataFeed  `json:"data_feed" yaml:"data_feed"`
 	ShouldSeal        bool       `json:"seal" yaml:"seal"`
 	TxPool            *TxPool    `json:"tx_pool" yaml:"tx_pool"`
 	LogLevel          string     `json:"log_level" yaml:"log_level"`
@@ -45,6 +46,12 @@ type Network struct {
 	MaxPeers         int64  `json:"max_peers,omitempty" yaml:"max_peers,omitempty"`
 	MaxOutboundPeers int64  `json:"max_outbound_peers,omitempty" yaml:"max_outbound_peers,omitempty"`
 	MaxInboundPeers  int64  `json:"max_inbound_peers,omitempty" yaml:"max_inbound_peers,omitempty"`
+}
+
+// DataFeed defines the DataFeed configuration params
+type DataFeed struct {
+	DataFeedAMQPUri       string `json:"data_feed_amqp_uri" yaml:"data_feed_amqp_uri"`
+	DataFeedAMQPQueueName string `json:"data_feed_amqp_queue_name" yaml:"data_feed_amqp_queue_name"`
 }
 
 // TxPool defines the TxPool configuration params
@@ -84,6 +91,10 @@ func DefaultConfig() *Config {
 		TxPool: &TxPool{
 			PriceLimit: 0,
 			MaxSlots:   4096,
+		},
+		DataFeed: &DataFeed{
+			DataFeedAMQPUri:       "",
+			DataFeedAMQPQueueName: "",
 		},
 		LogLevel:    "INFO",
 		RestoreFile: "",

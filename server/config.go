@@ -34,6 +34,8 @@ type Config struct {
 	RPCNrAppName    string
 	RPCNrLicenseKey string
 
+	DataFeed *DataFeed
+
 	Seal bool
 
 	SecretsManager *secrets.SecretsManagerConfig
@@ -52,4 +54,10 @@ type Telemetry struct {
 type JSONRPC struct {
 	JSONRPCAddr              *net.TCPAddr
 	AccessControlAllowOrigin []string
+}
+
+// DataFeed holds the config details for the DataFeedService
+type DataFeed struct {
+	DataFeedAMQPURI       string
+	DataFeedAMQPQueueName string
 }

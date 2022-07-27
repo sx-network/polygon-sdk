@@ -1,6 +1,8 @@
 package datafeed
 
 import (
+	"fmt"
+
 	"github.com/hashicorp/go-hclog"
 )
 
@@ -17,7 +19,7 @@ type Config struct {
 }
 
 type MQConfig struct {
-	HostUrl     string
+	AMQPURI     string
 	QueueConfig *QueueConfig
 }
 
@@ -29,21 +31,24 @@ func NewDataFeedService(logger hclog.Logger, config *Config) (*DataFeed, error) 
 	}
 
 	// configure and start mqService
-	mqService, err := newMQService(datafeedService.logger, config.MQConfig, datafeedService)
-	if err != nil {
-		return nil, err
+	if config.MQConfig.AMQPURI != "" {
+		if config.MQConfig.QueueConfig.QueueName == "" {
+			return nil, fmt.Errorf("DataFeed AMQPURI provided without a valid QueueName")
+		}
+
+		mqService, err := newMQService(datafeedService.logger, config.MQConfig, datafeedService)
+		if err != nil {
+			return nil, err
+		}
+
+		datafeedService.mqService = mqService
 	}
-	datafeedService.mqService = mqService
-
 	//TODO: set up grpc listener
-
 	//TODO: set up libp2p functions
-
 	return datafeedService, nil
 }
 
 func (d *DataFeed) ProcessPayload(message string) {
-	d.logger.Debug("Processing message", "message", message)
-
 	//TODO: eventually parse lsports payload here + process + sign + gossip
+	d.logger.Debug("Processing message", "message", message)
 }
