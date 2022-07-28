@@ -12,6 +12,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/chain"
 	"github.com/0xPolygon/polygon-edge/command"
 	ibftOp "github.com/0xPolygon/polygon-edge/consensus/ibft/proto"
+	datafeedOp "github.com/0xPolygon/polygon-edge/datafeed/proto"
 	"github.com/0xPolygon/polygon-edge/server"
 	"github.com/0xPolygon/polygon-edge/server/proto"
 	txpoolOp "github.com/0xPolygon/polygon-edge/txpool/proto"
@@ -97,6 +98,19 @@ func FormatKV(in []string) string {
 	columnConf.Glue = " = "
 
 	return columnize.Format(in, columnConf)
+}
+
+// GetDatafeedClientConnection returns the datafeed operator client connection
+func GetDatafeedClientConnection(address string) (
+	datafeedOp.DataFeedOperatorClient,
+	error,
+) {
+	conn, err := GetGRPCConnection(address)
+	if err != nil {
+		return nil, err
+	}
+
+	return datafeedOp.NewDataFeedOperatorClient(conn), nil
 }
 
 // GetTxPoolClientConnection returns the TxPool operator client connection

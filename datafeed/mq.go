@@ -53,6 +53,8 @@ func (mq *MQService) startConsumeLoop() {
 	mq.logger.Debug("listening for MQ messages...")
 
 	ctx, cfunc := context.WithCancel(context.Background())
+
+	//TODO: have consumer concurrency configurable once we need more than 1 running at a time
 	messages, errors, err := mq.startConsumer(ctx, 1)
 
 	if err != nil {
@@ -91,16 +93,24 @@ func (mq *MQService) startConsumer(
 	ctx context.Context, concurrency int,
 ) (<-chan string, <-chan error, error) {
 	mq.logger.Debug("Starting MQConsumerService...")
-	// bind the queue to the routing key - optional
-	// err = ch.QueueBind(queueName, routingKey, exchangeName, false, nil)
-	// if err != nil {
-	// 	return err
-	// }
+
+	// create the queue if it doesn't already exist
+	_, err := mq.connection.Channel.QueueDeclare(mq.config.QueueConfig.QueueName, true, false, false, false, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// bind the queue to the routing key
+	//TODO: eventually ensure the exchange name is configurable instead of hardcoded to 'toronto-exchange'
+	err = mq.connection.Channel.QueueBind(mq.config.QueueConfig.QueueName, "", "toronto-exchange", false, nil)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// prefetch 4x as many messages as we can handle at once
 	prefetchCount := concurrency * 4
 
-	err := mq.connection.Channel.Qos(prefetchCount, 0, false)
+	err = mq.connection.Channel.Qos(prefetchCount, 0, false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -157,6 +167,7 @@ func (mq *MQService) parseDelivery(delivery amqp.Delivery) (string, error) {
 		return "", err
 	}
 
+	//TODO: unmarshal from string to types.ReportOutcome
 	body := string(delivery.Body)
 	mq.logger.Debug("MQ message received", "message", body)
 

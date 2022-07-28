@@ -3,7 +3,9 @@ package datafeed
 import (
 	"fmt"
 
+	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 	"github.com/hashicorp/go-hclog"
+	"google.golang.org/grpc"
 )
 
 // DataFeed
@@ -11,6 +13,9 @@ type DataFeed struct {
 	logger    hclog.Logger
 	config    *Config
 	mqService *MQService
+
+	// indicates which DataFeed operator commands should be implemented
+	proto.UnimplementedDataFeedOperatorServer
 }
 
 // Config
@@ -24,7 +29,7 @@ type MQConfig struct {
 }
 
 // NewDataFeedService returns the new datafeed service
-func NewDataFeedService(logger hclog.Logger, config *Config) (*DataFeed, error) {
+func NewDataFeedService(logger hclog.Logger, config *Config, grpcServer *grpc.Server) (*DataFeed, error) {
 	datafeedService := &DataFeed{
 		logger: logger.Named("datafeed"),
 		config: config,
@@ -43,12 +48,18 @@ func NewDataFeedService(logger hclog.Logger, config *Config) (*DataFeed, error) 
 
 		datafeedService.mqService = mqService
 	}
-	//TODO: set up grpc listener
+
+	// configure grpc operator service
+	if grpcServer != nil {
+		proto.RegisterDataFeedOperatorServer(grpcServer, datafeedService)
+	}
+
 	//TODO: set up libp2p functions
 	return datafeedService, nil
 }
 
 func (d *DataFeed) ProcessPayload(message string) {
-	//TODO: eventually parse lsports payload here + process + sign + gossip
+	//TODO: strings for now but eventually parse lsports payload here + process + sign + gossip
+	//TODO: should call libp2p publish here after we validate the payload
 	d.logger.Debug("Processing message", "message", message)
 }
