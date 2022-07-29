@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/0xPolygon/polygon-edge/archive"
 	"github.com/0xPolygon/polygon-edge/blockchain"
@@ -35,7 +36,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Minimal is the central manager of the blockchain client
+// Server is the central manager of the blockchain client
 type Server struct {
 	logger       hclog.Logger
 	config       *Config
@@ -393,18 +394,19 @@ func (s *Server) setupConsensus() error {
 
 	consensus, err := engine(
 		&consensus.ConsensusParams{
-			Context:        context.Background(),
-			Seal:           s.config.Seal,
-			Config:         config,
-			Txpool:         s.txpool,
-			Network:        s.network,
-			Blockchain:     s.blockchain,
-			Executor:       s.executor,
-			Grpc:           s.grpcServer,
-			Logger:         s.logger.Named("consensus"),
-			Metrics:        s.serverMetrics.consensus,
-			SecretsManager: s.secretsManager,
-			BlockTime:      s.config.BlockTime,
+			Context:         context.Background(),
+			Seal:            s.config.Seal,
+			Config:          config,
+			Txpool:          s.txpool,
+			Network:         s.network,
+			Blockchain:      s.blockchain,
+			Executor:        s.executor,
+			Grpc:            s.grpcServer,
+			Logger:          s.logger.Named("consensus"),
+			Metrics:         s.serverMetrics.consensus,
+			SecretsManager:  s.secretsManager,
+			BlockTime:       s.config.BlockTime,
+			IBFTBaseTimeout: s.config.IBFTBaseTimeout,
 		},
 	)
 
@@ -558,6 +560,9 @@ func (s *Server) setupJSONRPC() error {
 			RPCNrAppName:    s.config.RPCNrAppName,
 			RPCNrLicenseKey: s.config.RPCNrLicenseKey,
 		},
+		PriceLimit:       s.config.PriceLimit,
+		BatchLengthLimit: s.config.JSONRPC.BatchLengthLimit,
+		BlockRangeLimit:  s.config.JSONRPC.BlockRangeLimit,
 	}
 
 	srv, err := jsonrpc.NewJSONRPC(s.logger, conf)
@@ -647,6 +652,7 @@ func (s *Server) startPrometheusServer(listenAddr *net.TCPAddr) *http.Server {
 				promhttp.HandlerOpts{},
 			),
 		),
+		ReadHeaderTimeout: 60 * time.Second,
 	}
 
 	go func() {
