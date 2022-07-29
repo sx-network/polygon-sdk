@@ -1428,6 +1428,28 @@ func (i *Ibft) IsIbftStateStale() bool {
 	return false
 }
 
+// GetValidatorInfo returns validator info to be used outside consensus layer
+func (i *Ibft) GetValidatorInfo() *consensus.ValidatorInfo {
+
+	// read from snapshot instead of state
+	snapshot, err := i.getLatestSnapshot()
+	if err != nil {
+		i.logger.Error(
+			"could not get latest snapshot when trying to derive validator info",
+			"err",
+			err,
+		)
+	}
+
+	return &consensus.ValidatorInfo{
+		Validators:       snapshot.Set,
+		ValidatorKey:     i.validatorKey,
+		ValidatorAddress: i.validatorKeyAddr.String(),
+		Epoch:            i.GetEpoch(snapshot.Number),
+		QuorumSize:       i.quorumSize(snapshot.Number)(snapshot.Set),
+	}
+}
+
 // getNextMessage reads a new message from the message queue
 func (i *Ibft) getNextMessage(timeout time.Duration) (*proto.MessageReq, bool) {
 	timeoutCh := time.After(timeout)

@@ -252,11 +252,6 @@ func NewServer(config *Config) (*Server, error) {
 		return nil, err
 	}
 
-	// setup and start datafeed consumer
-	if err := m.setupDataFeedService(); err != nil {
-		return nil, err
-	}
-
 	// restore archive data before starting
 	if err := m.restoreChain(); err != nil {
 		return nil, err
@@ -264,6 +259,11 @@ func NewServer(config *Config) (*Server, error) {
 
 	// start consensus
 	if err := m.consensus.Start(); err != nil {
+		return nil, err
+	}
+
+	// setup and start datafeed consumer
+	if err := m.setupDataFeedService(); err != nil {
 		return nil, err
 	}
 
@@ -586,6 +586,7 @@ func (s *Server) setupJSONRPC() error {
 
 // setupDataFeedService set up and start datafeed service
 func (s *Server) setupDataFeedService() error {
+
 	conf := &datafeed.Config{
 		MQConfig: &datafeed.MQConfig{
 			AMQPURI: s.config.DataFeed.DataFeedAMQPURI,
@@ -595,7 +596,13 @@ func (s *Server) setupDataFeedService() error {
 		},
 	}
 
-	datafeedService, err := datafeed.NewDataFeedService(s.logger, conf, s.grpcServer, s.network)
+	datafeedService, err := datafeed.NewDataFeedService(
+		s.logger,
+		conf,
+		s.grpcServer,
+		s.network,
+		s.consensus.GetValidatorInfo(),
+	)
 	if err != nil {
 		return err
 	}

@@ -84,3 +84,7 @@ func (d *Dummy) run() {
 func (d *Dummy) IsIbftStateStale() bool {
 	return false
 }
+
+func (d *Dummy) GetValidatorInfo() *consensus.ValidatorInfo {
+	return nil
+}

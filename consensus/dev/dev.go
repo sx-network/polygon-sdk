@@ -251,3 +251,7 @@ func (d *Dev) Close() error {
 func (d *Dev) IsIbftStateStale() bool {
 	return false
 }
+
+func (d *Dev) GetValidatorInfo() *consensus.ValidatorInfo {
+	return nil
+}

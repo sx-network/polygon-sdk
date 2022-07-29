@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"log"
 
 	"github.com/0xPolygon/polygon-edge/blockchain"
@@ -45,6 +46,17 @@ type Consensus interface {
 
 	// Returns whether or not ibft node is stale
 	IsIbftStateStale() bool
+
+	// Returns validator info to be used outside consensus layer
+	GetValidatorInfo() *ValidatorInfo
+}
+
+type ValidatorInfo struct {
+	Validators       []types.Address
+	ValidatorKey     *ecdsa.PrivateKey
+	ValidatorAddress string
+	Epoch            uint64
+	QuorumSize       int
 }
 
 // Config is the configuration for the consensus

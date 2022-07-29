@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/0xPolygon/polygon-edge/helper/common"
+	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-hclog"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -64,7 +65,12 @@ func (mq *MQService) startConsumeLoop() {
 	for {
 		select {
 		case message := <-messages:
-			mq.datafeedService.publishPayload(message, false)
+			//TODO: string to object here
+			reportOutcome := &types.ReportOutcome{
+				MarketHash: message,
+				Outcome:    "MQ",
+			}
+			mq.datafeedService.publishPayload(reportOutcome, false)
 		case err = <-errors:
 			mq.logger.Error("got error while receiving event", "err", err)
 		case <-common.GetTerminationSignalCh():
