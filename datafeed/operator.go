@@ -18,7 +18,7 @@ func (d *DataFeed) ReportOutcome(
 		return nil, err
 	}
 
-	d.ProcessPayload(string(reportOutcomeString))
+	d.publishPayload(string(reportOutcomeString), false)
 
 	return &proto.ReportOutcomeResp{
 		MarketHash: request.Market,

@@ -64,7 +64,7 @@ func (mq *MQService) startConsumeLoop() {
 	for {
 		select {
 		case message := <-messages:
-			mq.datafeedService.ProcessPayload(message)
+			mq.datafeedService.publishPayload(message, false)
 		case err = <-errors:
 			mq.logger.Error("got error while receiving event", "err", err)
 		case <-common.GetTerminationSignalCh():

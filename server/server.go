@@ -590,7 +590,7 @@ func (s *Server) setupDataFeedService() error {
 		},
 	}
 
-	datafeedService, err := datafeed.NewDataFeedService(s.logger, conf, s.grpcServer)
+	datafeedService, err := datafeed.NewDataFeedService(s.logger, conf, s.grpcServer, s.network)
 	if err != nil {
 		return err
 	}
