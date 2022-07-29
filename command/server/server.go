@@ -130,7 +130,7 @@ func setFlags(cmd *cobra.Command) {
 		&params.rawConfig.Network.NoDiscover,
 		command.NoDiscoverFlag,
 		defaultConfig.Network.NoDiscover,
-		"prevent the client from discovering other peers (default: false)",
+		"prevent the client from discovering other peers",
 	)
 
 	cmd.Flags().Int64Var(
@@ -150,6 +150,7 @@ func setFlags(cmd *cobra.Command) {
 	)
 	// override default usage value
 	cmd.Flag(maxInboundPeersFlag).DefValue = fmt.Sprintf("%d", defaultConfig.Network.MaxInboundPeers)
+	cmd.MarkFlagsMutuallyExclusive(maxPeersFlag, maxInboundPeersFlag)
 
 	cmd.Flags().Int64Var(
 		&params.rawConfig.Network.MaxOutboundPeers,
@@ -159,6 +160,7 @@ func setFlags(cmd *cobra.Command) {
 	)
 	// override default usage value
 	cmd.Flag(maxOutboundPeersFlag).DefValue = fmt.Sprintf("%d", defaultConfig.Network.MaxOutboundPeers)
+	cmd.MarkFlagsMutuallyExclusive(maxPeersFlag, maxOutboundPeersFlag)
 
 	cmd.Flags().Uint64Var(
 		&params.rawConfig.TxPool.PriceLimit,
@@ -198,11 +200,37 @@ func setFlags(cmd *cobra.Command) {
 		"the New Relic Agent License Key, used for reporting json-rpc metrics.",
 	)
 
+	cmd.Flags().Uint64Var(
+		&params.rawConfig.IBFTBaseTimeout,
+		ibftBaseTimeoutFlag,
+		// Calculate from block time if it is not given
+		0,
+		fmt.Sprintf(
+			"base IBFT timeout in seconds, it needs to be larger than block time. (block time * %d) is set if it's zero",
+			config.BlockTimeMultiplierForTimeout,
+		),
+	)
+
 	cmd.Flags().StringArrayVar(
 		&params.corsAllowedOrigins,
 		corsOriginFlag,
 		defaultConfig.Headers.AccessControlAllowOrigins,
 		"the CORS header indicating whether any JSON-RPC response can be shared with the specified origin",
+	)
+
+	cmd.Flags().Uint64Var(
+		&params.jsonRPCBatchLengthLimit,
+		jsonRPCBatchRequestLimitFlag,
+		defaultConfig.JSONRPCBatchRequestLimit,
+		"the max length to be considered when handling json-rpc batch requests",
+	)
+
+	//nolint:lll
+	cmd.Flags().Uint64Var(
+		&params.jsonRPCBlockRangeLimit,
+		jsonRPCBlockRangeLimitFlag,
+		defaultConfig.JSONRPCBlockRangeLimit,
+		"the max block range to be considered when executing json-rpc requests that consider fromBlock/toBlock values (e.g. eth_getLogs)",
 	)
 
 	cmd.Flags().StringVar(
@@ -261,10 +289,6 @@ func runPreRun(cmd *cobra.Command, _ []string) error {
 		if err := params.initConfigFromFile(); err != nil {
 			return err
 		}
-	}
-
-	if err := params.validateFlags(); err != nil {
-		return err
 	}
 
 	if err := params.initRawParams(); err != nil {

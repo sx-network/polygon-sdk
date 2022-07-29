@@ -10,6 +10,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/network"
 	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/hashicorp/go-hclog"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"google.golang.org/grpc"
 )
 
@@ -94,7 +95,7 @@ func NewDataFeedService(
 
 // addGossipMsg handles receiving msgs
 // gossiped by the network.
-func (d *DataFeed) addGossipMsg(obj interface{}) {
+func (d *DataFeed) addGossipMsg(obj interface{}, _ peer.ID) {
 	dataFeedReportGossip, ok := obj.(*proto.DataFeedReport)
 	if !ok {
 		d.logger.Error("failed to cast gossiped message to DataFeedReport")
@@ -102,14 +103,14 @@ func (d *DataFeed) addGossipMsg(obj interface{}) {
 		return
 	}
 
-	d.logger.Debug("handling gossiped datafeed msg", "msg", dataFeedReportGossip.MarketHash)
-
 	// Verify that the gossiped DataFeedReport message is not empty
 	if dataFeedReportGossip == nil {
 		d.logger.Error("malformed gossip DataFeedReport message received")
 
 		return
 	}
+
+	d.logger.Debug("handling gossiped datafeed msg", "msg", dataFeedReportGossip.MarketHash)
 
 	// validate the payload
 	if err := d.validateGossipedPayload(dataFeedReportGossip); err != nil {

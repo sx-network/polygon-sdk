@@ -15,31 +15,34 @@ import (
 )
 
 const (
-	configFlag                = "config"
-	genesisPathFlag           = "chain"
-	dataDirFlag               = "data-dir"
-	libp2pAddressFlag         = "libp2p"
-	prometheusAddressFlag     = "prometheus"
-	natFlag                   = "nat"
-	dnsFlag                   = "dns"
-	sealFlag                  = "seal"
-	maxPeersFlag              = "max-peers"
-	maxInboundPeersFlag       = "max-inbound-peers"
-	maxOutboundPeersFlag      = "max-outbound-peers"
-	priceLimitFlag            = "price-limit"
-	maxSlotsFlag              = "max-slots"
-	blockGasTargetFlag        = "block-gas-target"
-	secretsConfigFlag         = "secrets-config"
-	restoreFlag               = "restore"
-	blockTimeFlag             = "block-time"
-	rpcNRAppNameFlag          = "rpc-nr-app-name"
-	rpcNRLicenseKeyFlag       = "rpc-nr-license-key"
-	devIntervalFlag           = "dev-interval"
-	devFlag                   = "dev"
-	corsOriginFlag            = "access-control-allow-origins"
-	logFileLocationFlag       = "log-to"
-	dataFeedAMQPURIFlag       = "data-feed-amqp-uri"
-	dataFeedAMQPQueueNameFlag = "data-feed-amqp-queue-name"
+	configFlag                   = "config"
+	genesisPathFlag              = "chain"
+	dataDirFlag                  = "data-dir"
+	libp2pAddressFlag            = "libp2p"
+	prometheusAddressFlag        = "prometheus"
+	natFlag                      = "nat"
+	dnsFlag                      = "dns"
+	sealFlag                     = "seal"
+	maxPeersFlag                 = "max-peers"
+	maxInboundPeersFlag          = "max-inbound-peers"
+	maxOutboundPeersFlag         = "max-outbound-peers"
+	priceLimitFlag               = "price-limit"
+	jsonRPCBatchRequestLimitFlag = "json-rpc-batch-request-limit"
+	jsonRPCBlockRangeLimitFlag   = "json-rpc-block-range-limit"
+	maxSlotsFlag                 = "max-slots"
+	blockGasTargetFlag           = "block-gas-target"
+	secretsConfigFlag            = "secrets-config"
+	restoreFlag                  = "restore"
+	blockTimeFlag                = "block-time"
+	ibftBaseTimeoutFlag          = "ibft-base-timeout"
+	rpcNRAppNameFlag             = "rpc-nr-app-name"
+	rpcNRLicenseKeyFlag          = "rpc-nr-license-key"
+	devIntervalFlag              = "dev-interval"
+	devFlag                      = "dev"
+	corsOriginFlag               = "access-control-allow-origins"
+	logFileLocationFlag          = "log-to"
+	dataFeedAMQPURIFlag          = "data-feed-amqp-uri"
+	dataFeedAMQPQueueNameFlag    = "data-feed-amqp-queue-name"
 )
 
 const (
@@ -57,7 +60,6 @@ var (
 )
 
 var (
-	errInvalidPeerParams = errors.New("both max-peers and max-inbound/outbound flags are set")
 	errInvalidNATAddress = errors.New("could not parse NAT IP address")
 )
 
@@ -76,10 +78,11 @@ type serverParams struct {
 	devInterval    uint64
 	isDevMode      bool
 
-	corsAllowedOrigins []string
-
-	rpcNRAppName    string
-	rpcNRLicenseKey string
+	corsAllowedOrigins      []string
+	rpcNRAppName            string
+	rpcNRLicenseKey         string
+	jsonRPCBatchLengthLimit uint64
+	jsonRPCBlockRangeLimit  uint64
 
 	dataFeedAMQPURI       string
 	dataFeedAMQPQueueName string
@@ -88,15 +91,6 @@ type serverParams struct {
 	secretsConfig *secrets.SecretsManagerConfig
 
 	logFileLocation string
-}
-
-func (p *serverParams) validateFlags() error {
-	// Validate the max peers configuration
-	if p.isMaxPeersSet() && p.isPeerRangeSet() {
-		return errInvalidPeerParams
-	}
-
-	return nil
 }
 
 func (p *serverParams) isMaxPeersSet() bool {
@@ -154,6 +148,8 @@ func (p *serverParams) generateConfig() *server.Config {
 		JSONRPC: &server.JSONRPC{
 			JSONRPCAddr:              p.jsonRPCAddress,
 			AccessControlAllowOrigin: p.corsAllowedOrigins,
+			BatchLengthLimit:         p.jsonRPCBatchLengthLimit,
+			BlockRangeLimit:          p.jsonRPCBlockRangeLimit,
 		},
 		GRPCAddr:   p.grpcAddress,
 		LibP2PAddr: p.libp2pAddress,
@@ -184,6 +180,7 @@ func (p *serverParams) generateConfig() *server.Config {
 		BlockTime:       p.rawConfig.BlockTime,
 		RPCNrAppName:    p.rpcNRAppName,
 		RPCNrLicenseKey: p.rpcNRLicenseKey,
+		IBFTBaseTimeout: p.rawConfig.IBFTBaseTimeout,
 		LogLevel:        hclog.LevelFromString(p.rawConfig.LogLevel),
 		LogFilePath:     p.logFileLocation,
 	}
