@@ -241,7 +241,20 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 
 	if isMajoritySigs {
 		//TODO: write to SC
-		d.logger.Debug("Majority of sigs reached, writing payload to SC...")
+		d.logger.Debug(
+			"Majority of sigs reached, writing payload to SC",
+			"marketHash",
+			message.MarketHash,
+			"outcome",
+			message.Outcome,
+			"epoch",
+			message.Epoch,
+			"timestamp",
+			message.Timestamp,
+			"signatures",
+			message.Signatures,
+		)
+
 	} else {
 		// broadcast the payload only if a topic
 		// subscription is present
