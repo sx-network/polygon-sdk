@@ -143,25 +143,24 @@ func (d *DataFeed) addGossipMsg(obj interface{}, _ peer.ID) {
 func (d *DataFeed) validateGossipedPayload(dataFeedReportGossip *proto.DataFeedReport) error {
 
 	// check if we already signed
-	isAlreadySigned, err := d.checkAlreadySigned(dataFeedReportGossip)
+	isAlreadySigned, err := d.validateSignatures(dataFeedReportGossip)
 	if err != nil {
-		return nil
+		return err
 	}
 	if isAlreadySigned {
 		return fmt.Errorf("we already signed this payload")
 	}
 
 	// check if payload too old
-	d.logger.Debug("time", "time", time.Since(time.Unix(dataFeedReportGossip.Timestamp, 0)).Seconds())
-	if time.Since(time.Unix(dataFeedReportGossip.Timestamp, 0)).Seconds() > maxGossipTimestampDriftSeconds {
+	if d.validateTimestamp(dataFeedReportGossip) {
 		return fmt.Errorf("proposed payload is too old")
 	}
 
 	return nil
 }
 
-// checkAlreadySigned checks if the current validator has already signed the payload
-func (d *DataFeed) checkAlreadySigned(dataFeedReportGossip *proto.DataFeedReport) (bool, error) {
+// validateSignatures checks if the current validator has already signed the payload
+func (d *DataFeed) validateSignatures(dataFeedReportGossip *proto.DataFeedReport) (bool, error) {
 
 	clonedMsg, ok := protobuf.Clone(dataFeedReportGossip).(*proto.DataFeedReport)
 	if !ok {
@@ -205,6 +204,12 @@ func (d *DataFeed) checkAlreadySigned(dataFeedReportGossip *proto.DataFeedReport
 
 	}
 	return false, nil
+}
+
+// validateTimestamp  checks if payload too old
+func (d *DataFeed) validateTimestamp(dataFeedReportGossip *proto.DataFeedReport) bool {
+	d.logger.Debug("time", "time", time.Since(time.Unix(dataFeedReportGossip.Timestamp, 0)).Seconds())
+	return time.Since(time.Unix(dataFeedReportGossip.Timestamp, 0)).Seconds() > maxGossipTimestampDriftSeconds
 }
 
 // signGossipedPayload sings the payload by concatenating our own signature to the signatures field
@@ -255,9 +260,6 @@ func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string
 
 // publishPayload
 func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs bool) {
-	//TODO: strings for now but eventually parse lsports payload here + process + sign + gossip
-
-	d.logger.Debug("Publishing message", "message", message.MarketHash)
 
 	// d.logger.Debug(
 	// 	"Validator info",
