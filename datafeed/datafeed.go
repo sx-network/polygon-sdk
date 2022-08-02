@@ -6,12 +6,15 @@ import (
 	"time"
 
 	"github.com/0xPolygon/polygon-edge/consensus"
+	"github.com/0xPolygon/polygon-edge/crypto"
 	"github.com/0xPolygon/polygon-edge/datafeed/proto"
+	"github.com/0xPolygon/polygon-edge/helper/hex"
 	"github.com/0xPolygon/polygon-edge/network"
 	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/hashicorp/go-hclog"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"google.golang.org/grpc"
+	protobuf "google.golang.org/protobuf/proto"
 )
 
 const (
@@ -140,26 +143,12 @@ func (d *DataFeed) addGossipMsg(obj interface{}, _ peer.ID) {
 // validateGossipedPayload performs validation steps on gossiped payload prior to signing
 func (d *DataFeed) validateGossipedPayload(dataFeedReportGossip *proto.DataFeedReport) error {
 
-	//TODO: check if we already signed
-
-	// sigList := strings.Split(dataFeedReportGossip.Signatures, ",")
-	// for _, sig := range sigList {
-
-	// 	crypto.SigToPub(sig, []byte(sig))
-
-	// 	buffer := bytes.NewBuffer([]byte(sig))
-	// 	dec := gob.NewDecoder(buffer)
-
-	// 	var decoded types.ReportOutcomeGossip
-	// 	err := dec.Decode(&decoded)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
-
-	//TODO: probably need to add special logic to compare current validatorKey with signatures
 	// check if we already signed
-	if strings.Contains(dataFeedReportGossip.Signatures, d.validatorInfo.ValidatorAddress) {
+	isAlreadySigned, err := d.checkAlreadySigned(dataFeedReportGossip)
+	if err != nil {
+		return nil
+	}
+	if isAlreadySigned {
 		return fmt.Errorf("we already signed this payload")
 	}
 
@@ -170,6 +159,53 @@ func (d *DataFeed) validateGossipedPayload(dataFeedReportGossip *proto.DataFeedR
 	}
 
 	return nil
+}
+
+// checkAlreadySigned checks if the current validator has already signed the payload
+func (d *DataFeed) checkAlreadySigned(dataFeedReportGossip *proto.DataFeedReport) (bool, error) {
+
+	clonedMsg, ok := protobuf.Clone(dataFeedReportGossip).(*proto.DataFeedReport)
+	if !ok {
+		return false, fmt.Errorf("error while determining if we already signed")
+	}
+	clonedMsg.Signatures = ""
+
+	data, err := protobuf.Marshal(clonedMsg)
+	if err != nil {
+		return false, err
+	}
+
+	sigList := strings.Split(dataFeedReportGossip.Signatures, ",")
+	for _, sig := range sigList {
+		buf, err := hex.DecodeHex(sig)
+		if err != nil {
+			return false, err
+		}
+
+		pub, err := crypto.RecoverPubkey(buf, crypto.Keccak256(data))
+		if err != nil {
+			return false, err
+		}
+
+		// see if we signed it
+		if d.validatorInfo.ValidatorAddress == crypto.PubKeyToAddress(pub).String() {
+			return true, nil
+		} else {
+
+			// if we haven't signed it, see if a recognized validator signed it
+			otherValidatorSigned := false
+			for _, validator := range d.validatorInfo.Validators {
+				if validator == crypto.PubKeyToAddress(pub) {
+					otherValidatorSigned = true
+				}
+			}
+			if !otherValidatorSigned {
+				return false, fmt.Errorf("unrecognized signature detected")
+			}
+		}
+
+	}
+	return false, nil
 }
 
 // signPayload sings the payload by concatenating our own signature to the signatures field
@@ -183,7 +219,7 @@ func (d *DataFeed) signPayload(dataFeedReportGossip *proto.DataFeedReport) (*typ
 		IsGossip:   true,
 	}
 
-	sig, err := d.deriveSignature(reportOutcome)
+	sig, err := d.getSignatureForPayload(dataFeedReportGossip)
 	if err != nil {
 		return nil, false, err
 	}
@@ -195,30 +231,27 @@ func (d *DataFeed) signPayload(dataFeedReportGossip *proto.DataFeedReport) (*typ
 	return reportOutcome, numSigs >= d.validatorInfo.QuorumSize, nil
 }
 
-// deriveSignature derives the signature of the current validator
-func (d *DataFeed) deriveSignature(payload *types.ReportOutcome) (string, error) {
+// getSignatureForPayload derives the signature of the current validator
+func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string, error) {
 
-	//TODO: figure out how to sign
+	clonedMsg, ok := protobuf.Clone(payload).(*proto.DataFeedReport)
+	if !ok {
+		return "", fmt.Errorf("error while determining if we already signed")
+	}
 
-	// payload.Signatures = ""
+	clonedMsg.Signatures = ""
 
-	// var buffer bytes.Buffer
-	// enc := gob.NewEncoder(&buffer)
+	data, err := protobuf.Marshal(clonedMsg)
+	if err != nil {
+		return "", err
+	}
 
-	// // Encode the payload
-	// err := enc.Encode(payload)
-	// if err != nil {
-	// 	return "", err
-	// }
+	signedData, err := crypto.Sign(d.validatorInfo.ValidatorKey, crypto.Keccak256(data))
+	if err != nil {
+		return "", err
+	}
 
-	// signedData, err := crypto.Sign(d.validatorInfo.ValidatorKey, crypto.Keccak256(buffer.Bytes()))
-	// if err != nil {
-	// 	return "", err
-	// }
-
-	// return string(signedData), nil
-
-	return d.validatorInfo.ValidatorAddress, nil
+	return hex.EncodeToHex(signedData), nil
 }
 
 // publishPayload
@@ -270,22 +303,21 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 				reportOutcome.Timestamp = message.Timestamp
 			}
 
-			mySig, err := d.deriveSignature(reportOutcome)
-			if err != nil {
-				d.logger.Error("failed derive signature", "err", err)
-			}
-			if !message.IsGossip {
-				reportOutcome.Signatures = mySig
-			} else {
-				reportOutcome.Signatures = message.Signatures
-			}
-
 			dataFeedReportGossip := &proto.DataFeedReport{
 				MarketHash: message.MarketHash,
 				Outcome:    message.Outcome,
 				Epoch:      reportOutcome.Epoch,
 				Timestamp:  reportOutcome.Timestamp,
-				Signatures: reportOutcome.Signatures,
+			}
+
+			mySig, err := d.getSignatureForPayload(dataFeedReportGossip)
+			if err != nil {
+				d.logger.Error("failed derive signature", "err", err)
+			}
+			if !message.IsGossip {
+				dataFeedReportGossip.Signatures = mySig
+			} else {
+				dataFeedReportGossip.Signatures = message.Signatures
 			}
 
 			d.logger.Debug(
