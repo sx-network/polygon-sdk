@@ -9,7 +9,7 @@ message DataFeedReport {
     string marketHash = 1;
 
     // outcome is the outcome of the report
-    string outcome = 2;
+    int32 outcome = 2;
  
     // signatures is the concatenated list of validator signatures 
     string signatures = 3;

@@ -32,10 +32,10 @@ func setFlags(cmd *cobra.Command) {
 		"the market hash of the report",
 	)
 
-	cmd.Flags().StringVar(
+	cmd.Flags().Int32Var(
 		&params.outcome,
 		outcomeFlag,
-		"",
+		0,
 		"the outcome of the report",
 	)
 }

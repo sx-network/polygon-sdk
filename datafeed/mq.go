@@ -2,6 +2,7 @@ package datafeed
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/0xPolygon/polygon-edge/helper/common"
@@ -56,7 +57,7 @@ func (mq *MQService) startConsumeLoop() {
 	ctx, cfunc := context.WithCancel(context.Background())
 
 	//TODO: have consumer concurrency configurable once we need more than 1 running at a time
-	messages, errors, err := mq.startConsumer(ctx, 1)
+	reports, errors, err := mq.startConsumer(ctx, 1)
 
 	if err != nil {
 		panic(err)
@@ -64,15 +65,10 @@ func (mq *MQService) startConsumeLoop() {
 
 	for {
 		select {
-		case message := <-messages:
-			//TODO: string to object here
-			reportOutcome := &types.ReportOutcome{
-				MarketHash: message,
-				Outcome:    "MQ",
-			}
-			mq.datafeedService.publishPayload(reportOutcome, false)
+		case report := <-reports:
+			mq.datafeedService.publishPayload(&report, false)
 		case err = <-errors:
-			mq.logger.Error("got error while receiving event", "err", err)
+			mq.logger.Error("error while consuming from message queue", "err", err)
 		case <-common.GetTerminationSignalCh():
 			cfunc()
 		}
@@ -94,10 +90,10 @@ func getConnection(rabbitMQURL string) (Connection, error) {
 }
 
 // startConsumer start consuming queued messages, receiving deliveries on the 'deliveries' channel.
-// returns parsed deliveries within messages channel and any errors if they occurred within errors channel.
+// returns parsed deliveries within reports channel and any errors if they occurred within errors channel.
 func (mq *MQService) startConsumer(
 	ctx context.Context, concurrency int,
-) (<-chan string, <-chan error, error) {
+) (<-chan types.ReportOutcome, <-chan error, error) {
 	mq.logger.Debug("Starting MQConsumerService...")
 
 	// create the queue if it doesn't already exist
@@ -136,20 +132,21 @@ func (mq *MQService) startConsumer(
 		return nil, nil, err
 	}
 
-	messages := make(chan string)
+	reports := make(chan types.ReportOutcome)
 	errors := make(chan error)
 
 	for i := 0; i < concurrency; i++ {
 		go func() {
 			for delivery := range deliveries {
-				message, err := mq.parseDelivery(delivery)
+				report, err := mq.parseDelivery(delivery)
 				if err != nil {
 					errors <- err
-
-					delivery.Nack(false, true) //nolint:errcheck
+					//delivery.Nack(false, true) //nolint:errcheck
+					// nacking will avoid removing from queue, so we ack even so we've encountered an error
+					delivery.Ack(false)
 				} else {
 					delivery.Ack(false) //nolint:errcheck
-					messages <- message
+					reports <- report
 				}
 			}
 		}()
@@ -162,20 +159,20 @@ func (mq *MQService) startConsumer(
 		mq.connection.Channel.Cancel(uuid, false) //nolint:errcheck
 	}()
 
-	return messages, errors, nil
+	return reports, errors, nil
 }
 
-// parseDelivery returns body of message or error if one occurred during parsing
-func (mq *MQService) parseDelivery(delivery amqp.Delivery) (string, error) {
+// parseDelivery returns unmarshalled report or error if one occurred during parsing
+func (mq *MQService) parseDelivery(delivery amqp.Delivery) (types.ReportOutcome, error) {
 	if delivery.Body == nil {
-		err := fmt.Errorf("error, no message body")
-
-		return "", err
+		return types.ReportOutcome{}, fmt.Errorf("no message body")
 	}
 
-	//TODO: unmarshal from string to types.ReportOutcome
-	body := string(delivery.Body)
-	mq.logger.Debug("MQ message received", "message", body)
+	var reportOutcome types.ReportOutcome
+	if err := json.Unmarshal([]byte(delivery.Body), &reportOutcome); err != nil {
+		return types.ReportOutcome{}, fmt.Errorf("error during report outcome json unmarshaling, %w", err)
+	}
+	mq.logger.Debug("MQ message received", "marketHash", reportOutcome.MarketHash)
 
-	return body, nil
+	return reportOutcome, nil
 }

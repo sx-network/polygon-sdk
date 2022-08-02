@@ -11,7 +11,7 @@ service DataFeedOperator {
 
 message ReportOutcomeReq {
   string market = 1;
-  string outcome = 2;
+  int32 outcome = 2;
 }
 
 message ReportOutcomeResp {

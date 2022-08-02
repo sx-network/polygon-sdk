@@ -9,10 +9,10 @@ import (
 
 type DataFeedReportOutcomeResult struct {
 	MarketHash string `json:"market"`
-	Outcome    string `json:"outcome"`
+	Outcome    int32  `json:"outcome"`
 }
 
-func newDataFeedReportOutcomeResult(marketHash, outcome string) *DataFeedReportOutcomeResult {
+func newDataFeedReportOutcomeResult(marketHash string, outcome int32) *DataFeedReportOutcomeResult {
 	res := &DataFeedReportOutcomeResult{
 		MarketHash: marketHash,
 		Outcome:    outcome,
@@ -27,7 +27,7 @@ func (r *DataFeedReportOutcomeResult) GetOutput() string {
 	buffer.WriteString("\n[DATAFEED REPORT SUBMITTED]\n")
 	buffer.WriteString(helper.FormatKV([]string{
 		fmt.Sprintf("MARKET HASH|%s", r.MarketHash),
-		fmt.Sprintf("OUTCOME|%s", r.Outcome),
+		fmt.Sprintf("OUTCOME|%d", r.Outcome),
 	}))
 	buffer.WriteString("\n")
 

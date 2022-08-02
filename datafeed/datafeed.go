@@ -128,8 +128,7 @@ func (d *DataFeed) addGossipMsg(obj interface{}, _ peer.ID) {
 	}
 
 	// sign payload
-	// TODO: we need validatorKey to sign
-	signedPayload, isMajoritySigs, err := d.signPayload(dataFeedReportGossip)
+	signedPayload, isMajoritySigs, err := d.signGossipedPayload(dataFeedReportGossip)
 	if err != nil {
 		d.logger.Error("unable to sign payload")
 
@@ -192,7 +191,7 @@ func (d *DataFeed) checkAlreadySigned(dataFeedReportGossip *proto.DataFeedReport
 			return true, nil
 		} else {
 
-			// if we haven't signed it, see if a recognized validator signed it
+			// if we haven't signed it, see if a recognized validator from the current validator set signed it
 			otherValidatorSigned := false
 			for _, validator := range d.validatorInfo.Validators {
 				if validator == crypto.PubKeyToAddress(pub) {
@@ -208,8 +207,8 @@ func (d *DataFeed) checkAlreadySigned(dataFeedReportGossip *proto.DataFeedReport
 	return false, nil
 }
 
-// signPayload sings the payload by concatenating our own signature to the signatures field
-func (d *DataFeed) signPayload(dataFeedReportGossip *proto.DataFeedReport) (*types.ReportOutcome, bool, error) {
+// signGossipedPayload sings the payload by concatenating our own signature to the signatures field
+func (d *DataFeed) signGossipedPayload(dataFeedReportGossip *proto.DataFeedReport) (*types.ReportOutcome, bool, error) {
 
 	reportOutcome := &types.ReportOutcome{
 		MarketHash: dataFeedReportGossip.MarketHash,
@@ -236,7 +235,7 @@ func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string
 
 	clonedMsg, ok := protobuf.Clone(payload).(*proto.DataFeedReport)
 	if !ok {
-		return "", fmt.Errorf("error while determining if we already signed")
+		return "", fmt.Errorf("error while trying to clone datafeed report")
 	}
 
 	clonedMsg.Signatures = ""
@@ -257,20 +256,18 @@ func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string
 // publishPayload
 func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs bool) {
 	//TODO: strings for now but eventually parse lsports payload here + process + sign + gossip
-	//TODO: should call libp2p publish here after we validate the payload
+
 	d.logger.Debug("Publishing message", "message", message.MarketHash)
 
-	d.logger.Debug(
-		"Validator info",
-		"privateKey",
-		d.validatorInfo.ValidatorKey,
-		"validator 1",
-		d.validatorInfo.Validators[0],
-		"epoch",
-		d.validatorInfo.Epoch,
-		"quorumSize",
-		d.validatorInfo.QuorumSize,
-	)
+	// d.logger.Debug(
+	// 	"Validator info",
+	// 	"validator set length",
+	// 	len(d.validatorInfo.Validators),
+	// 	"epoch",
+	// 	d.validatorInfo.Epoch,
+	// 	"quorumSize",
+	// 	d.validatorInfo.QuorumSize,
+	// )
 
 	if isMajoritySigs {
 		//TODO: write to SC
@@ -293,31 +290,25 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		// subscription is present
 		if d.topic != nil {
 
-			reportOutcome := &types.ReportOutcome{}
-
-			if !message.IsGossip {
-				reportOutcome.Epoch = d.validatorInfo.Epoch
-				reportOutcome.Timestamp = time.Now().Unix()
-			} else {
-				reportOutcome.Epoch = message.Epoch
-				reportOutcome.Timestamp = message.Timestamp
-			}
-
 			dataFeedReportGossip := &proto.DataFeedReport{
 				MarketHash: message.MarketHash,
 				Outcome:    message.Outcome,
-				Epoch:      reportOutcome.Epoch,
-				Timestamp:  reportOutcome.Timestamp,
 			}
 
-			mySig, err := d.getSignatureForPayload(dataFeedReportGossip)
-			if err != nil {
-				d.logger.Error("failed derive signature", "err", err)
-			}
-			if !message.IsGossip {
-				dataFeedReportGossip.Signatures = mySig
-			} else {
+			if message.IsGossip {
+				dataFeedReportGossip.Epoch = message.Epoch
+				dataFeedReportGossip.Timestamp = message.Timestamp
 				dataFeedReportGossip.Signatures = message.Signatures
+			} else {
+				dataFeedReportGossip.Epoch = d.validatorInfo.Epoch
+				dataFeedReportGossip.Timestamp = time.Now().Unix()
+
+				mySig, err := d.getSignatureForPayload(dataFeedReportGossip)
+				if err != nil {
+					d.logger.Error("failed to get payload signature", "err", err)
+				}
+
+				dataFeedReportGossip.Signatures = mySig
 			}
 
 			d.logger.Debug(

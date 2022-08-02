@@ -20,7 +20,7 @@ var (
 
 type reportOutcomeParams struct {
 	market  string
-	outcome string
+	outcome int32
 }
 
 func (p *reportOutcomeParams) reportOutcome(grpcAddress string) error {
