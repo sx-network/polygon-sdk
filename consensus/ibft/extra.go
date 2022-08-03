@@ -21,8 +21,8 @@ var (
 
 var zeroBytes = make([]byte, 32)
 
-// putIbftExtraValidators is a helper method that adds validators to the extra field in the header
-func putIbftExtraValidators(h *types.Header, validators []types.Address) {
+// putIbftExtraSnapshotData is a helper method that adds snapshot data to the extra field in the header
+func putIbftExtraSnapshotData(h *types.Header, validators []types.Address, blockReward string) {
 	// Pad zeros to the right up to istanbul vanity
 	extra := h.ExtraData
 	if len(extra) < IstanbulExtraVanity {
@@ -35,6 +35,7 @@ func putIbftExtraValidators(h *types.Header, validators []types.Address) {
 		Validators:    validators,
 		ProposerSeal:  []byte{},
 		CommittedSeal: [][]byte{},
+		BlockReward:   blockReward,
 	}
 
 	extra = ibftExtra.MarshalRLPTo(extra)
@@ -79,6 +80,7 @@ type IstanbulExtra struct {
 	Validators    []types.Address
 	ProposerSeal  []byte
 	CommittedSeal [][]byte
+	BlockReward   string
 }
 
 // MarshalRLPTo defines the marshal function wrapper for IstanbulExtra
