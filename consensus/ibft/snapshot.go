@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	lru "github.com/hashicorp/golang-lru"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"sync"
 	"sync/atomic"
+
+	lru "github.com/hashicorp/golang-lru"
 
 	"github.com/0xPolygon/polygon-edge/consensus/ibft/proto"
 	"github.com/0xPolygon/polygon-edge/types"
@@ -118,7 +119,7 @@ func (i *backendIBFT) addHeaderSnap(header *types.Header) error {
 		Number:      header.Number,
 		Votes:       []*Vote{},
 		Set:         extra.Validators,
-		BlockReward: "",
+		BlockReward: extra.BlockReward,
 	}
 
 	i.store.add(snap)
