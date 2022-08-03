@@ -92,6 +92,13 @@ func (i *IstanbulExtra) MarshalRLPTo(dst []byte) []byte {
 func (i *IstanbulExtra) MarshalRLPWith(ar *fastrlp.Arena) *fastrlp.Value {
 	vv := ar.NewArray()
 
+	// BlockReward
+	if i.BlockReward == "" {
+		vv.Set(ar.NewNull())
+	} else {
+		vv.Set(ar.NewString(i.BlockReward))
+	}
+
 	// Validators
 	vals := ar.NewArray()
 	for _, a := range i.Validators {
@@ -137,13 +144,22 @@ func (i *IstanbulExtra) UnmarshalRLPFrom(p *fastrlp.Parser, v *fastrlp.Value) er
 		return err
 	}
 
-	if len(elems) < 3 {
-		return fmt.Errorf("incorrect number of elements to decode istambul extra, expected 3 but found %d", len(elems))
+	if len(elems) < 4 {
+		return fmt.Errorf("incorrect number of elements to decode istambul extra, expected 4 but found %d", len(elems))
+	}
+
+	// BlockReward
+	{
+		br, err := elems[0].GetString()
+		if err != nil {
+			return fmt.Errorf("string expected for block reward")
+		}
+		i.BlockReward = br
 	}
 
 	// Validators
 	{
-		vals, err := elems[0].GetElems()
+		vals, err := elems[1].GetElems()
 		if err != nil {
 			return fmt.Errorf("list expected for validators")
 		}
@@ -157,14 +173,14 @@ func (i *IstanbulExtra) UnmarshalRLPFrom(p *fastrlp.Parser, v *fastrlp.Value) er
 
 	// ProposerSeal
 	{
-		if i.ProposerSeal, err = elems[1].GetBytes(i.ProposerSeal); err != nil {
+		if i.ProposerSeal, err = elems[2].GetBytes(i.ProposerSeal); err != nil {
 			return err
 		}
 	}
 
 	// Committed
 	{
-		vals, err := elems[2].GetElems()
+		vals, err := elems[3].GetElems()
 		if err != nil {
 			return fmt.Errorf("list expected for committed")
 		}
