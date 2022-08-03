@@ -28,7 +28,7 @@ type PoAMechanism struct {
 
 // PoAFactory initializes the required data
 // for the Proof of Authority mechanism
-func PoAFactory(ibft *Ibft, params *IBFTFork) (ConsensusMechanism, error) {
+func PoAFactory(ibft *backendIBFT, params *IBFTFork) (ConsensusMechanism, error) {
 	poa := &PoAMechanism{
 		BaseConsensusMechanism: BaseConsensusMechanism{
 			mechanismType: PoA,
@@ -48,7 +48,7 @@ func PoAFactory(ibft *Ibft, params *IBFTFork) (ConsensusMechanism, error) {
 // IsAvailable returns indicates if mechanism should be called at given height
 func (poa *PoAMechanism) IsAvailable(hookType HookType, height uint64) bool {
 	switch hookType {
-	case AcceptStateLogHook, VerifyHeadersHook, ProcessHeadersHook, CandidateVoteHook, CalculateProposerHook:
+	case VerifyHeadersHook, ProcessHeadersHook, CandidateVoteHook:
 		return poa.IsInRange(height)
 	case InsertBlockHook:
 		// update block rewards when the one before the beginning or the end of epoch
@@ -61,26 +61,6 @@ func (poa *PoAMechanism) IsAvailable(hookType HookType, height uint64) bool {
 	default:
 		return false
 	}
-}
-
-// acceptStateLogHook logs the current snapshot with the number of votes
-func (poa *PoAMechanism) acceptStateLogHook(snapParam interface{}) error {
-	// Cast the param to a *Snapshot
-	snap, ok := snapParam.(*Snapshot)
-	if !ok {
-		return ErrInvalidHookParam
-	}
-
-	// Log the info message
-	poa.ibft.logger.Info(
-		"current snapshot",
-		"validators",
-		len(snap.Set),
-		"votes",
-		len(snap.Votes),
-	)
-
-	return nil
 }
 
 // verifyHeadersHook verifies that the header nonce conforms to the IBFT PoA proposal format
@@ -241,18 +221,6 @@ func (poa *PoAMechanism) candidateVoteHook(hookParams interface{}) error {
 	return nil
 }
 
-// calculateProposerHook calculates the next proposer based on the last
-func (poa *PoAMechanism) calculateProposerHook(lastProposerParam interface{}) error {
-	lastProposer, ok := lastProposerParam.(types.Address)
-	if !ok {
-		return ErrInvalidHookParam
-	}
-
-	poa.ibft.state.CalcProposer(lastProposer)
-
-	return nil
-}
-
 // insertBlockHook checks if the block is the last block of the epoch,
 // in order to update the snapshot with the current block reward
 func (poa *PoAMechanism) insertBlockHook(numberParam interface{}) error {
@@ -271,11 +239,7 @@ func (poa *PoAMechanism) insertBlockHook(numberParam interface{}) error {
 		return err
 	}
 
-	snap, err := poa.ibft.getSnapshot(header.Number)
-	if err != nil {
-		return err
-	}
-
+	snap := poa.ibft.getSnapshot(header.Number)
 	if snap == nil {
 		return fmt.Errorf("cannot find snapshot at %d", header.Number)
 	}
@@ -318,9 +282,9 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 
 // custom block rewards
 func (poa *PoAMechanism) payoutBlockReward(params *preStateCommitHookParams) error {
-	snapshot, err := poa.ibft.getSnapshot(params.header.Number)
-	if err != nil {
-		return err
+	snapshot := poa.ibft.getSnapshot(params.header.Number)
+	if snapshot == nil {
+		return fmt.Errorf("cannot find snapshot at %d", params.header.Number)
 	}
 
 	// pay the block proposer the block reward from the current snapshot
@@ -340,9 +304,6 @@ func (poa *PoAMechanism) initializeHookMap() {
 	// Create the hook map
 	poa.hookMap = make(map[HookType]func(interface{}) error)
 
-	// Register the AcceptStateLogHook
-	poa.hookMap[AcceptStateLogHook] = poa.acceptStateLogHook
-
 	// Register the VerifyHeadersHook
 	poa.hookMap[VerifyHeadersHook] = poa.verifyHeadersHook
 
@@ -351,9 +312,6 @@ func (poa *PoAMechanism) initializeHookMap() {
 
 	// Register the CandidateVoteHook
 	poa.hookMap[CandidateVoteHook] = poa.candidateVoteHook
-
-	// Register the CalculateProposerHook
-	poa.hookMap[CalculateProposerHook] = poa.calculateProposerHook
 
 	// Register the InsertBlockHook
 	poa.hookMap[InsertBlockHook] = poa.insertBlockHook

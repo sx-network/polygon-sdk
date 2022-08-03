@@ -406,6 +406,7 @@ func (e *Eth) GetStorageAt(
 	// Get the storage for the passed in location
 	result, err := e.store.GetStorage(header.StateRoot, address, index)
 	if err != nil {
+		// nolint:govet
 		if errors.As(err, &ErrStateNotFound) {
 			return argBytesPtr(types.ZeroHash[:]), nil
 		}
@@ -538,6 +539,7 @@ func (e *Eth) EstimateGas(arg *txnArgs, rawNum *BlockNumber) (interface{}, error
 		accountBalance := big.NewInt(0)
 		acc, err := e.store.GetAccount(header.StateRoot, transaction.From)
 
+		// nolint:govet
 		if err != nil && !errors.As(err, &ErrStateNotFound) {
 			// An unrelated error occurred, return it
 			return nil, err
@@ -580,6 +582,8 @@ func (e *Eth) EstimateGas(arg *txnArgs, rawNum *BlockNumber) (interface{}, error
 
 	// Checks if executor level valid gas errors occurred
 	isGasApplyError := func(err error) bool {
+		// Not linting this as the underlying error is actually wrapped
+		// nolint:govet
 		return errors.As(err, &state.ErrNotEnoughIntrinsicGas)
 	}
 
@@ -706,6 +710,7 @@ func (e *Eth) GetBalance(address types.Address, filter BlockNumberOrHash) (inter
 
 	// Extract the account balance
 	acc, err := e.store.GetAccount(header.StateRoot, address)
+	// nolint:govet
 	if errors.As(err, &ErrStateNotFound) {
 		// Account not found, return an empty account
 		return argUintPtr(0), nil
@@ -772,6 +777,7 @@ func (e *Eth) GetCode(address types.Address, filter BlockNumberOrHash) (interfac
 	emptySlice := []byte{}
 	acc, err := e.store.GetAccount(header.StateRoot, address)
 
+	// nolint:govet
 	if errors.As(err, &ErrStateNotFound) {
 		// If the account doesn't exist / is not initialized yet,
 		// return the default value
@@ -806,16 +812,12 @@ func (e *Eth) GetFilterChanges(id string) (interface{}, error) {
 
 // UninstallFilter uninstalls a filter with given ID
 func (e *Eth) UninstallFilter(id string) (bool, error) {
-	ok := e.filterManager.Uninstall(id)
-
-	return ok, nil
+	return e.filterManager.Uninstall(id), nil
 }
 
 // Unsubscribe uninstalls a filter in a websocket
 func (e *Eth) Unsubscribe(id string) (bool, error) {
-	ok := e.filterManager.Uninstall(id)
-
-	return ok, nil
+	return e.filterManager.Uninstall(id), nil
 }
 
 func (e *Eth) getBlockHeader(number BlockNumber) (*types.Header, error) {
@@ -866,6 +868,7 @@ func (e *Eth) getNextNonce(address types.Address, number BlockNumber) (uint64, e
 
 	acc, err := e.store.GetAccount(header.StateRoot, address)
 
+	// nolint:govet
 	if errors.As(err, &ErrStateNotFound) {
 		// If the account doesn't exist / isn't initialized,
 		// return a nonce value of 0

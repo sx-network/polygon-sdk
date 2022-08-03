@@ -67,12 +67,6 @@ const (
 	// when building a block (candidate voting)
 	CandidateVoteHook HookType = "CandidateVoteHook"
 
-	// POA + POS //
-
-	// AcceptStateLogHook defines what should be logged out as the status
-	// from AcceptState
-	AcceptStateLogHook HookType = "AcceptStateLogHook"
-
 	// POS //
 
 	// VerifyBlockHook defines the additional verification steps for the PoS mechanism
@@ -80,10 +74,6 @@ const (
 
 	// PreStateCommitHook defines the additional state transition injection
 	PreStateCommitHook HookType = "PreStateCommitHook"
-
-	// CalculateProposerHook defines what is the next proposer
-	// based on the previous
-	CalculateProposerHook = "CalculateProposerHook"
 )
 
 type ConsensusMechanism interface {
@@ -106,7 +96,7 @@ type ConsensusMechanism interface {
 
 type BaseConsensusMechanism struct {
 	// Reference to the main IBFT implementation
-	ibft *Ibft
+	ibft *backendIBFT
 
 	// hookMap is the collection of registered hooks
 	hookMap map[HookType]func(interface{}) error
@@ -184,7 +174,7 @@ type IBFTFork struct {
 }
 
 // ConsensusMechanismFactory is the factory function to create a consensus mechanism
-type ConsensusMechanismFactory func(ibft *Ibft, params *IBFTFork) (ConsensusMechanism, error)
+type ConsensusMechanismFactory func(ibft *backendIBFT, params *IBFTFork) (ConsensusMechanism, error)
 
 var mechanismBackends = map[MechanismType]ConsensusMechanismFactory{
 	PoA: PoAFactory,

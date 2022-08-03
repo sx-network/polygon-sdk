@@ -206,5 +206,5 @@ var IbftOperator_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "consensus/ibft/proto/operator.proto",
+	Metadata: "ibft_operator.proto",
 }

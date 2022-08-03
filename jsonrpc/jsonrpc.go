@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-hclog"
@@ -33,7 +34,7 @@ func (s serverType) String() string {
 	}
 }
 
-// JSONRPC is an API backend
+// JSONRPC is an API consensus
 type JSONRPC struct {
 	logger     hclog.Logger
 	config     *Config
@@ -41,6 +42,7 @@ type JSONRPC struct {
 }
 
 type dispatcher interface {
+	RemoveFilterByWs(conn wsConn)
 	HandleWs(reqBody []byte, conn wsConn) ([]byte, error)
 	Handle(reqBody []byte, txn *newrelic.Transaction) ([]byte, error)
 }
@@ -124,7 +126,8 @@ func (j *JSONRPC) setupHTTP() error {
 	}
 
 	srv := http.Server{
-		Handler: mux,
+		Handler:           mux,
+		ReadHeaderTimeout: 60 * time.Second,
 	}
 
 	go func() {
@@ -172,15 +175,25 @@ var wsUpgrader = websocket.Upgrader{
 
 // wsWrapper is a wrapping object for the web socket connection and logger
 type wsWrapper struct {
-	ws        *websocket.Conn // the actual WS connection
-	logger    hclog.Logger    // module logger
-	writeLock sync.Mutex      // writer lock
+	sync.Mutex
+
+	ws       *websocket.Conn // the actual WS connection
+	logger   hclog.Logger    // module logger
+	filterID string          // filter ID
+}
+
+func (w *wsWrapper) SetFilterID(filterID string) {
+	w.filterID = filterID
+}
+
+func (w *wsWrapper) GetFilterID() string {
+	return w.filterID
 }
 
 // WriteMessage writes out the message to the WS peer
 func (w *wsWrapper) WriteMessage(messageType int, data []byte) error {
-	w.writeLock.Lock()
-	defer w.writeLock.Unlock()
+	w.Lock()
+	defer w.Unlock()
 	writeErr := w.ws.WriteMessage(messageType, data)
 
 	if writeErr != nil {
@@ -239,6 +252,8 @@ func (j *JSONRPC) handleWs(w http.ResponseWriter, req *http.Request) {
 				j.logger.Error(fmt.Sprintf("Unable to read WS message, %s", err.Error()))
 				j.logger.Info("Closing WS connection with error")
 			}
+
+			j.dispatcher.RemoveFilterByWs(wrapConn)
 
 			break
 		}

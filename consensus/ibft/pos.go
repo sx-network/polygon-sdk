@@ -21,7 +21,7 @@ type PoSMechanism struct {
 
 // PoSFactory initializes the required data
 // for the Proof of Stake mechanism
-func PoSFactory(ibft *Ibft, params *IBFTFork) (ConsensusMechanism, error) {
+func PoSFactory(ibft *backendIBFT, params *IBFTFork) (ConsensusMechanism, error) {
 	pos := &PoSMechanism{
 		BaseConsensusMechanism: BaseConsensusMechanism{
 			mechanismType: PoS,
@@ -41,7 +41,7 @@ func PoSFactory(ibft *Ibft, params *IBFTFork) (ConsensusMechanism, error) {
 // IsAvailable returns indicates if mechanism should be called at given height
 func (pos *PoSMechanism) IsAvailable(hookType HookType, height uint64) bool {
 	switch hookType {
-	case AcceptStateLogHook, VerifyBlockHook, CalculateProposerHook:
+	case VerifyBlockHook:
 		return pos.IsInRange(height)
 	case PreStateCommitHook:
 		// deploy contract on ContractDeployment or pay out validator block rewards from snapshot
@@ -90,36 +90,6 @@ func (pos *PoSMechanism) initializeParams(params *IBFTFork) error {
 			pos.MinValidatorCount = params.MinValidatorCount.Value
 		}
 	}
-
-	return nil
-}
-
-// calculateProposerHook calculates the next proposer based on the last
-func (pos *PoSMechanism) calculateProposerHook(lastProposerParam interface{}) error {
-	lastProposer, ok := lastProposerParam.(types.Address)
-	if !ok {
-		return ErrInvalidHookParam
-	}
-
-	pos.ibft.state.CalcProposer(lastProposer)
-
-	return nil
-}
-
-// acceptStateLogHook logs the current snapshot
-func (pos *PoSMechanism) acceptStateLogHook(snapParam interface{}) error {
-	// Cast the param to a *Snapshot
-	snap, ok := snapParam.(*Snapshot)
-	if !ok {
-		return ErrInvalidHookParam
-	}
-
-	// Log the info message
-	pos.ibft.logger.Info(
-		"current snapshot",
-		"validators",
-		len(snap.Set),
-	)
 
 	return nil
 }
@@ -173,9 +143,9 @@ func (pos *PoSMechanism) preStateCommitHook(rawParams interface{}) error {
 	} else if pos.CustomContractAddress != types.ZeroAddress && pos.IsInRange(params.header.Number) {
 		// custom staking block rewards
 
-		snapshot, err := pos.ibft.getSnapshot(params.header.Number)
-		if err != nil {
-			return err
+		snapshot := pos.ibft.getSnapshot(params.header.Number)
+		if snapshot == nil {
+			return fmt.Errorf("cannot find snapshot at %d", params.header.Number)
 		}
 
 		// pay the block proposer the block reward from the current snapshot
@@ -196,9 +166,6 @@ func (pos *PoSMechanism) initializeHookMap() {
 	// Create the hook map
 	pos.hookMap = make(map[HookType]func(interface{}) error)
 
-	// Register the AcceptStateLogHook
-	pos.hookMap[AcceptStateLogHook] = pos.acceptStateLogHook
-
 	// Register the InsertBlockHook
 	pos.hookMap[InsertBlockHook] = pos.insertBlockHook
 
@@ -207,9 +174,6 @@ func (pos *PoSMechanism) initializeHookMap() {
 
 	// Register the PreStateCommitHook
 	pos.hookMap[PreStateCommitHook] = pos.preStateCommitHook
-
-	// Register the CalculateProposerHook
-	pos.hookMap[CalculateProposerHook] = pos.calculateProposerHook
 }
 
 // ShouldWriteTransactions indicates if transactions should be written to a block
@@ -251,9 +215,9 @@ func (pos *PoSMechanism) updateValidators(num uint64) error {
 		return err
 	}
 
-	snap, err := pos.ibft.getSnapshot(header.Number)
-	if err != nil {
-		return err
+	snap := pos.ibft.getSnapshot(header.Number)
+	if snap == nil {
+		return errSnapshotNotFound
 	}
 
 	if snap == nil {

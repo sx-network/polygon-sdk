@@ -14,32 +14,37 @@ import (
 )
 
 const (
-	configFlag            = "config"
-	genesisPathFlag       = "chain"
-	dataDirFlag           = "data-dir"
-	libp2pAddressFlag     = "libp2p"
-	prometheusAddressFlag = "prometheus"
-	natFlag               = "nat"
-	dnsFlag               = "dns"
-	sealFlag              = "seal"
-	maxPeersFlag          = "max-peers"
-	maxInboundPeersFlag   = "max-inbound-peers"
-	maxOutboundPeersFlag  = "max-outbound-peers"
-	priceLimitFlag        = "price-limit"
-	batchRequestLimitFlag = "json-rpc-batch-request-limit"
-	blockRangeLimitFlag   = "json-rpc-block-range-limit"
-	maxSlotsFlag          = "max-slots"
-	blockGasTargetFlag    = "block-gas-target"
-	secretsConfigFlag     = "secrets-config"
-	restoreFlag           = "restore"
-	blockTimeFlag         = "block-time"
-	rpcNRAppNameFlag      = "rpc-nr-app-name"
-	rpcNRLicenseKeyFlag   = "rpc-nr-license-key"
-	ibftBaseTimeoutFlag   = "ibft-base-timeout"
-	devIntervalFlag       = "dev-interval"
-	devFlag               = "dev"
-	corsOriginFlag        = "access-control-allow-origins"
-	logFileLocationFlag   = "log-to"
+	configFlag                   = "config"
+	genesisPathFlag              = "chain"
+	dataDirFlag                  = "data-dir"
+	libp2pAddressFlag            = "libp2p"
+	prometheusAddressFlag        = "prometheus"
+	natFlag                      = "nat"
+	dnsFlag                      = "dns"
+	sealFlag                     = "seal"
+	maxPeersFlag                 = "max-peers"
+	maxInboundPeersFlag          = "max-inbound-peers"
+	maxOutboundPeersFlag         = "max-outbound-peers"
+	priceLimitFlag               = "price-limit"
+	jsonRPCBatchRequestLimitFlag = "json-rpc-batch-request-limit"
+	jsonRPCBlockRangeLimitFlag   = "json-rpc-block-range-limit"
+	maxSlotsFlag                 = "max-slots"
+	blockGasTargetFlag           = "block-gas-target"
+	secretsConfigFlag            = "secrets-config"
+	restoreFlag                  = "restore"
+	blockTimeFlag                = "block-time"
+	rpcNRAppNameFlag             = "rpc-nr-app-name"
+	rpcNRLicenseKeyFlag          = "rpc-nr-license-key"
+	devIntervalFlag              = "dev-interval"
+	devFlag                      = "dev"
+	corsOriginFlag               = "access-control-allow-origins"
+	logFileLocationFlag          = "log-to"
+)
+
+// Flags that are deprecated, but need to be preserved for
+// backwards compatibility with existing scripts
+const (
+	ibftBaseTimeoutFlagLEGACY = "ibft-base-timeout"
 )
 
 const (
@@ -80,8 +85,10 @@ type serverParams struct {
 	rpcNRAppName    string
 	rpcNRLicenseKey string
 
-	batchLengthLimit uint64
-	blockRangeLimit  uint64
+	jsonRPCBatchLengthLimit uint64
+	jsonRPCBlockRangeLimit  uint64
+
+	ibftBaseTimeoutLegacy uint64
 
 	genesisConfig *chain.Chain
 	secretsConfig *secrets.SecretsManagerConfig
@@ -144,8 +151,8 @@ func (p *serverParams) generateConfig() *server.Config {
 		JSONRPC: &server.JSONRPC{
 			JSONRPCAddr:              p.jsonRPCAddress,
 			AccessControlAllowOrigin: p.corsAllowedOrigins,
-			BatchLengthLimit:         p.batchLengthLimit,
-			BlockRangeLimit:          p.blockRangeLimit,
+			BatchLengthLimit:         p.jsonRPCBatchLengthLimit,
+			BlockRangeLimit:          p.jsonRPCBlockRangeLimit,
 		},
 		GRPCAddr:   p.grpcAddress,
 		LibP2PAddr: p.libp2pAddress,
@@ -173,7 +180,6 @@ func (p *serverParams) generateConfig() *server.Config {
 		BlockTime:       p.rawConfig.BlockTime,
 		RPCNrAppName:    p.rpcNRAppName,
 		RPCNrLicenseKey: p.rpcNRLicenseKey,
-		IBFTBaseTimeout: p.rawConfig.IBFTBaseTimeout,
 		LogLevel:        hclog.LevelFromString(p.rawConfig.LogLevel),
 		LogFilePath:     p.logFileLocation,
 	}
