@@ -266,11 +266,6 @@ func NewServer(config *Config) (*Server, error) {
 		return nil, err
 	}
 
-	// setup and start grpc server
-	if err := m.setupGRPC(); err != nil {
-		return nil, err
-	}
-
 	// restore archive data before starting
 	if err := m.restoreChain(); err != nil {
 		return nil, err
