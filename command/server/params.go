@@ -90,7 +90,7 @@ type serverParams struct {
 	jsonRPCBatchLengthLimit uint64
 	jsonRPCBlockRangeLimit  uint64
 
-	dataFeedAMQPURI       *net.TCPAddr
+	dataFeedAMQPURI       string
 	dataFeedAMQPQueueName string
 
 	ibftBaseTimeoutLegacy uint64

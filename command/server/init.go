@@ -305,18 +305,8 @@ func (p *serverParams) initJSONRPCAddress() error {
 }
 
 func (p *serverParams) initDataFeedMQAddress() error {
-	var parseErr error
-
-	if p.dataFeedAMQPURI, parseErr = helper.ResolveAddr(
-		p.rawConfig.DataFeed.DataFeedAMQPUri,
-		helper.AllInterfacesBinding,
-	); parseErr != nil {
-		return parseErr
-	}
-
-	if p.dataFeedAMQPURI != nil {
-		p.dataFeedAMQPQueueName = p.rawConfig.DataFeed.DataFeedAMQPQueueName
-	}
+	p.dataFeedAMQPURI = p.rawConfig.DataFeed.DataFeedAMQPUri
+	p.dataFeedAMQPQueueName = p.rawConfig.DataFeed.DataFeedAMQPQueueName
 
 	return nil
 }
