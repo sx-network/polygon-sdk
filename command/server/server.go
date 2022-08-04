@@ -237,7 +237,7 @@ func setFlags(cmd *cobra.Command) {
 	)
 
 	cmd.Flags().StringVar(
-		&params.dataFeedAMQPQueueName,
+		&params.rawConfig.DataFeed.DataFeedAMQPQueueName,
 		dataFeedAMQPQueueNameFlag,
 		"",
 		"the AMQ queue that the DataFeedService's MQConsumer consumes from",
