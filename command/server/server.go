@@ -230,7 +230,7 @@ func setFlags(cmd *cobra.Command) {
 	)
 
 	cmd.Flags().StringVar(
-		&params.dataFeedAMQPURI,
+		&params.rawConfig.DataFeed.DataFeedAMQPUri,
 		dataFeedAMQPURIFlag,
 		"",
 		"the AMQP URI used by the DataFeedService's MQConsumer",

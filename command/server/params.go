@@ -60,6 +60,7 @@ var (
 			Telemetry: &config.Telemetry{},
 			Network:   &config.Network{},
 			TxPool:    &config.TxPool{},
+			DataFeed:  &config.DataFeed{},
 		},
 	}
 )
@@ -89,7 +90,7 @@ type serverParams struct {
 	jsonRPCBatchLengthLimit uint64
 	jsonRPCBlockRangeLimit  uint64
 
-	dataFeedAMQPURI       string
+	dataFeedAMQPURI       *net.TCPAddr
 	dataFeedAMQPQueueName string
 
 	ibftBaseTimeoutLegacy uint64
@@ -175,7 +176,7 @@ func (p *serverParams) generateConfig() *server.Config {
 			Chain:            p.genesisConfig,
 		},
 		DataFeed: &server.DataFeed{
-			DataFeedAMQPURI:       p.dataFeedAMQPURI,
+			DataFeedAMQPURI:       p.rawConfig.DataFeed.DataFeedAMQPUri,
 			DataFeedAMQPQueueName: p.dataFeedAMQPQueueName,
 		},
 		DataDir:         p.rawConfig.DataDir,

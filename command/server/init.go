@@ -224,6 +224,10 @@ func (p *serverParams) initAddresses() error {
 		return err
 	}
 
+	if err := p.initDataFeedMQAddress(); err != nil {
+		return err
+	}
+
 	return p.initGRPCAddress()
 }
 
@@ -295,6 +299,23 @@ func (p *serverParams) initJSONRPCAddress() error {
 		helper.AllInterfacesBinding,
 	); parseErr != nil {
 		return parseErr
+	}
+
+	return nil
+}
+
+func (p *serverParams) initDataFeedMQAddress() error {
+	var parseErr error
+
+	if p.dataFeedAMQPURI, parseErr = helper.ResolveAddr(
+		p.rawConfig.DataFeed.DataFeedAMQPUri,
+		helper.AllInterfacesBinding,
+	); parseErr != nil {
+		return parseErr
+	}
+
+	if p.dataFeedAMQPURI != nil {
+		p.dataFeedAMQPQueueName = p.rawConfig.DataFeed.DataFeedAMQPQueueName
 	}
 
 	return nil
