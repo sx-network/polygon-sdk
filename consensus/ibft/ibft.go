@@ -597,8 +597,13 @@ func (i *backendIBFT) IsIbftStateStale() bool {
 	return false
 }
 
+// getValidatorInfoFunc returns a callback that returns ValidaotrInfo when executed
+func (i *backendIBFT) GetValidatorInfo() consensus.ValidatorInfoFn {
+	return i.GetValidatorInfoImpl
+}
+
 // GetValidatorInfo returns validator info to be used outside consensus layer
-func (i *backendIBFT) GetValidatorInfo() *consensus.ValidatorInfo {
+func (i *backendIBFT) GetValidatorInfoImpl() *consensus.ValidatorInfo {
 	// read from snapshot instead of state
 	snapshot, err := i.getLatestSnapshot()
 	if err != nil {

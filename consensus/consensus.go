@@ -48,7 +48,7 @@ type Consensus interface {
 	IsIbftStateStale() bool
 
 	// Returns validator info to be used outside consensus layer
-	GetValidatorInfo() *ValidatorInfo
+	GetValidatorInfo() ValidatorInfoFn
 }
 
 type ValidatorInfo struct {
@@ -58,6 +58,8 @@ type ValidatorInfo struct {
 	Epoch            uint64
 	QuorumSize       int
 }
+
+type ValidatorInfoFn func() *ValidatorInfo
 
 // Config is the configuration for the consensus
 type Config struct {

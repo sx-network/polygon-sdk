@@ -33,8 +33,8 @@ type DataFeed struct {
 	// networking stack
 	topic *network.Topic
 
-	// validator info
-	validatorInfo *consensus.ValidatorInfo
+	// validator info function
+	validatorInfoFn consensus.ValidatorInfoFn
 
 	// indicates which DataFeed operator commands should be implemented
 	proto.UnimplementedDataFeedOperatorServer
@@ -56,12 +56,12 @@ func NewDataFeedService(
 	config *Config,
 	grpcServer *grpc.Server,
 	network *network.Server,
-	validatorInfo *consensus.ValidatorInfo,
+	validatorInfoFn consensus.ValidatorInfoFn,
 ) (*DataFeed, error) {
 	datafeedService := &DataFeed{
-		logger:        logger.Named("datafeed"),
-		config:        config,
-		validatorInfo: validatorInfo,
+		logger:          logger.Named("datafeed"),
+		config:          config,
+		validatorInfoFn: validatorInfoFn,
 	}
 
 	// configure and start mqService
@@ -186,12 +186,12 @@ func (d *DataFeed) validateSignatures(dataFeedReportGossip *proto.DataFeedReport
 		}
 
 		// see if we signed it
-		if d.validatorInfo.ValidatorAddress == crypto.PubKeyToAddress(pub).String() {
+		if d.validatorInfoFn().ValidatorAddress == crypto.PubKeyToAddress(pub).String() {
 			return true, nil
 		} else {
 			// if we haven't signed it, see if a recognized validator from the current validator set signed it
 			otherValidatorSigned := false
-			for _, validator := range d.validatorInfo.Validators {
+			for _, validator := range d.validatorInfoFn().Validators {
 				if validator == crypto.PubKeyToAddress(pub) {
 					otherValidatorSigned = true
 				}
@@ -231,7 +231,7 @@ func (d *DataFeed) signGossipedPayload(dataFeedReportGossip *proto.DataFeedRepor
 
 	numSigs := len(strings.Split(reportOutcome.Signatures, ","))
 
-	return reportOutcome, numSigs >= d.validatorInfo.QuorumSize, nil
+	return reportOutcome, numSigs >= d.validatorInfoFn().QuorumSize, nil
 }
 
 // getSignatureForPayload derives the signature of the current validator
@@ -248,7 +248,7 @@ func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string
 		return "", err
 	}
 
-	signedData, err := crypto.Sign(d.validatorInfo.ValidatorKey, crypto.Keccak256(data))
+	signedData, err := crypto.Sign(d.validatorInfoFn().ValidatorKey, crypto.Keccak256(data))
 	if err != nil {
 		return "", err
 	}
@@ -286,7 +286,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 				dataFeedReportGossip.Timestamp = message.Timestamp
 				dataFeedReportGossip.Signatures = message.Signatures
 			} else {
-				dataFeedReportGossip.Epoch = d.validatorInfo.Epoch
+				dataFeedReportGossip.Epoch = d.validatorInfoFn().Epoch
 				dataFeedReportGossip.Timestamp = time.Now().Unix()
 
 				mySig, err := d.getSignatureForPayload(dataFeedReportGossip)
