@@ -176,7 +176,7 @@ func (p *serverParams) generateConfig() *server.Config {
 			Chain:            p.genesisConfig,
 		},
 		DataFeed: &server.DataFeed{
-			DataFeedAMQPURI:       p.rawConfig.DataFeed.DataFeedAMQPUri,
+			DataFeedAMQPURI:       p.dataFeedAMQPURI,
 			DataFeedAMQPQueueName: p.dataFeedAMQPQueueName,
 		},
 		DataDir:         p.rawConfig.DataDir,
