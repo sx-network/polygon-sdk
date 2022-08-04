@@ -261,11 +261,6 @@ func NewServer(config *Config) (*Server, error) {
 		return nil, err
 	}
 
-	// setup and start datafeed consumer
-	if err := m.setupDataFeedService(); err != nil {
-		return nil, err
-	}
-
 	// restore archive data before starting
 	if err := m.restoreChain(); err != nil {
 		return nil, err
@@ -273,6 +268,11 @@ func NewServer(config *Config) (*Server, error) {
 
 	// start consensus
 	if err := m.consensus.Start(); err != nil {
+		return nil, err
+	}
+
+	// setup and start datafeed consumer
+	if err := m.setupDataFeedService(); err != nil {
 		return nil, err
 	}
 
