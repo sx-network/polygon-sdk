@@ -12,7 +12,6 @@ func (d *DataFeed) ReportOutcome(
 	ctx context.Context,
 	request *proto.ReportOutcomeReq,
 ) (*proto.ReportOutcomeResp, error) {
-
 	reportOutcome := &types.ReportOutcome{
 		MarketHash: request.Market,
 		Outcome:    request.Outcome,

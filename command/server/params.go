@@ -34,7 +34,6 @@ const (
 	secretsConfigFlag            = "secrets-config"
 	restoreFlag                  = "restore"
 	blockTimeFlag                = "block-time"
-	ibftBaseTimeoutFlag          = "ibft-base-timeout"
 	rpcNRAppNameFlag             = "rpc-nr-app-name"
 	rpcNRLicenseKeyFlag          = "rpc-nr-license-key"
 	devIntervalFlag              = "dev-interval"
@@ -43,6 +42,12 @@ const (
 	logFileLocationFlag          = "log-to"
 	dataFeedAMQPURIFlag          = "data-feed-amqp-uri"
 	dataFeedAMQPQueueNameFlag    = "data-feed-amqp-queue-name"
+)
+
+// Flags that are deprecated, but need to be preserved for
+// backwards compatibility with existing scripts
+const (
+	ibftBaseTimeoutFlagLEGACY = "ibft-base-timeout"
 )
 
 const (
@@ -86,6 +91,8 @@ type serverParams struct {
 
 	dataFeedAMQPURI       string
 	dataFeedAMQPQueueName string
+
+	ibftBaseTimeoutLegacy uint64
 
 	genesisConfig *chain.Chain
 	secretsConfig *secrets.SecretsManagerConfig
@@ -180,7 +187,6 @@ func (p *serverParams) generateConfig() *server.Config {
 		BlockTime:       p.rawConfig.BlockTime,
 		RPCNrAppName:    p.rpcNRAppName,
 		RPCNrLicenseKey: p.rpcNRLicenseKey,
-		IBFTBaseTimeout: p.rawConfig.IBFTBaseTimeout,
 		LogLevel:        hclog.LevelFromString(p.rawConfig.LogLevel),
 		LogFilePath:     p.logFileLocation,
 	}

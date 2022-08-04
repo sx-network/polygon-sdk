@@ -143,7 +143,7 @@ func (mq *MQService) startConsumer(
 					errors <- err
 					//delivery.Nack(false, true) //nolint:errcheck
 					// nacking will avoid removing from queue, so we ack even so we've encountered an error
-					delivery.Ack(false)
+					delivery.Ack(false) //nolint:errcheck
 				} else {
 					delivery.Ack(false) //nolint:errcheck
 					reports <- report
@@ -169,9 +169,10 @@ func (mq *MQService) parseDelivery(delivery amqp.Delivery) (types.ReportOutcome,
 	}
 
 	var reportOutcome types.ReportOutcome
-	if err := json.Unmarshal([]byte(delivery.Body), &reportOutcome); err != nil {
+	if err := json.Unmarshal(delivery.Body, &reportOutcome); err != nil {
 		return types.ReportOutcome{}, fmt.Errorf("error during report outcome json unmarshaling, %w", err)
 	}
+
 	mq.logger.Debug("MQ message received", "marketHash", reportOutcome.MarketHash)
 
 	return reportOutcome, nil

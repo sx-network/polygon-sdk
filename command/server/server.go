@@ -200,17 +200,6 @@ func setFlags(cmd *cobra.Command) {
 		"the New Relic Agent License Key, used for reporting json-rpc metrics.",
 	)
 
-	cmd.Flags().Uint64Var(
-		&params.rawConfig.IBFTBaseTimeout,
-		ibftBaseTimeoutFlag,
-		// Calculate from block time if it is not given
-		0,
-		fmt.Sprintf(
-			"base IBFT timeout in seconds, it needs to be larger than block time. (block time * %d) is set if it's zero",
-			config.BlockTimeMultiplierForTimeout,
-		),
-	)
-
 	cmd.Flags().StringArrayVar(
 		&params.corsAllowedOrigins,
 		corsOriginFlag,
@@ -254,7 +243,22 @@ func setFlags(cmd *cobra.Command) {
 		"the AMQ queue that the DataFeedService's MQConsumer consumes from",
 	)
 
+	setLegacyFlags(cmd)
 	setDevFlags(cmd)
+}
+
+// setLegacyFlags sets the legacy flags to preserve backwards compatibility
+// with running partners
+func setLegacyFlags(cmd *cobra.Command) {
+	// Legacy IBFT base timeout flag
+	cmd.Flags().Uint64Var(
+		&params.ibftBaseTimeoutLegacy,
+		ibftBaseTimeoutFlagLEGACY,
+		0,
+		"",
+	)
+
+	_ = cmd.Flags().MarkHidden(ibftBaseTimeoutFlagLEGACY)
 }
 
 func setDevFlags(cmd *cobra.Command) {

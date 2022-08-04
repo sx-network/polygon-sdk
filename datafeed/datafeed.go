@@ -141,12 +141,12 @@ func (d *DataFeed) addGossipMsg(obj interface{}, _ peer.ID) {
 
 // validateGossipedPayload performs validation steps on gossiped payload prior to signing
 func (d *DataFeed) validateGossipedPayload(dataFeedReportGossip *proto.DataFeedReport) error {
-
 	// check if we already signed
 	isAlreadySigned, err := d.validateSignatures(dataFeedReportGossip)
 	if err != nil {
 		return err
 	}
+
 	if isAlreadySigned {
 		return fmt.Errorf("we already signed this payload")
 	}
@@ -161,14 +161,14 @@ func (d *DataFeed) validateGossipedPayload(dataFeedReportGossip *proto.DataFeedR
 
 // validateSignatures checks if the current validator has already signed the payload
 func (d *DataFeed) validateSignatures(dataFeedReportGossip *proto.DataFeedReport) (bool, error) {
-
 	clonedMsg, ok := protobuf.Clone(dataFeedReportGossip).(*proto.DataFeedReport)
 	if !ok {
 		return false, fmt.Errorf("error while determining if we already signed")
 	}
-	clonedMsg.Signatures = ""
 
+	clonedMsg.Signatures = ""
 	data, err := protobuf.Marshal(clonedMsg)
+
 	if err != nil {
 		return false, err
 	}
@@ -189,7 +189,6 @@ func (d *DataFeed) validateSignatures(dataFeedReportGossip *proto.DataFeedReport
 		if d.validatorInfo.ValidatorAddress == crypto.PubKeyToAddress(pub).String() {
 			return true, nil
 		} else {
-
 			// if we haven't signed it, see if a recognized validator from the current validator set signed it
 			otherValidatorSigned := false
 			for _, validator := range d.validatorInfo.Validators {
@@ -201,20 +200,20 @@ func (d *DataFeed) validateSignatures(dataFeedReportGossip *proto.DataFeedReport
 				return false, fmt.Errorf("unrecognized signature detected")
 			}
 		}
-
 	}
+
 	return false, nil
 }
 
 // validateTimestamp  checks if payload too old
 func (d *DataFeed) validateTimestamp(dataFeedReportGossip *proto.DataFeedReport) bool {
 	d.logger.Debug("time", "time", time.Since(time.Unix(dataFeedReportGossip.Timestamp, 0)).Seconds())
+
 	return time.Since(time.Unix(dataFeedReportGossip.Timestamp, 0)).Seconds() > maxGossipTimestampDriftSeconds
 }
 
 // signGossipedPayload sings the payload by concatenating our own signature to the signatures field
 func (d *DataFeed) signGossipedPayload(dataFeedReportGossip *proto.DataFeedReport) (*types.ReportOutcome, bool, error) {
-
 	reportOutcome := &types.ReportOutcome{
 		MarketHash: dataFeedReportGossip.MarketHash,
 		Outcome:    dataFeedReportGossip.Outcome,
@@ -237,7 +236,6 @@ func (d *DataFeed) signGossipedPayload(dataFeedReportGossip *proto.DataFeedRepor
 
 // getSignatureForPayload derives the signature of the current validator
 func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string, error) {
-
 	clonedMsg, ok := protobuf.Clone(payload).(*proto.DataFeedReport)
 	if !ok {
 		return "", fmt.Errorf("error while trying to clone datafeed report")
@@ -260,17 +258,6 @@ func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string
 
 // publishPayload
 func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs bool) {
-
-	// d.logger.Debug(
-	// 	"Validator info",
-	// 	"validator set length",
-	// 	len(d.validatorInfo.Validators),
-	// 	"epoch",
-	// 	d.validatorInfo.Epoch,
-	// 	"quorumSize",
-	// 	d.validatorInfo.QuorumSize,
-	// )
-
 	if isMajoritySigs {
 		//TODO: write to SC
 		d.logger.Debug(
@@ -286,12 +273,9 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 			"signatures",
 			message.Signatures,
 		)
-
 	} else {
-		// broadcast the payload only if a topic
-		// subscription is present
 		if d.topic != nil {
-
+			// broadcast the payload only if a topic subscription present
 			dataFeedReportGossip := &proto.DataFeedReport{
 				MarketHash: message.MarketHash,
 				Outcome:    message.Outcome,
