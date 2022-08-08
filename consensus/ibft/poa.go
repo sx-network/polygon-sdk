@@ -222,7 +222,10 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 
 	if poa.ibft.customContractAddress != types.ZeroAddress {
 
-		header, _ := poa.ibft.blockchain.GetHeaderByNumber(params.header.Number)
+		header, ok := poa.ibft.blockchain.GetHeaderByNumber(params.header.Number)
+		if !ok {
+			poa.ibft.logger.Error("preStateCommitHook", "could not get headerByNumber for number", params.header.Number)
+		}
 		t, err := poa.ibft.executor.BeginTxn(header.StateRoot, header, types.ZeroAddress)
 		if err != nil {
 			poa.ibft.logger.Error("failed to begin txn", "err", err)
