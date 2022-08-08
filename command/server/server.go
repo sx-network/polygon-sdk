@@ -244,10 +244,10 @@ func setFlags(cmd *cobra.Command) {
 	)
 
 	cmd.Flags().StringVar(
-		&params.rawConfig.DataFeed.CustomContractAddress,
+		&params.rawConfig.CustomContractAddress,
 		customContractAddressFlag,
 		"",
-		"the custom contract address the DataFeedService uses for SC interaction",
+		"the custom contract address used for SC interaction",
 	)
 
 	setLegacyFlags(cmd)

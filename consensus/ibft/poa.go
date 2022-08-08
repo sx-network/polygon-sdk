@@ -46,7 +46,7 @@ func PoAFactory(ibft *backendIBFT, params *IBFTFork) (ConsensusMechanism, error)
 // IsAvailable returns indicates if mechanism should be called at given height
 func (poa *PoAMechanism) IsAvailable(hookType HookType, height uint64) bool {
 	switch hookType {
-	case VerifyHeadersHook, ProcessHeadersHook, CandidateVoteHook:
+	case VerifyHeadersHook, ProcessHeadersHook, CandidateVoteHook, PreStateCommitHook:
 		return poa.IsInRange(height)
 	default:
 		return false
@@ -211,6 +211,28 @@ func (poa *PoAMechanism) candidateVoteHook(hookParams interface{}) error {
 	return nil
 }
 
+// preStateCommitHook hook that carries out state-modifying transactions
+func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
+	params, ok := rawParams.(*preStateCommitHookParams)
+	if !ok {
+		return ErrInvalidHookParam
+	}
+
+	if poa.ibft.customContractAddress != types.ZeroAddress {
+		// TODO: 1. check if block when PoA validator set is updated on snapshot, if so then write set to SC along with
+		// SXNode.setValidators(set, epoch)
+		//params.validatorSet, params.epochSize
+		poa.ibft.logger.Debug("preStateCommitHook", "validatorSet length", len(params.validatorSet))
+		poa.ibft.logger.Debug("preStateCommitHook", "epochSize", params.epochSize)
+
+		// TODO: 2. if building a block, check signedPayloads array and if non-empty, write to reportOutcomes()
+		// SXNode.reportOutcomes(marketHashes[], outcomes[], signatures[] ) OR SXNode.reporOutcomes(signedPayloads[]) where signedPayload is a library
+
+	}
+
+	return nil
+}
+
 // initializeHookMap registers the hooks that the PoA mechanism
 // should have
 func (poa *PoAMechanism) initializeHookMap() {
@@ -225,6 +247,9 @@ func (poa *PoAMechanism) initializeHookMap() {
 
 	// Register the CandidateVoteHook
 	poa.hookMap[CandidateVoteHook] = poa.candidateVoteHook
+
+	// Register the PreStateCommitHook
+	poa.hookMap[PreStateCommitHook] = poa.preStateCommitHook
 }
 
 // ShouldWriteTransactions indicates if transactions should be written to a block

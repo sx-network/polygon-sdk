@@ -37,6 +37,8 @@ type Config struct {
 
 	DataFeed *DataFeed
 
+	CustomContractAddress types.Address
+
 	Seal bool
 
 	SecretsManager *secrets.SecretsManagerConfig
@@ -63,5 +65,4 @@ type JSONRPC struct {
 type DataFeed struct {
 	DataFeedAMQPURI       string
 	DataFeedAMQPQueueName string
-	CustomContractAddress types.Address
 }

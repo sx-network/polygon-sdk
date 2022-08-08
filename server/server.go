@@ -403,18 +403,19 @@ func (s *Server) setupConsensus() error {
 
 	consensus, err := engine(
 		&consensus.Params{
-			Context:        context.Background(),
-			Seal:           s.config.Seal,
-			Config:         config,
-			TxPool:         s.txpool,
-			Network:        s.network,
-			Blockchain:     s.blockchain,
-			Executor:       s.executor,
-			Grpc:           s.grpcServer,
-			Logger:         s.logger,
-			Metrics:        s.serverMetrics.consensus,
-			SecretsManager: s.secretsManager,
-			BlockTime:      s.config.BlockTime,
+			Context:               context.Background(),
+			Seal:                  s.config.Seal,
+			Config:                config,
+			TxPool:                s.txpool,
+			Network:               s.network,
+			Blockchain:            s.blockchain,
+			Executor:              s.executor,
+			Grpc:                  s.grpcServer,
+			Logger:                s.logger,
+			Metrics:               s.serverMetrics.consensus,
+			SecretsManager:        s.secretsManager,
+			BlockTime:             s.config.BlockTime,
+			CustomContractAddress: s.config.CustomContractAddress,
 		},
 	)
 
@@ -586,7 +587,6 @@ func (s *Server) setupJSONRPC() error {
 // setupDataFeedService set up and start datafeed service
 func (s *Server) setupDataFeedService() error {
 	conf := &datafeed.Config{
-		CustomContractAddress: s.config.DataFeed.CustomContractAddress,
 		MQConfig: &datafeed.MQConfig{
 			AMQPURI: s.config.DataFeed.DataFeedAMQPURI,
 			QueueConfig: &datafeed.QueueConfig{

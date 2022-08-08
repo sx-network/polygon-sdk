@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/0xPolygon/polygon-edge/helper/common"
+	"github.com/0xPolygon/polygon-edge/state"
+	"github.com/0xPolygon/polygon-edge/types"
 )
 
 // Define the type of the IBFT consensus
@@ -171,4 +173,12 @@ type ConsensusMechanismFactory func(ibft *backendIBFT, params *IBFTFork) (Consen
 var mechanismBackends = map[MechanismType]ConsensusMechanismFactory{
 	PoA: PoAFactory,
 	PoS: PoSFactory,
+}
+
+// preStateCommitHookParams are the params passed into the preStateCommitHook
+type preStateCommitHookParams struct {
+	header       *types.Header
+	txn          *state.Transition
+	validatorSet ValidatorSet
+	epochSize    uint64
 }

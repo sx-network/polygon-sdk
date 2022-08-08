@@ -77,6 +77,8 @@ type backendIBFT struct {
 
 	blockTime time.Duration // Minimum block generation time in seconds
 
+	customContractAddress types.Address // custom contract address used for on-chain interaction
+
 	sealing bool // Flag indicating if the node is a sealer
 
 	closeCh chan struct{} // Channel for closing
@@ -111,20 +113,21 @@ func Factory(params *consensus.Params) (consensus.Consensus, error) {
 	}
 
 	p := &backendIBFT{
-		logger:             params.Logger.Named("ibft"),
-		config:             params.Config,
-		Grpc:               params.Grpc,
-		blockchain:         params.Blockchain,
-		executor:           params.Executor,
-		closeCh:            make(chan struct{}),
-		txpool:             params.TxPool,
-		network:            params.Network,
-		epochSize:          epochSize,
-		quorumSizeBlockNum: quorumSizeBlockNum,
-		sealing:            params.Seal,
-		metrics:            params.Metrics,
-		secretsManager:     params.SecretsManager,
-		blockTime:          time.Duration(params.BlockTime) * time.Second,
+		logger:                params.Logger.Named("ibft"),
+		config:                params.Config,
+		Grpc:                  params.Grpc,
+		blockchain:            params.Blockchain,
+		executor:              params.Executor,
+		closeCh:               make(chan struct{}),
+		txpool:                params.TxPool,
+		network:               params.Network,
+		epochSize:             epochSize,
+		quorumSizeBlockNum:    quorumSizeBlockNum,
+		sealing:               params.Seal,
+		metrics:               params.Metrics,
+		secretsManager:        params.SecretsManager,
+		blockTime:             time.Duration(params.BlockTime) * time.Second,
+		customContractAddress: params.CustomContractAddress,
 		syncer: syncer.NewSyncer(
 			params.Logger,
 			params.Network,
@@ -544,8 +547,10 @@ func (i *backendIBFT) GetBlockCreator(header *types.Header) (types.Address, erro
 // PreStateCommit a hook to be called before finalizing state transition on inserting block
 func (i *backendIBFT) PreStateCommit(header *types.Header, txn *state.Transition) error {
 	params := &preStateCommitHookParams{
-		header: header,
-		txn:    txn,
+		header:       header,
+		txn:          txn,
+		validatorSet: i.activeValidatorSet,
+		epochSize:    i.epochSize,
 	}
 
 	if err := i.runHook(PreStateCommitHook, header.Number, params); err != nil {

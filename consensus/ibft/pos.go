@@ -3,9 +3,9 @@ package ibft
 import (
 	"errors"
 	"fmt"
+
 	"github.com/0xPolygon/polygon-edge/contracts/staking"
 	stakingHelper "github.com/0xPolygon/polygon-edge/helper/staking"
-	"github.com/0xPolygon/polygon-edge/state"
 	"github.com/0xPolygon/polygon-edge/types"
 )
 
@@ -113,12 +113,6 @@ func (pos *PoSMechanism) verifyBlockHook(blockParam interface{}) error {
 	}
 
 	return nil
-}
-
-// preStateCommitHookParams are the params passed into the preStateCommitHook
-type preStateCommitHookParams struct {
-	header *types.Header
-	txn    *state.Transition
 }
 
 // verifyBlockHook checks if the block is an epoch block and if it has any transactions

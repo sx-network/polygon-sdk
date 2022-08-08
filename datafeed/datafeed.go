@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/0xPolygon/polygon-edge/consensus"
-	"github.com/0xPolygon/polygon-edge/contracts/datafeed"
 	"github.com/0xPolygon/polygon-edge/crypto"
 	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 	"github.com/0xPolygon/polygon-edge/helper/hex"
@@ -43,8 +42,7 @@ type DataFeed struct {
 
 // Config
 type Config struct {
-	CustomContractAddress types.Address
-	MQConfig              *MQConfig
+	MQConfig *MQConfig
 }
 
 // NewDataFeedService returns the new datafeed service
@@ -265,19 +263,16 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		// once validator writes to SC, it should gossip this so other validators remove from their queues
 		// gossip msg should also contained fully signed payload which validators will have to verify first before discarding from queue
 
-		if d.config.CustomContractAddress != types.ZeroAddress {
+		// header, _ := d.consensusInfoFn().Blockchain.GetHeaderByNumber(1)
+		// t, err := d.consensusInfoFn().Executor.BeginTxn(header.Hash, header, types.ZeroAddress)
+		// if err != nil {
+		// 	d.logger.Error("failed to begin txn", "err", err)
+		// }
 
-			header, _ := d.consensusInfoFn().Blockchain.GetHeaderByNumber(1)
-			t, err := d.consensusInfoFn().Executor.BeginTxn(header.Hash, header, types.ZeroAddress)
-			if err != nil {
-				d.logger.Error("failed to begin txn", "err", err)
-			}
-
-			_, err = datafeed.ReportOutcome(t, d.consensusInfoFn().ValidatorAddress, d.config.CustomContractAddress)
-			if err != nil {
-				d.logger.Error("failed to call ReportOutcome", "err", err)
-			}
-		}
+		// _, err = datafeed.ReportOutcome(t, d.consensusInfoFn().ValidatorAddress)
+		// if err != nil {
+		// 	d.logger.Error("failed to call ReportOutcome", "err", err)
+		// }
 
 		//TODO: write to SC
 		d.logger.Debug(

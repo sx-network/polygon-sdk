@@ -32,6 +32,7 @@ type Config struct {
 	LogFilePath              string     `json:"log_to" yaml:"log_to"`
 	JSONRPCBatchRequestLimit uint64     `json:"json_rpc_batch_request_limit" yaml:"json_rpc_batch_request_limit"`
 	JSONRPCBlockRangeLimit   uint64     `json:"json_rpc_block_range_limit" yaml:"json_rpc_block_range_limit"`
+	CustomContractAddress    string     `json:"custom_contract_address" yaml:"custom_contract_address"`
 }
 
 // Telemetry holds the config details for metric services.
@@ -52,9 +53,8 @@ type Network struct {
 
 // DataFeed defines the DataFeed configuration params
 type DataFeed struct {
-	AMQPURI               string `json:"amqp_uri" yaml:"amqp_uri"`
-	AMQPQueueName         string `json:"amqp_queue_name" yaml:"amqp_queue_name"`
-	CustomContractAddress string `json:"custom_contract_address" yaml:"custom_contract_address"`
+	AMQPURI       string `json:"amqp_uri" yaml:"amqp_uri"`
+	AMQPQueueName string `json:"amqp_queue_name" yaml:"amqp_queue_name"`
 }
 
 // TxPool defines the TxPool configuration params

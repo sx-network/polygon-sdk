@@ -228,6 +228,10 @@ func (p *serverParams) initAddresses() error {
 		return err
 	}
 
+	if err := p.initCustomContractAddress(); err != nil {
+		return err
+	}
+
 	return p.initGRPCAddress()
 }
 
@@ -307,8 +311,12 @@ func (p *serverParams) initJSONRPCAddress() error {
 func (p *serverParams) initDataFeedMQAddress() error {
 	p.dataFeedAMQPURI = p.rawConfig.DataFeed.AMQPURI
 	p.dataFeedAMQPQueueName = p.rawConfig.DataFeed.AMQPQueueName
-	p.dataFeedCustomContractAddress = types.StringToAddress(p.rawConfig.DataFeed.CustomContractAddress)
 
+	return nil
+}
+
+func (p *serverParams) initCustomContractAddress() error {
+	p.customContractAddress = types.StringToAddress(p.rawConfig.CustomContractAddress)
 	return nil
 }
 
