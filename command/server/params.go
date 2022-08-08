@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"github.com/0xPolygon/polygon-edge/command/server/config"
+	"github.com/0xPolygon/polygon-edge/types"
 
 	"github.com/0xPolygon/polygon-edge/chain"
 	"github.com/0xPolygon/polygon-edge/network"
@@ -42,6 +43,7 @@ const (
 	logFileLocationFlag          = "log-to"
 	dataFeedAMQPURIFlag          = "data-feed-amqp-uri"
 	dataFeedAMQPQueueNameFlag    = "data-feed-amqp-queue-name"
+	customContractAddressFlag    = "custom-contract-address"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -90,8 +92,9 @@ type serverParams struct {
 	jsonRPCBatchLengthLimit uint64
 	jsonRPCBlockRangeLimit  uint64
 
-	dataFeedAMQPURI       string
-	dataFeedAMQPQueueName string
+	dataFeedAMQPURI               string
+	dataFeedAMQPQueueName         string
+	dataFeedCustomContractAddress types.Address
 
 	ibftBaseTimeoutLegacy uint64
 
@@ -178,6 +181,7 @@ func (p *serverParams) generateConfig() *server.Config {
 		DataFeed: &server.DataFeed{
 			DataFeedAMQPURI:       p.dataFeedAMQPURI,
 			DataFeedAMQPQueueName: p.dataFeedAMQPQueueName,
+			CustomContractAddress: p.dataFeedCustomContractAddress,
 		},
 		DataDir:         p.rawConfig.DataDir,
 		Seal:            p.rawConfig.ShouldSeal,

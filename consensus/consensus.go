@@ -48,18 +48,20 @@ type Consensus interface {
 	IsIbftStateStale() bool
 
 	// Returns validator info to be used outside consensus layer
-	GetValidatorInfo() ValidatorInfoFn
+	GetConsensusInfo() ConsensusInfoFn
 }
 
-type ValidatorInfo struct {
+type ConsensusInfo struct {
 	Validators       []types.Address
 	ValidatorKey     *ecdsa.PrivateKey
-	ValidatorAddress string
+	ValidatorAddress types.Address
+	Executor         state.Executor
+	Blockchain       *blockchain.Blockchain
 	Epoch            uint64
 	QuorumSize       int
 }
 
-type ValidatorInfoFn func() *ValidatorInfo
+type ConsensusInfoFn func() *ConsensusInfo
 
 // Config is the configuration for the consensus
 type Config struct {

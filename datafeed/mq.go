@@ -12,6 +12,11 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+const (
+	mqConsumerConcurrency = 1
+	exchangeName          = "toronto-exchange"
+)
+
 // MQService
 type MQService struct {
 	logger          hclog.Logger
@@ -23,6 +28,11 @@ type MQService struct {
 // Connection
 type Connection struct {
 	Channel *amqp.Channel
+}
+
+type MQConfig struct {
+	AMQPURI     string
+	QueueConfig *QueueConfig
 }
 
 // QueueConfig
@@ -56,8 +66,7 @@ func (mq *MQService) startConsumeLoop() {
 
 	ctx, cfunc := context.WithCancel(context.Background())
 
-	//TODO: have consumer concurrency configurable once we need more than 1 running at a time
-	reports, errors, err := mq.startConsumer(ctx, 1)
+	reports, errors, err := mq.startConsumer(ctx, mqConsumerConcurrency)
 
 	if err != nil {
 		panic(err)
@@ -104,7 +113,7 @@ func (mq *MQService) startConsumer(
 
 	// bind the queue to the routing key
 	//TODO: eventually ensure the exchange name is configurable instead of hardcoded to 'toronto-exchange'
-	err = mq.connection.Channel.QueueBind(mq.config.QueueConfig.QueueName, "", "toronto-exchange", false, nil)
+	err = mq.connection.Channel.QueueBind(mq.config.QueueConfig.QueueName, "", exchangeName, false, nil)
 	if err != nil {
 		return nil, nil, err
 	}

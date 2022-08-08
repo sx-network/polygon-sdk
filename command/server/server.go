@@ -230,17 +230,24 @@ func setFlags(cmd *cobra.Command) {
 	)
 
 	cmd.Flags().StringVar(
-		&params.rawConfig.DataFeed.DataFeedAMQPUri,
+		&params.rawConfig.DataFeed.AMQPURI,
 		dataFeedAMQPURIFlag,
 		"",
 		"the AMQP URI used by the DataFeedService's MQConsumer",
 	)
 
 	cmd.Flags().StringVar(
-		&params.rawConfig.DataFeed.DataFeedAMQPQueueName,
+		&params.rawConfig.DataFeed.AMQPQueueName,
 		dataFeedAMQPQueueNameFlag,
 		"",
 		"the AMQ queue that the DataFeedService's MQConsumer consumes from",
+	)
+
+	cmd.Flags().StringVar(
+		&params.rawConfig.DataFeed.CustomContractAddress,
+		customContractAddressFlag,
+		"",
+		"the custom contract address the DataFeedService uses for SC interaction",
 	)
 
 	setLegacyFlags(cmd)

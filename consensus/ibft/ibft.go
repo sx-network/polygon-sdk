@@ -598,27 +598,20 @@ func (i *backendIBFT) IsIbftStateStale() bool {
 }
 
 // getValidatorInfoFunc returns a callback that returns ValidaotrInfo when executed
-func (i *backendIBFT) GetValidatorInfo() consensus.ValidatorInfoFn {
-	return i.GetValidatorInfoImpl
+func (i *backendIBFT) GetConsensusInfo() consensus.ConsensusInfoFn {
+	return i.GetConsensusInfoImpl
 }
 
-// GetValidatorInfo returns validator info to be used outside consensus layer
-func (i *backendIBFT) GetValidatorInfoImpl() *consensus.ValidatorInfo {
-	// read from snapshot instead of state
-	snapshot, err := i.getLatestSnapshot()
-	if err != nil {
-		i.logger.Error(
-			"could not get latest snapshot when trying to derive validator info",
-			"err",
-			err,
-		)
-	}
+// GetValidatorInfo returns consensus info to be used outside consensus layer
+func (i *backendIBFT) GetConsensusInfoImpl() *consensus.ConsensusInfo {
 
-	return &consensus.ValidatorInfo{
-		Validators:       snapshot.Set,
+	return &consensus.ConsensusInfo{
+		Validators:       i.activeValidatorSet,
 		ValidatorKey:     i.validatorKey,
-		ValidatorAddress: i.validatorKeyAddr.String(),
-		Epoch:            i.GetEpoch(snapshot.Number),
-		QuorumSize:       i.quorumSize(snapshot.Number)(snapshot.Set),
+		ValidatorAddress: i.validatorKeyAddr,
+		Executor:         *i.executor,
+		Blockchain:       i.blockchain,
+		Epoch:            i.GetEpoch(i.blockchain.Header().Number),
+		QuorumSize:       i.quorumSize(i.blockchain.Header().Number)(i.activeValidatorSet),
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/0xPolygon/polygon-edge/consensus"
+	"github.com/0xPolygon/polygon-edge/contracts/datafeed"
 	"github.com/0xPolygon/polygon-edge/crypto"
 	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 	"github.com/0xPolygon/polygon-edge/helper/hex"
@@ -33,8 +34,8 @@ type DataFeed struct {
 	// networking stack
 	topic *network.Topic
 
-	// validator info function
-	validatorInfoFn consensus.ValidatorInfoFn
+	// consensus info function
+	consensusInfoFn consensus.ConsensusInfoFn
 
 	// indicates which DataFeed operator commands should be implemented
 	proto.UnimplementedDataFeedOperatorServer
@@ -42,12 +43,8 @@ type DataFeed struct {
 
 // Config
 type Config struct {
-	MQConfig *MQConfig
-}
-
-type MQConfig struct {
-	AMQPURI     string
-	QueueConfig *QueueConfig
+	CustomContractAddress types.Address
+	MQConfig              *MQConfig
 }
 
 // NewDataFeedService returns the new datafeed service
@@ -56,12 +53,12 @@ func NewDataFeedService(
 	config *Config,
 	grpcServer *grpc.Server,
 	network *network.Server,
-	validatorInfoFn consensus.ValidatorInfoFn,
+	validatorInfoFn consensus.ConsensusInfoFn,
 ) (*DataFeed, error) {
 	datafeedService := &DataFeed{
 		logger:          logger.Named("datafeed"),
 		config:          config,
-		validatorInfoFn: validatorInfoFn,
+		consensusInfoFn: validatorInfoFn,
 	}
 
 	// configure and start mqService
@@ -186,12 +183,12 @@ func (d *DataFeed) validateSignatures(dataFeedReportGossip *proto.DataFeedReport
 		}
 
 		// see if we signed it
-		if d.validatorInfoFn().ValidatorAddress == crypto.PubKeyToAddress(pub).String() {
+		if d.consensusInfoFn().ValidatorAddress == crypto.PubKeyToAddress(pub) {
 			return true, nil
 		} else {
 			// if we haven't signed it, see if a recognized validator from the current validator set signed it
 			otherValidatorSigned := false
-			for _, validator := range d.validatorInfoFn().Validators {
+			for _, validator := range d.consensusInfoFn().Validators {
 				if validator == crypto.PubKeyToAddress(pub) {
 					otherValidatorSigned = true
 				}
@@ -231,7 +228,7 @@ func (d *DataFeed) signGossipedPayload(dataFeedReportGossip *proto.DataFeedRepor
 
 	numSigs := len(strings.Split(reportOutcome.Signatures, ","))
 
-	return reportOutcome, numSigs >= d.validatorInfoFn().QuorumSize, nil
+	return reportOutcome, numSigs >= d.consensusInfoFn().QuorumSize, nil
 }
 
 // getSignatureForPayload derives the signature of the current validator
@@ -248,7 +245,7 @@ func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string
 		return "", err
 	}
 
-	signedData, err := crypto.Sign(d.validatorInfoFn().ValidatorKey, crypto.Keccak256(data))
+	signedData, err := crypto.Sign(d.consensusInfoFn().ValidatorKey, crypto.Keccak256(data))
 	if err != nil {
 		return "", err
 	}
@@ -259,6 +256,24 @@ func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string
 // publishPayload
 func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs bool) {
 	if isMajoritySigs {
+
+		// TODO: can we only execute a publish payload if we are currently writing a block??? maybe we need to somehow
+		// queue one until it gets picked up by a block proposer
+
+		// every validator will have a queue that it will add to here and read from when reaching a hook triggered on every block
+		// if the queue isn't empty, it will attempt to apply txn from queue
+		// once validator writes to SC, it should gossip this so other validators remove from their queues
+		header, _ := d.consensusInfoFn().Blockchain.GetHeaderByNumber(1)
+		t, err := d.consensusInfoFn().Executor.BeginTxn(header.Hash, header, types.ZeroAddress)
+		if err != nil {
+			d.logger.Error("failed to begin txn", "err", err)
+		}
+
+		_, err = datafeed.ReportOutcome(t, d.consensusInfoFn().ValidatorAddress, d.config.CustomContractAddress)
+		if err != nil {
+			d.logger.Error("failed to call ReportOutcome", "err", err)
+		}
+
 		//TODO: write to SC
 		d.logger.Debug(
 			"Majority of sigs reached, writing payload to SC",
@@ -286,7 +301,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 				dataFeedReportGossip.Timestamp = message.Timestamp
 				dataFeedReportGossip.Signatures = message.Signatures
 			} else {
-				dataFeedReportGossip.Epoch = d.validatorInfoFn().Epoch
+				dataFeedReportGossip.Epoch = d.consensusInfoFn().Epoch
 				dataFeedReportGossip.Timestamp = time.Now().Unix()
 
 				mySig, err := d.getSignatureForPayload(dataFeedReportGossip)

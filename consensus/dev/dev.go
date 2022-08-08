@@ -245,6 +245,6 @@ func (d *Dev) IsIbftStateStale() bool {
 	return false
 }
 
-func (d *Dev) GetValidatorInfo() consensus.ValidatorInfoFn {
+func (d *Dev) GetConsensusInfo() consensus.ConsensusInfoFn {
 	return nil
 }

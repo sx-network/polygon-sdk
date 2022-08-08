@@ -8,6 +8,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/chain"
 	"github.com/0xPolygon/polygon-edge/network"
 	"github.com/0xPolygon/polygon-edge/secrets"
+	"github.com/0xPolygon/polygon-edge/types"
 )
 
 const DefaultGRPCPort int = 9632
@@ -62,4 +63,5 @@ type JSONRPC struct {
 type DataFeed struct {
 	DataFeedAMQPURI       string
 	DataFeedAMQPQueueName string
+	CustomContractAddress types.Address
 }

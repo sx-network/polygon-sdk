@@ -305,8 +305,9 @@ func (p *serverParams) initJSONRPCAddress() error {
 }
 
 func (p *serverParams) initDataFeedMQAddress() error {
-	p.dataFeedAMQPURI = p.rawConfig.DataFeed.DataFeedAMQPUri
-	p.dataFeedAMQPQueueName = p.rawConfig.DataFeed.DataFeedAMQPQueueName
+	p.dataFeedAMQPURI = p.rawConfig.DataFeed.AMQPURI
+	p.dataFeedAMQPQueueName = p.rawConfig.DataFeed.AMQPQueueName
+	p.dataFeedCustomContractAddress = types.StringToAddress(p.rawConfig.DataFeed.CustomContractAddress)
 
 	return nil
 }

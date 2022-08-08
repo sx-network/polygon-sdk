@@ -85,6 +85,6 @@ func (d *Dummy) IsIbftStateStale() bool {
 	return false
 }
 
-func (d *Dummy) GetValidatorInfo() consensus.ValidatorInfoFn {
+func (d *Dummy) GetConsensusInfo() consensus.ConsensusInfoFn {
 	return nil
 }

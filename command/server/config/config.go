@@ -52,8 +52,9 @@ type Network struct {
 
 // DataFeed defines the DataFeed configuration params
 type DataFeed struct {
-	DataFeedAMQPUri       string `json:"data_feed_amqp_uri" yaml:"data_feed_amqp_uri"`
-	DataFeedAMQPQueueName string `json:"data_feed_amqp_queue_name" yaml:"data_feed_amqp_queue_name"`
+	AMQPURI               string `json:"amqp_uri" yaml:"amqp_uri"`
+	AMQPQueueName         string `json:"amqp_queue_name" yaml:"amqp_queue_name"`
+	CustomContractAddress string `json:"custom_contract_address" yaml:"custom_contract_address"`
 }
 
 // TxPool defines the TxPool configuration params
@@ -107,8 +108,8 @@ func DefaultConfig() *Config {
 			MaxSlots:   4096,
 		},
 		DataFeed: &DataFeed{
-			DataFeedAMQPUri:       "",
-			DataFeedAMQPQueueName: "",
+			AMQPURI:       "",
+			AMQPQueueName: "",
 		},
 		LogLevel:    "INFO",
 		RestoreFile: "",
