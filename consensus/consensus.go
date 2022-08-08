@@ -59,9 +59,12 @@ type ConsensusInfo struct {
 	Blockchain       *blockchain.Blockchain
 	Epoch            uint64
 	QuorumSize       int
+	SetSignedPayload SetSignedPayloadFn
 }
 
 type ConsensusInfoFn func() *ConsensusInfo
+
+type SetSignedPayloadFn func(*types.ReportOutcome)
 
 // Config is the configuration for the consensus
 type Config struct {

@@ -34,7 +34,7 @@ type DataFeed struct {
 	topic *network.Topic
 
 	// consensus info function
-	consensusInfoFn consensus.ConsensusInfoFn
+	consensusInfo consensus.ConsensusInfoFn
 
 	// indicates which DataFeed operator commands should be implemented
 	proto.UnimplementedDataFeedOperatorServer
@@ -51,12 +51,12 @@ func NewDataFeedService(
 	config *Config,
 	grpcServer *grpc.Server,
 	network *network.Server,
-	validatorInfoFn consensus.ConsensusInfoFn,
+	consensusInfoFn consensus.ConsensusInfoFn,
 ) (*DataFeed, error) {
 	datafeedService := &DataFeed{
-		logger:          logger.Named("datafeed"),
-		config:          config,
-		consensusInfoFn: validatorInfoFn,
+		logger:        logger.Named("datafeed"),
+		config:        config,
+		consensusInfo: consensusInfoFn,
 	}
 
 	// configure and start mqService
@@ -181,12 +181,12 @@ func (d *DataFeed) validateSignatures(dataFeedReportGossip *proto.DataFeedReport
 		}
 
 		// see if we signed it
-		if d.consensusInfoFn().ValidatorAddress == crypto.PubKeyToAddress(pub) {
+		if d.consensusInfo().ValidatorAddress == crypto.PubKeyToAddress(pub) {
 			return true, nil
 		} else {
 			// if we haven't signed it, see if a recognized validator from the current validator set signed it
 			otherValidatorSigned := false
-			for _, validator := range d.consensusInfoFn().Validators {
+			for _, validator := range d.consensusInfo().Validators {
 				if validator == crypto.PubKeyToAddress(pub) {
 					otherValidatorSigned = true
 				}
@@ -226,7 +226,7 @@ func (d *DataFeed) signGossipedPayload(dataFeedReportGossip *proto.DataFeedRepor
 
 	numSigs := len(strings.Split(reportOutcome.Signatures, ","))
 
-	return reportOutcome, numSigs >= d.consensusInfoFn().QuorumSize, nil
+	return reportOutcome, numSigs >= d.consensusInfo().QuorumSize, nil
 }
 
 // getSignatureForPayload derives the signature of the current validator
@@ -243,7 +243,7 @@ func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string
 		return "", err
 	}
 
-	signedData, err := crypto.Sign(d.consensusInfoFn().ValidatorKey, crypto.Keccak256(data))
+	signedData, err := crypto.Sign(d.consensusInfo().ValidatorKey, crypto.Keccak256(data))
 	if err != nil {
 		return "", err
 	}
@@ -254,6 +254,8 @@ func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string
 // publishPayload
 func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs bool) {
 	if isMajoritySigs {
+
+		d.consensusInfo().SetSignedPayload(message)
 
 		// TODO: can we only execute a publish payload if we are currently writing a block??? maybe we need to somehow
 		// queue one until it gets picked up by a block proposer
@@ -301,7 +303,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 				dataFeedReportGossip.Timestamp = message.Timestamp
 				dataFeedReportGossip.Signatures = message.Signatures
 			} else {
-				dataFeedReportGossip.Epoch = d.consensusInfoFn().Epoch
+				dataFeedReportGossip.Epoch = d.consensusInfo().Epoch
 				dataFeedReportGossip.Timestamp = time.Now().Unix()
 
 				mySig, err := d.getSignatureForPayload(dataFeedReportGossip)

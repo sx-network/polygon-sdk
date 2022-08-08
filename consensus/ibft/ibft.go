@@ -79,6 +79,8 @@ type backendIBFT struct {
 
 	customContractAddress types.Address // custom contract address used for on-chain interaction
 
+	signedPayload *types.ReportOutcome // signed payload to be written to SC on next block built
+
 	sealing bool // Flag indicating if the node is a sealer
 
 	closeCh chan struct{} // Channel for closing
@@ -604,11 +606,11 @@ func (i *backendIBFT) IsIbftStateStale() bool {
 
 // getValidatorInfoFunc returns a callback that returns ValidaotrInfo when executed
 func (i *backendIBFT) GetConsensusInfo() consensus.ConsensusInfoFn {
-	return i.GetConsensusInfoImpl
+	return i.getConsensusInfoImpl
 }
 
 // GetValidatorInfo returns consensus info to be used outside consensus layer
-func (i *backendIBFT) GetConsensusInfoImpl() *consensus.ConsensusInfo {
+func (i *backendIBFT) getConsensusInfoImpl() *consensus.ConsensusInfo {
 
 	return &consensus.ConsensusInfo{
 		Validators:       i.activeValidatorSet,
@@ -618,5 +620,14 @@ func (i *backendIBFT) GetConsensusInfoImpl() *consensus.ConsensusInfo {
 		Blockchain:       i.blockchain,
 		Epoch:            i.GetEpoch(i.blockchain.Header().Number),
 		QuorumSize:       i.quorumSize(i.blockchain.Header().Number)(i.activeValidatorSet),
+		SetSignedPayload: i.setSignedPaload(),
 	}
+}
+
+func (i *backendIBFT) setSignedPaload() consensus.SetSignedPayloadFn {
+	return i.setSignedPayloadImpl
+}
+
+func (i *backendIBFT) setSignedPayloadImpl(signedPayload *types.ReportOutcome) {
+	i.signedPayload = signedPayload
 }

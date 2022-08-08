@@ -3,6 +3,7 @@ package ibft
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/0xPolygon/polygon-edge/types"
 )
@@ -225,6 +226,18 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 		poa.ibft.logger.Debug("preStateCommitHook", "validatorSet length", len(params.validatorSet))
 		poa.ibft.logger.Debug("preStateCommitHook", "epochSize", params.epochSize)
 
+		if poa.ibft.signedPayload != nil {
+			poa.ibft.logger.Debug("preStateCommitHook", "signedPayload marketHash", poa.ibft.signedPayload.MarketHash)
+			//TODO: payload validation
+			if time.Since(time.Unix(poa.ibft.signedPayload.Timestamp, 0)).Seconds() <= 10 {
+				//TODO: write this payload to SC
+				poa.ibft.logger.Debug("preStateCommitHook signedPayload is non-stale, writing to SC...")
+			}
+
+			poa.ibft.signedPayload = nil
+		} else {
+			poa.ibft.logger.Debug("preStateCommitHook signedPayload is nil")
+		}
 		// TODO: 2. if building a block, check signedPayloads array and if non-empty, write to reportOutcomes()
 		// SXNode.reportOutcomes(marketHashes[], outcomes[], signatures[] ) OR SXNode.reporOutcomes(signedPayloads[]) where signedPayload is a library
 
