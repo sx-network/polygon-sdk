@@ -55,8 +55,6 @@ type ConsensusInfo struct {
 	Validators       []types.Address
 	ValidatorKey     *ecdsa.PrivateKey
 	ValidatorAddress types.Address
-	Executor         state.Executor
-	Blockchain       *blockchain.Blockchain
 	Epoch            uint64
 	QuorumSize       int
 	SetSignedPayload SetSignedPayloadFn

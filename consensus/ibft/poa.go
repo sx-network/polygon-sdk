@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/0xPolygon/polygon-edge/contracts/datafeed"
 	"github.com/0xPolygon/polygon-edge/types"
 )
 
@@ -220,26 +221,46 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 	}
 
 	if poa.ibft.customContractAddress != types.ZeroAddress {
-		// TODO: 1. check if block when PoA validator set is updated on snapshot, if so then write set to SC along with
-		// SXNode.setValidators(set, epoch)
-		//params.validatorSet, params.epochSize
+
+		header, _ := poa.ibft.blockchain.GetHeaderByNumber(params.header.Number)
+		t, err := poa.ibft.executor.BeginTxn(header.StateRoot, header, types.ZeroAddress)
+		if err != nil {
+			poa.ibft.logger.Error("failed to begin txn", "err", err)
+		}
+
 		poa.ibft.logger.Debug("preStateCommitHook", "validatorSet length", len(params.validatorSet))
 		poa.ibft.logger.Debug("preStateCommitHook", "epochSize", params.epochSize)
 
+		// TODO: 1. check if block when PoA validator set is updated on snapshot, if so then write set to SC along with
+		// SXNode.setValidators(set, epoch)
+		//params.validatorSet, params.epochSize
+		if params.header.Number%poa.ibft.epochSize == 0 {
+			_, err = datafeed.SetValidators(t, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, poa.ibft.activeValidatorSet)
+			if err != nil {
+				poa.ibft.logger.Error("failed to call setValidators", "err", err)
+			}
+		}
+
+		// TODO: 2. if building a block, check signedPayloads array and if non-empty, write to reportOutcomes()
+		// SXNode.reportOutcomes(marketHashes[], outcomes[], signatures[] ) OR SXNode.reporOutcomes(signedPayloads[]) where signedPayload is a library
 		if poa.ibft.signedPayload != nil {
 			poa.ibft.logger.Debug("preStateCommitHook", "signedPayload marketHash", poa.ibft.signedPayload.MarketHash)
 			//TODO: payload validation
 			if time.Since(time.Unix(poa.ibft.signedPayload.Timestamp, 0)).Seconds() <= 10 {
 				//TODO: write this payload to SC
 				poa.ibft.logger.Debug("preStateCommitHook signedPayload is non-stale, writing to SC...")
+
+				_, err = datafeed.ReportOutcome(t, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, poa.ibft.signedPayload)
+				if err != nil {
+					poa.ibft.logger.Error("failed to call reportOutcome", "err", err)
+				}
+
 			}
 
 			poa.ibft.signedPayload = nil
 		} else {
 			poa.ibft.logger.Debug("preStateCommitHook signedPayload is nil")
 		}
-		// TODO: 2. if building a block, check signedPayloads array and if non-empty, write to reportOutcomes()
-		// SXNode.reportOutcomes(marketHashes[], outcomes[], signatures[] ) OR SXNode.reporOutcomes(signedPayloads[]) where signedPayload is a library
 
 	}
 

@@ -79,6 +79,7 @@ type backendIBFT struct {
 
 	customContractAddress types.Address // custom contract address used for on-chain interaction
 
+	//TODO: eventually we want this to be a signedPayload queue?
 	signedPayload *types.ReportOutcome // signed payload to be written to SC on next block built
 
 	sealing bool // Flag indicating if the node is a sealer
@@ -616,8 +617,6 @@ func (i *backendIBFT) getConsensusInfoImpl() *consensus.ConsensusInfo {
 		Validators:       i.activeValidatorSet,
 		ValidatorKey:     i.validatorKey,
 		ValidatorAddress: i.validatorKeyAddr,
-		Executor:         *i.executor,
-		Blockchain:       i.blockchain,
 		Epoch:            i.GetEpoch(i.blockchain.Header().Number),
 		QuorumSize:       i.quorumSize(i.blockchain.Header().Number)(i.activeValidatorSet),
 		SetSignedPayload: i.setSignedPaload(),

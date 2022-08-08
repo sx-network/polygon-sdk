@@ -266,7 +266,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		// gossip msg should also contained fully signed payload which validators will have to verify first before discarding from queue
 
 		// header, _ := d.consensusInfoFn().Blockchain.GetHeaderByNumber(1)
-		// t, err := d.consensusInfoFn().Executor.BeginTxn(header.Hash, header, types.ZeroAddress)
+		// t, err := d.consensusInfoFn().Executor.BeginTxn(header.StateRoot, header, types.ZeroAddress)
 		// if err != nil {
 		// 	d.logger.Error("failed to begin txn", "err", err)
 		// }
