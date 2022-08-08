@@ -222,15 +222,6 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 
 	if poa.ibft.customContractAddress != types.ZeroAddress {
 
-		header, ok := poa.ibft.blockchain.GetHeaderByNumber(params.header.Number)
-		if !ok {
-			poa.ibft.logger.Error("preStateCommitHook", "could not get headerByNumber for number", params.header.Number)
-		}
-		t, err := poa.ibft.executor.BeginTxn(header.StateRoot, header, types.ZeroAddress)
-		if err != nil {
-			poa.ibft.logger.Error("failed to begin txn", "err", err)
-		}
-
 		poa.ibft.logger.Debug("preStateCommitHook", "validatorSet length", len(params.validatorSet))
 		poa.ibft.logger.Debug("preStateCommitHook", "epochSize", params.epochSize)
 
@@ -238,7 +229,7 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 		// SXNode.setValidators(set, epoch)
 		//params.validatorSet, params.epochSize
 		if params.header.Number%poa.ibft.epochSize == 0 {
-			_, err = datafeed.SetValidators(t, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, poa.ibft.activeValidatorSet)
+			_, err := datafeed.SetValidators(params.txn, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, poa.ibft.activeValidatorSet)
 			if err != nil {
 				poa.ibft.logger.Error("failed to call setValidators", "err", err)
 			}
@@ -253,7 +244,7 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 				//TODO: write this payload to SC
 				poa.ibft.logger.Debug("preStateCommitHook signedPayload is non-stale, writing to SC...")
 
-				_, err = datafeed.ReportOutcome(t, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, poa.ibft.signedPayload)
+				_, err := datafeed.ReportOutcome(params.txn, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, poa.ibft.signedPayload)
 				if err != nil {
 					poa.ibft.logger.Error("failed to call reportOutcome", "err", err)
 				}
