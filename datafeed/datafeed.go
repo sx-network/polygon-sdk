@@ -263,15 +263,20 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		// every validator will have a queue that it will add to here and read from when reaching a hook triggered on every block
 		// if the queue isn't empty, it will attempt to apply txn from queue
 		// once validator writes to SC, it should gossip this so other validators remove from their queues
-		header, _ := d.consensusInfoFn().Blockchain.GetHeaderByNumber(1)
-		t, err := d.consensusInfoFn().Executor.BeginTxn(header.Hash, header, types.ZeroAddress)
-		if err != nil {
-			d.logger.Error("failed to begin txn", "err", err)
-		}
+		// gossip msg should also contained fully signed payload which validators will have to verify first before discarding from queue
 
-		_, err = datafeed.ReportOutcome(t, d.consensusInfoFn().ValidatorAddress, d.config.CustomContractAddress)
-		if err != nil {
-			d.logger.Error("failed to call ReportOutcome", "err", err)
+		if d.config.CustomContractAddress != types.ZeroAddress {
+
+			header, _ := d.consensusInfoFn().Blockchain.GetHeaderByNumber(1)
+			t, err := d.consensusInfoFn().Executor.BeginTxn(header.Hash, header, types.ZeroAddress)
+			if err != nil {
+				d.logger.Error("failed to begin txn", "err", err)
+			}
+
+			_, err = datafeed.ReportOutcome(t, d.consensusInfoFn().ValidatorAddress, d.config.CustomContractAddress)
+			if err != nil {
+				d.logger.Error("failed to call ReportOutcome", "err", err)
+			}
 		}
 
 		//TODO: write to SC
