@@ -239,7 +239,7 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 	poa.ibft.logger.Debug("preStateCommitHook - calling setValidators here..")
 
 	snap := poa.ibft.getSnapshot(params.header.Number)
-	_, err := datafeed.SetValidators(params.txn, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, snap.Set)
+	_, err := datafeed.SetValidators(params.txn, params.txn.GetTxContext().Coinbase, poa.ibft.customContractAddress, snap.Set)
 	if err != nil {
 		poa.ibft.logger.Error("failed to call setValidators", "err", err)
 	}
