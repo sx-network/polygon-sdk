@@ -49,9 +49,9 @@ func (poa *PoAMechanism) IsAvailable(hookType HookType, height uint64) bool {
 	switch hookType {
 	case VerifyHeadersHook, ProcessHeadersHook, CandidateVoteHook:
 		return poa.IsInRange(height)
-	// case PreStateCommitHook, InsertBlockHook:
-	// 	return poa.ibft.customContractAddress != types.ZeroAddress &&
-	// 		(height+1 == poa.From || poa.IsInRange(height) && poa.ibft.IsLastOfEpoch(height))
+	case PreStateCommitHook:
+		return poa.ibft.customContractAddress != types.ZeroAddress &&
+			(height+1 == poa.From || poa.IsInRange(height) && poa.ibft.IsLastOfEpoch(height))
 	default:
 		return false
 	}
@@ -184,15 +184,15 @@ func (poa *PoAMechanism) processHeadersHook(hookParam interface{}) error {
 		})
 
 		//TODO: 1. Try calling setValidators
-		poa.ibft.logger.Debug("processHeadersHook - calling setValidators here..")
-		transition, err := poa.ibft.executor.BeginTxn(params.header.StateRoot, params.header, types.ZeroAddress)
-		if err != nil {
-			return err
-		}
-		_, err = datafeed.SetValidators(transition, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, params.snap.Set)
-		if err != nil {
-			poa.ibft.logger.Error("failed to call setValidators", "err", err)
-		}
+		// poa.ibft.logger.Debug("processHeadersHook - calling setValidators here..")
+		// transition, err := poa.ibft.executor.BeginTxn(params.header.StateRoot, params.header, types.ZeroAddress)
+		// if err != nil {
+		// 	return err
+		// }
+		// _, err = datafeed.SetValidators(transition, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, params.snap.Set)
+		// if err != nil {
+		// 	poa.ibft.logger.Error("failed to call setValidators", "err", err)
+		// }
 	}
 
 	return nil
@@ -315,9 +315,6 @@ func (poa *PoAMechanism) initializeHookMap() {
 
 	// Register the PreStateCommitHook
 	poa.hookMap[PreStateCommitHook] = poa.preStateCommitHook
-
-	// Register the InsertBlockHook
-	poa.hookMap[InsertBlockHook] = poa.insertBlockHook
 }
 
 // ShouldWriteTransactions indicates if transactions should be written to a block
