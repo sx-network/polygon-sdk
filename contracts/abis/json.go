@@ -5,27 +5,14 @@ const OutcomeReporterJSONABI = `[
 	{
 		"inputs": [
 			{
-				"internalType": "uint8",
-				"name": "test",
-				"type": "uint8"
+				"internalType": "address[]",
+				"name": "addresses",
+				"type": "address[]"
 			}
 		],
 		"name": "setValidators",
 		"outputs": [],
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "reportOutcome",
-		"outputs": [
-			{
-				"internalType": "address[]",
-				"name": "",
-				"type": "address[]"
-			}
-		],
-		"stateMutability": "view",
 		"type": "function"
 	}
 ]`

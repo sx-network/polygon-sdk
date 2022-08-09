@@ -26,8 +26,11 @@ func SetValidators(t TxQueryHandler, from types.Address, to types.Address, valid
 	}
 
 	// TODO: figure out how to pass arguments using eth-go
+	// encodedInput, encodeErr := method.Inputs.Encode(map[string]interface{}{
+	// 	"test": uint8(len(validators)),
+	// })
 	encodedInput, encodeErr := method.Inputs.Encode(map[string]interface{}{
-		"test": uint8(len(validators)),
+		"addresses": validators,
 	})
 	if encodeErr != nil {
 		return nil, encodeErr
