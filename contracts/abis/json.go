@@ -1,17 +1,18 @@
 package abis
 
+//TODO: for now setValidators just sets a uint8
 const OutcomeReporterJSONABI = `[
 	{
-		"inputs": [],
-		"name": "setValidators",
-		"outputs": [
+		"inputs": [
 			{
-				"internalType": "address[]",
-				"name": "",
-				"type": "address[]"
+				"internalType": "uint8",
+				"name": "test",
+				"type": "uint8"
 			}
 		],
-		"stateMutability": "view",
+		"name": "setValidators",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
