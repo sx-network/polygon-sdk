@@ -26,16 +26,18 @@ func SetValidators(t TxQueryHandler, from types.Address, to types.Address, valid
 	}
 
 	// TODO: figure out how to pass arguments using eth-go
-	encoded, err := method.Encode(uint8(12))
-	if err != nil {
-		return nil, err
+	encodedInput, encodeErr := method.Inputs.Encode(map[string]interface{}{
+		"test": uint8(12),
+	})
+	if encodeErr != nil {
+		return nil, encodeErr
 	}
 
 	res, err := t.Apply(&types.Transaction{
 		From:     from,
 		To:       &to,
 		Value:    big.NewInt(0),
-		Input:    encoded,
+		Input:    append(method.ID(), encodedInput...),
 		GasPrice: big.NewInt(0),
 		Gas:      queryGasLimit,
 		Nonce:    t.GetNonce(from),
