@@ -49,9 +49,9 @@ func (poa *PoAMechanism) IsAvailable(hookType HookType, height uint64) bool {
 	switch hookType {
 	case VerifyHeadersHook, ProcessHeadersHook, CandidateVoteHook:
 		return poa.IsInRange(height)
-	case PreStateCommitHook, InsertBlockHook:
-		return poa.ibft.customContractAddress != types.ZeroAddress &&
-			(height+1 == poa.From || poa.IsInRange(height) && poa.ibft.IsLastOfEpoch(height))
+	// case PreStateCommitHook, InsertBlockHook:
+	// 	return poa.ibft.customContractAddress != types.ZeroAddress &&
+	// 		(height+1 == poa.From || poa.IsInRange(height) && poa.ibft.IsLastOfEpoch(height))
 	default:
 		return false
 	}
