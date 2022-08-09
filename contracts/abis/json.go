@@ -3,6 +3,19 @@ package abis
 const OutcomeReporterJSONABI = `[
 	{
 		"inputs": [],
+		"name": "setValidators",
+		"outputs": [
+			{
+				"internalType": "address[]",
+				"name": "",
+				"type": "address[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "reportOutcome",
 		"outputs": [
 			{

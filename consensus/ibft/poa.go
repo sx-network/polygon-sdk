@@ -3,7 +3,6 @@ package ibft
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/0xPolygon/polygon-edge/contracts/datafeed"
 	"github.com/0xPolygon/polygon-edge/types"
@@ -48,8 +47,11 @@ func PoAFactory(ibft *backendIBFT, params *IBFTFork) (ConsensusMechanism, error)
 // IsAvailable returns indicates if mechanism should be called at given height
 func (poa *PoAMechanism) IsAvailable(hookType HookType, height uint64) bool {
 	switch hookType {
-	case VerifyHeadersHook, ProcessHeadersHook, CandidateVoteHook, PreStateCommitHook:
+	case VerifyHeadersHook, ProcessHeadersHook, CandidateVoteHook:
 		return poa.IsInRange(height)
+	case PreStateCommitHook, InsertBlockHook:
+		return poa.ibft.customContractAddress != types.ZeroAddress &&
+			(height+1 == poa.From || poa.IsInRange(height) && poa.ibft.IsLastOfEpoch(height))
 	default:
 		return false
 	}
@@ -180,6 +182,17 @@ func (poa *PoAMechanism) processHeadersHook(hookParam interface{}) error {
 		params.snap.RemoveVotes(func(v *Vote) bool {
 			return v.Address == params.header.Miner
 		})
+
+		//TODO: 1. Try calling setValidators
+		poa.ibft.logger.Debug("processHeadersHook - calling setValidators here..")
+		transition, err := poa.ibft.executor.BeginTxn(params.header.StateRoot, params.header, types.ZeroAddress)
+		if err != nil {
+			return err
+		}
+		_, err = datafeed.SetValidators(transition, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, params.snap.Set)
+		if err != nil {
+			poa.ibft.logger.Error("failed to call setValidators", "err", err)
+		}
 	}
 
 	return nil
@@ -220,42 +233,66 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 		return ErrInvalidHookParam
 	}
 
-	if poa.ibft.customContractAddress != types.ZeroAddress {
+	poa.ibft.logger.Debug("preStateCommitHook", "validatorSet length", len(params.validatorSet))
 
-		poa.ibft.logger.Debug("preStateCommitHook", "validatorSet length", len(params.validatorSet))
-		poa.ibft.logger.Debug("preStateCommitHook", "epochSize", params.epochSize)
+	//TODO: 2. Try calling setValidators
+	poa.ibft.logger.Debug("preStateCommitHook - calling setValidators here..")
 
-		// TODO: 1. check if block when PoA validator set is updated on snapshot, if so then write set to SC along with
-		// SXNode.setValidators(set, epoch)
-		//params.validatorSet, params.epochSize
-		if params.header.Number%poa.ibft.epochSize == 0 {
-			_, err := datafeed.SetValidators(params.txn, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, poa.ibft.activeValidatorSet)
-			if err != nil {
-				poa.ibft.logger.Error("failed to call setValidators", "err", err)
-			}
+	snap := poa.ibft.getSnapshot(params.header.Number)
+	_, err := datafeed.SetValidators(params.txn, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, snap.Set)
+	if err != nil {
+		poa.ibft.logger.Error("failed to call setValidators", "err", err)
+	}
+
+	// TODO: 2. if building a block, check signedPayloads array and if non-empty, write to reportOutcomes()
+	// SXNode.reportOutcomes(marketHashes[], outcomes[], signatures[] ) OR SXNode.reporOutcomes(signedPayloads[]) where signedPayload is a library
+	// if poa.ibft.signedPayload != nil {
+	// 	poa.ibft.logger.Debug("preStateCommitHook", "signedPayload marketHash", poa.ibft.signedPayload.MarketHash)
+	// 	//TODO: payload validation but this can't be verified on other blocks
+	// 	if time.Since(time.Unix(poa.ibft.signedPayload.Timestamp, 0)).Seconds() <= 10 {
+	// 		//TODO: write this payload to SC
+	// 		poa.ibft.logger.Debug("preStateCommitHook signedPayload is non-stale, writing to SC...")
+
+	// 		_, err := datafeed.ReportOutcome(params.txn, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, poa.ibft.signedPayload)
+	// 		if err != nil {
+	// 			poa.ibft.logger.Error("failed to call reportOutcome", "err", err)
+	// 		}
+
+	// 	}
+
+	// 	poa.ibft.signedPayload = nil
+	// } else {
+	// 	poa.ibft.logger.Debug("preStateCommitHook signedPayload is nil")
+	// }
+
+	return nil
+}
+
+// preStateCommitHook hook that carries out state-modifying transactions
+func (poa *PoAMechanism) insertBlockHook(numberParam interface{}) error {
+	headerNumber, ok := numberParam.(uint64)
+	if !ok {
+		return ErrInvalidHookParam
+	}
+
+	header, ok := poa.ibft.blockchain.GetHeaderByNumber(headerNumber)
+	if !ok {
+		return errors.New("header not found")
+	}
+
+	transition, err := poa.ibft.executor.BeginTxn(header.StateRoot, header, types.ZeroAddress)
+	if err != nil {
+		return err
+	}
+
+	//TODO: 3. Try calling setValidators
+	poa.ibft.logger.Debug("insertBlockHook - calling setValidators here..")
+	if headerNumber%poa.ibft.epochSize == 0 {
+		snap := poa.ibft.getSnapshot(headerNumber)
+		_, err := datafeed.SetValidators(transition, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, snap.Set)
+		if err != nil {
+			poa.ibft.logger.Error("failed to call setValidators", "err", err)
 		}
-
-		// TODO: 2. if building a block, check signedPayloads array and if non-empty, write to reportOutcomes()
-		// SXNode.reportOutcomes(marketHashes[], outcomes[], signatures[] ) OR SXNode.reporOutcomes(signedPayloads[]) where signedPayload is a library
-		if poa.ibft.signedPayload != nil {
-			poa.ibft.logger.Debug("preStateCommitHook", "signedPayload marketHash", poa.ibft.signedPayload.MarketHash)
-			//TODO: payload validation
-			if time.Since(time.Unix(poa.ibft.signedPayload.Timestamp, 0)).Seconds() <= 10 {
-				//TODO: write this payload to SC
-				poa.ibft.logger.Debug("preStateCommitHook signedPayload is non-stale, writing to SC...")
-
-				_, err := datafeed.ReportOutcome(params.txn, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, poa.ibft.signedPayload)
-				if err != nil {
-					poa.ibft.logger.Error("failed to call reportOutcome", "err", err)
-				}
-
-			}
-
-			poa.ibft.signedPayload = nil
-		} else {
-			poa.ibft.logger.Debug("preStateCommitHook signedPayload is nil")
-		}
-
 	}
 
 	return nil
@@ -278,6 +315,9 @@ func (poa *PoAMechanism) initializeHookMap() {
 
 	// Register the PreStateCommitHook
 	poa.hookMap[PreStateCommitHook] = poa.preStateCommitHook
+
+	// Register the InsertBlockHook
+	poa.hookMap[InsertBlockHook] = poa.insertBlockHook
 }
 
 // ShouldWriteTransactions indicates if transactions should be written to a block

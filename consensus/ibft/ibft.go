@@ -553,7 +553,6 @@ func (i *backendIBFT) PreStateCommit(header *types.Header, txn *state.Transition
 		header:       header,
 		txn:          txn,
 		validatorSet: i.activeValidatorSet,
-		epochSize:    i.epochSize,
 	}
 
 	if err := i.runHook(PreStateCommitHook, header.Number, params); err != nil {

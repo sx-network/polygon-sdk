@@ -180,5 +180,4 @@ type preStateCommitHookParams struct {
 	header       *types.Header
 	txn          *state.Transition
 	validatorSet ValidatorSet
-	epochSize    uint64
 }

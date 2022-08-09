@@ -255,6 +255,7 @@ func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string
 func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs bool) {
 	if isMajoritySigs {
 
+		// TODO: just call reportOutcome as soon as we reach here
 		d.consensusInfo().SetSignedPayload(message)
 
 		// TODO: can we only execute a publish payload if we are currently writing a block??? maybe we need to somehow
