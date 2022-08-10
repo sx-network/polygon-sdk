@@ -289,7 +289,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		}
 
 		c := contract.NewContract(ethgo.Address(d.config.CustomContractAddress), abiContract, contract.WithJsonRPC(client.Eth()))
-		res, err := c.Call("getEpochSize()", ethgo.Latest)
+		res, err := c.Call("getEpochSize", ethgo.Latest)
 		if err != nil {
 			d.logger.Error("failed to call getEpochSize() via ethgo", "err", err)
 		}
