@@ -42,6 +42,9 @@ type DataFeed struct {
 	// consensus info function
 	consensusInfo consensus.ConsensusInfoFn
 
+	// the last paload we published to SC
+	lastPublishedPayload string
+
 	// indicates which DataFeed operator commands should be implemented
 	proto.UnimplementedDataFeedOperatorServer
 }
@@ -137,8 +140,10 @@ func (d *DataFeed) addGossipMsg(obj interface{}, _ peer.ID) {
 		return
 	}
 
-	// finally publish it
-	d.publishPayload(signedPayload, isMajoritySigs)
+	// finally publish it if we haven't already
+	if d.lastPublishedPayload != signedPayload.MarketHash+fmt.Sprint(signedPayload.Timestamp) {
+		d.publishPayload(signedPayload, isMajoritySigs)
+	}
 }
 
 // validateGossipedPayload performs validation steps on gossiped payload prior to signing
@@ -311,13 +316,18 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 			return
 		}
 
-		receipt, err := txn.Wait()
-		if err != nil {
-			d.logger.Error("failed to get txn receipt via ethgo", "err", err)
-			return
-		}
+		d.logger.Debug("publishPayload - Transaction pending", "txHash", txn.Hash())
 
-		d.logger.Debug("publishPayload - Transaction mined", "txHash", receipt.TransactionHash)
+		d.lastPublishedPayload = message.MarketHash + fmt.Sprint(message.Timestamp)
+
+		// TODO: this actually waits until there's a receipt which we probably don't care about
+		// receipt, err := txn.Wait()
+		// if err != nil {
+		// 	d.logger.Error("failed to get txn receipt via ethgo", "err", err)
+		// 	return
+		// }
+
+		// d.logger.Debug("publishPayload - Transaction mined", "receiptHash", receipt.TransactionHash)
 
 	} else {
 		if d.topic != nil {
