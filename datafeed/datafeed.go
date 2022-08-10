@@ -275,7 +275,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		)
 
 		var functions = []string{
-			"function getEpochSize() external view returns(uint)",
+			"function getEpochSize() external view returns (uint)",
 		}
 
 		abiContract, err := abi.NewABIFromList(functions)
