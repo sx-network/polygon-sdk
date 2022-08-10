@@ -587,6 +587,7 @@ func (s *Server) setupJSONRPC() error {
 // setupDataFeedService set up and start datafeed service
 func (s *Server) setupDataFeedService() error {
 	conf := &datafeed.Config{
+		CustomContractAddress: s.config.CustomContractAddress,
 		MQConfig: &datafeed.MQConfig{
 			AMQPURI: s.config.DataFeed.DataFeedAMQPURI,
 			QueueConfig: &datafeed.QueueConfig{

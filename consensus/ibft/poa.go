@@ -222,9 +222,6 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 		return ErrInvalidHookParam
 	}
 
-	poa.ibft.logger.Debug("preStateCommitHook", "validatorSet length", len(params.validatorSet))
-
-	//TODO: 2. Try calling setValidators
 	poa.ibft.logger.Debug("preStateCommitHook - calling setValidators here..")
 
 	snap := poa.ibft.getSnapshot(params.header.Number)
@@ -232,27 +229,6 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 	if err != nil {
 		poa.ibft.logger.Error("failed to call setValidators", "err", err)
 	}
-
-	// TODO: 2. if building a block, check signedPayloads array and if non-empty, write to reportOutcomes()
-	// SXNode.reportOutcomes(marketHashes[], outcomes[], signatures[] ) OR SXNode.reporOutcomes(signedPayloads[]) where signedPayload is a library
-	// if poa.ibft.signedPayload != nil {
-	// 	poa.ibft.logger.Debug("preStateCommitHook", "signedPayload marketHash", poa.ibft.signedPayload.MarketHash)
-	// 	//TODO: payload validation but this can't be verified on other blocks
-	// 	if time.Since(time.Unix(poa.ibft.signedPayload.Timestamp, 0)).Seconds() <= 10 {
-	// 		//TODO: write this payload to SC
-	// 		poa.ibft.logger.Debug("preStateCommitHook signedPayload is non-stale, writing to SC...")
-
-	// 		_, err := datafeed.ReportOutcome(params.txn, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, poa.ibft.signedPayload)
-	// 		if err != nil {
-	// 			poa.ibft.logger.Error("failed to call reportOutcome", "err", err)
-	// 		}
-
-	// 	}
-
-	// 	poa.ibft.signedPayload = nil
-	// } else {
-	// 	poa.ibft.logger.Debug("preStateCommitHook signedPayload is nil")
-	// }
 
 	return nil
 }

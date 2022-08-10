@@ -2,6 +2,7 @@ package datafeed
 
 import (
 	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
@@ -13,6 +14,10 @@ import (
 	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/hashicorp/go-hclog"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/abi"
+	"github.com/umbracle/ethgo/contract"
+	"github.com/umbracle/ethgo/jsonrpc"
 	"google.golang.org/grpc"
 	protobuf "google.golang.org/protobuf/proto"
 )
@@ -42,7 +47,8 @@ type DataFeed struct {
 
 // Config
 type Config struct {
-	MQConfig *MQConfig
+	CustomContractAddress types.Address
+	MQConfig              *MQConfig
 }
 
 // NewDataFeedService returns the new datafeed service
@@ -254,30 +260,6 @@ func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string
 // publishPayload
 func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs bool) {
 	if isMajoritySigs {
-
-		// TODO: just call reportOutcome as soon as we reach here
-		d.consensusInfo().SetSignedPayload(message)
-
-		// TODO: can we only execute a publish payload if we are currently writing a block??? maybe we need to somehow
-		// queue one until it gets picked up by a block proposer
-
-		// every validator will have a queue that it will add to here and read from when reaching a hook triggered on every block
-		// if the queue isn't empty, it will attempt to apply txn from queue
-		// once validator writes to SC, it should gossip this so other validators remove from their queues
-		// gossip msg should also contained fully signed payload which validators will have to verify first before discarding from queue
-
-		// header, _ := d.consensusInfoFn().Blockchain.GetHeaderByNumber(1)
-		// t, err := d.consensusInfoFn().Executor.BeginTxn(header.StateRoot, header, types.ZeroAddress)
-		// if err != nil {
-		// 	d.logger.Error("failed to begin txn", "err", err)
-		// }
-
-		// _, err = datafeed.ReportOutcome(t, d.consensusInfoFn().ValidatorAddress)
-		// if err != nil {
-		// 	d.logger.Error("failed to call ReportOutcome", "err", err)
-		// }
-
-		//TODO: write to SC
 		d.logger.Debug(
 			"Majority of sigs reached, writing payload to SC",
 			"marketHash",
@@ -291,6 +273,29 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 			"signatures",
 			message.Signatures,
 		)
+
+		var functions = []string{
+			"function getEpochSize() external view returns(uint)",
+		}
+
+		abiContract, err := abi.NewABIFromList(functions)
+		if err != nil {
+			d.logger.Error("failed to retrieve ethgo ABI", "err", err)
+		}
+
+		client, err := jsonrpc.NewClient("http://localhost:10002")
+		if err != nil {
+			d.logger.Error("failed to initialize new ethgo client", "err", err)
+		}
+
+		c := contract.NewContract(ethgo.Address(d.config.CustomContractAddress), abiContract, contract.WithJsonRPC(client.Eth()))
+		res, err := c.Call("getEpochSize()", ethgo.Latest)
+		if err != nil {
+			d.logger.Error("failed to call getEpochSize() via ethgo", "err", err)
+		}
+
+		d.logger.Debug("publishPayload - payload published", "epochSize", res["getEpochSize"].(*big.Int))
+
 	} else {
 		if d.topic != nil {
 			// broadcast the payload only if a topic subscription present
