@@ -283,11 +283,13 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		abiContract, err := abi.NewABIFromList(functions)
 		if err != nil {
 			d.logger.Error("failed to retrieve ethgo ABI", "err", err)
+			return
 		}
 
 		client, err := jsonrpc.NewClient("http://localhost:10002")
 		if err != nil {
 			d.logger.Error("failed to initialize new ethgo client", "err", err)
+			return
 		}
 
 		c := contract.NewContract(
@@ -300,16 +302,19 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		txn, err := c.Txn("reportOutcome", new(big.Int).SetInt64(int64(message.Outcome)))
 		if err != nil {
 			d.logger.Error("failed to create txn via ethgo", "err", err)
+			return
 		}
 
 		err = txn.Do()
 		if err != nil {
 			d.logger.Error("failed to send raw txn via ethgo", "err", err)
+			return
 		}
 
 		receipt, err := txn.Wait()
 		if err != nil {
 			d.logger.Error("failed to get txn receipt via ethgo", "err", err)
+			return
 		}
 
 		d.logger.Debug("publishPayload - Transaction mined", "txHash", receipt.TransactionHash)
