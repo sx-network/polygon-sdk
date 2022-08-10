@@ -611,7 +611,6 @@ func (i *backendIBFT) GetConsensusInfo() consensus.ConsensusInfoFn {
 
 // GetValidatorInfo returns consensus info to be used outside consensus layer
 func (i *backendIBFT) getConsensusInfoImpl() *consensus.ConsensusInfo {
-
 	return &consensus.ConsensusInfo{
 		Validators:       i.activeValidatorSet,
 		ValidatorKey:     i.validatorKey,

@@ -57,7 +57,12 @@ func SetValidators(t TxQueryHandler, from types.Address, to types.Address, valid
 	return res.ReturnValue, nil
 }
 
-func ReportOutcome(t TxQueryHandler, from types.Address, to types.Address, payload *types.ReportOutcome) ([]byte, error) {
+func ReportOutcome(
+	t TxQueryHandler,
+	from types.Address,
+	to types.Address,
+	payload *types.ReportOutcome,
+) ([]byte, error) {
 	method, ok := abis.OutcomeReporterABI.Methods["reportOutcome"]
 	if !ok {
 		return nil, errors.New("reportOutcome method doesn't exist in OutcomeReporter contract ABI")

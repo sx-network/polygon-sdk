@@ -317,6 +317,7 @@ func (p *serverParams) initDataFeedMQAddress() error {
 
 func (p *serverParams) initCustomContractAddress() error {
 	p.customContractAddress = types.StringToAddress(p.rawConfig.CustomContractAddress)
+
 	return nil
 }
 

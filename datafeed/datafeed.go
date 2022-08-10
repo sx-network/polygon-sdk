@@ -140,10 +140,8 @@ func (d *DataFeed) addGossipMsg(obj interface{}, _ peer.ID) {
 		return
 	}
 
-	// finally publish it if we haven't already
-	if d.lastPublishedPayload != signedPayload.MarketHash+fmt.Sprint(signedPayload.Timestamp) {
-		d.publishPayload(signedPayload, isMajoritySigs)
-	}
+	// finally publish payload
+	d.publishPayload(signedPayload, isMajoritySigs)
 }
 
 // validateGossipedPayload performs validation steps on gossiped payload prior to signing
@@ -265,8 +263,13 @@ func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string
 
 // publishPayload
 func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs bool) {
-	//TODO: this can be invoked twice - add some sort of toggle based on marketHash so SC only gets called max once by us?
 	if isMajoritySigs {
+		if d.lastPublishedPayload != message.MarketHash+fmt.Sprint(message.Timestamp) {
+			d.logger.Debug("we've already tried to report this signed outcome ", "marketHash", message.MarketHash)
+
+			return
+		}
+
 		d.logger.Debug(
 			"Majority of sigs reached, writing payload to SC",
 			"marketHash",
@@ -288,12 +291,14 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		abiContract, err := abi.NewABIFromList(functions)
 		if err != nil {
 			d.logger.Error("failed to retrieve ethgo ABI", "err", err)
+
 			return
 		}
 
 		client, err := jsonrpc.NewClient("http://localhost:10002")
 		if err != nil {
 			d.logger.Error("failed to initialize new ethgo client", "err", err)
+
 			return
 		}
 
@@ -307,16 +312,16 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		txn, err := c.Txn("reportOutcome", new(big.Int).SetInt64(int64(message.Outcome)))
 		if err != nil {
 			d.logger.Error("failed to create txn via ethgo", "err", err)
+
 			return
 		}
 
 		err = txn.Do()
 		if err != nil {
 			d.logger.Error("failed to send raw txn via ethgo", "err", err)
+
 			return
 		}
-
-		d.logger.Debug("publishPayload - Transaction pending", "txHash", txn.Hash())
 
 		d.lastPublishedPayload = message.MarketHash + fmt.Sprint(message.Timestamp)
 
@@ -329,6 +334,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 
 		// d.logger.Debug("publishPayload - Transaction mined", "receiptHash", receipt.TransactionHash)
 
+		d.logger.Debug("publishPayload - Transaction pending", "txHash", txn.Hash())
 	} else {
 		if d.topic != nil {
 			// broadcast the payload only if a topic subscription present
@@ -336,7 +342,6 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 				MarketHash: message.MarketHash,
 				Outcome:    message.Outcome,
 			}
-
 			if message.IsGossip {
 				dataFeedReportGossip.Epoch = message.Epoch
 				dataFeedReportGossip.Timestamp = message.Timestamp
