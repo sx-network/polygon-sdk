@@ -264,7 +264,7 @@ func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string
 // publishPayload
 func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs bool) {
 	if isMajoritySigs {
-		if d.lastPublishedPayload != message.MarketHash+fmt.Sprint(message.Timestamp) {
+		if d.lastPublishedPayload == message.MarketHash+fmt.Sprint(message.Timestamp) {
 			d.logger.Debug("we've already tried to report this signed outcome ", "marketHash", message.MarketHash)
 
 			return
