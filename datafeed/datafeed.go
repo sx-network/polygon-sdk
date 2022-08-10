@@ -2,6 +2,7 @@ package datafeed
 
 import (
 	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/contract"
 	"github.com/umbracle/ethgo/jsonrpc"
+	"github.com/umbracle/ethgo/wallet"
 	"google.golang.org/grpc"
 	protobuf "google.golang.org/protobuf/proto"
 )
@@ -275,7 +277,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		)
 
 		var functions = []string{
-			"function setEpoch(uint epochSize)",
+			"function reportOutcome(uint outcome)",
 		}
 
 		abiContract, err := abi.NewABIFromList(functions)
@@ -288,16 +290,14 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 			d.logger.Error("failed to initialize new ethgo client", "err", err)
 		}
 
-		// from address (msg.sender in solidity)
-		from := ethgo.Address{0x1}
 		c := contract.NewContract(
 			ethgo.Address(d.config.CustomContractAddress),
 			abiContract,
-			contract.WithSender(from),
+			contract.WithSender(wallet.NewKey(d.consensusInfo().ValidatorKey)),
 			contract.WithJsonRPC(client.Eth()),
 		)
 
-		txn, err := c.Txn("setEpoch", 13)
+		txn, err := c.Txn("reportOutcome", new(big.Int).SetInt64(int64(message.Outcome)))
 		if err != nil {
 			d.logger.Error("failed to create txn via ethgo", "err", err)
 		}
