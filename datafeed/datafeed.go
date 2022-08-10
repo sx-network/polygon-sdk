@@ -294,7 +294,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 			d.logger.Error("failed to call getEpochSize() via ethgo", "err", err)
 		}
 
-		d.logger.Debug("publishPayload - payload published", "epochSize", res[""].(*big.Int))
+		d.logger.Debug("publishPayload - payload published", "epochSize", res["0"].(*big.Int))
 
 	} else {
 		if d.topic != nil {
