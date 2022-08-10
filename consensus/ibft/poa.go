@@ -182,17 +182,6 @@ func (poa *PoAMechanism) processHeadersHook(hookParam interface{}) error {
 		params.snap.RemoveVotes(func(v *Vote) bool {
 			return v.Address == params.header.Miner
 		})
-
-		//TODO: 1. Try calling setValidators
-		// poa.ibft.logger.Debug("processHeadersHook - calling setValidators here..")
-		// transition, err := poa.ibft.executor.BeginTxn(params.header.StateRoot, params.header, types.ZeroAddress)
-		// if err != nil {
-		// 	return err
-		// }
-		// _, err = datafeed.SetValidators(transition, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, params.snap.Set)
-		// if err != nil {
-		// 	poa.ibft.logger.Error("failed to call setValidators", "err", err)
-		// }
 	}
 
 	return nil
@@ -239,7 +228,7 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 	poa.ibft.logger.Debug("preStateCommitHook - calling setValidators here..")
 
 	snap := poa.ibft.getSnapshot(params.header.Number)
-	_, err := datafeed.SetValidators(params.txn, params.txn.GetTxContext().Coinbase, poa.ibft.customContractAddress, snap.Set)
+	_, err := datafeed.SetValidators(params.txn, types.ZeroAddress, poa.ibft.customContractAddress, snap.Set)
 	if err != nil {
 		poa.ibft.logger.Error("failed to call setValidators", "err", err)
 	}
@@ -264,36 +253,6 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 	// } else {
 	// 	poa.ibft.logger.Debug("preStateCommitHook signedPayload is nil")
 	// }
-
-	return nil
-}
-
-// preStateCommitHook hook that carries out state-modifying transactions
-func (poa *PoAMechanism) insertBlockHook(numberParam interface{}) error {
-	headerNumber, ok := numberParam.(uint64)
-	if !ok {
-		return ErrInvalidHookParam
-	}
-
-	header, ok := poa.ibft.blockchain.GetHeaderByNumber(headerNumber)
-	if !ok {
-		return errors.New("header not found")
-	}
-
-	transition, err := poa.ibft.executor.BeginTxn(header.StateRoot, header, types.ZeroAddress)
-	if err != nil {
-		return err
-	}
-
-	//TODO: 3. Try calling setValidators
-	poa.ibft.logger.Debug("insertBlockHook - calling setValidators here..")
-	if headerNumber%poa.ibft.epochSize == 0 {
-		snap := poa.ibft.getSnapshot(headerNumber)
-		_, err := datafeed.SetValidators(transition, poa.ibft.validatorKeyAddr, poa.ibft.customContractAddress, snap.Set)
-		if err != nil {
-			poa.ibft.logger.Error("failed to call setValidators", "err", err)
-		}
-	}
 
 	return nil
 }
