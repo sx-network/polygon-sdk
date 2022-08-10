@@ -2,7 +2,6 @@ package datafeed
 
 import (
 	"fmt"
-	"math/big"
 	"strings"
 	"time"
 
@@ -276,7 +275,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		)
 
 		var functions = []string{
-			"function getEpochSize() external view returns (uint)",
+			"function setEpoch(uint epochSize)",
 		}
 
 		abiContract, err := abi.NewABIFromList(functions)
@@ -298,12 +297,22 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 			contract.WithJsonRPC(client.Eth()),
 		)
 
-		res, err := c.Call("getEpochSize", ethgo.Latest)
+		txn, err := c.Txn("setEpoch", 13)
 		if err != nil {
-			d.logger.Error("failed to call getEpochSize() via ethgo", "err", err)
+			d.logger.Error("failed to create txn via ethgo", "err", err)
 		}
 
-		d.logger.Debug("publishPayload - payload published", "epochSize", res["0"].(*big.Int))
+		err = txn.Do()
+		if err != nil {
+			d.logger.Error("failed to send raw txn via ethgo", "err", err)
+		}
+
+		receipt, err := txn.Wait()
+		if err != nil {
+			d.logger.Error("failed to get txn receipt via ethgo", "err", err)
+		}
+
+		d.logger.Debug("publishPayload - Transaction mined", "txHash", receipt.TransactionHash)
 
 	} else {
 		if d.topic != nil {
