@@ -259,6 +259,7 @@ func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string
 
 // publishPayload
 func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs bool) {
+	//TODO: this can be invoked twice - add some sort of toggle based on marketHash so SC only gets called max once by us?
 	if isMajoritySigs {
 		d.logger.Debug(
 			"Majority of sigs reached, writing payload to SC",
@@ -288,7 +289,15 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 			d.logger.Error("failed to initialize new ethgo client", "err", err)
 		}
 
-		c := contract.NewContract(ethgo.Address(d.config.CustomContractAddress), abiContract, contract.WithJsonRPC(client.Eth()))
+		// from address (msg.sender in solidity)
+		from := ethgo.Address{0x1}
+		c := contract.NewContract(
+			ethgo.Address(d.config.CustomContractAddress),
+			abiContract,
+			contract.WithSender(from),
+			contract.WithJsonRPC(client.Eth()),
+		)
+
 		res, err := c.Call("getEpochSize", ethgo.Latest)
 		if err != nil {
 			d.logger.Error("failed to call getEpochSize() via ethgo", "err", err)
