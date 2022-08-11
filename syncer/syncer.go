@@ -180,7 +180,7 @@ func (s *syncer) Sync(callback func(*types.Block) bool) error {
 	skipList := s.makeSkipList()
 
 	for {
-		//Wait for a new event to arrive
+		// Wait for a new event to arrive
 		<-s.newStatusCh
 
 		// fetch local latest block

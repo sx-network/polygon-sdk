@@ -3,6 +3,7 @@ package ibft
 import (
 	"errors"
 	"fmt"
+
 	"math/big"
 
 	"github.com/0xPolygon/polygon-edge/contracts/staking"
