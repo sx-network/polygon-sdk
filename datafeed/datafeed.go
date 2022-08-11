@@ -227,7 +227,7 @@ func (d *DataFeed) signGossipedPayload(dataFeedReportGossip *proto.DataFeedRepor
 		IsGossip:   true,
 	}
 
-	sig, err := d.getSignatureForPayload(dataFeedReportGossip)
+	sig, err := d.GetSignatureForPayload(dataFeedReportGossip)
 	if err != nil {
 		return nil, false, err
 	}
@@ -239,8 +239,8 @@ func (d *DataFeed) signGossipedPayload(dataFeedReportGossip *proto.DataFeedRepor
 	return reportOutcome, numSigs >= d.consensusInfo().QuorumSize, nil
 }
 
-// getSignatureForPayload derives the signature of the current validator
-func (d *DataFeed) getSignatureForPayload(payload *proto.DataFeedReport) (string, error) {
+// GetSignatureForPayload derives the signature of the current validator
+func (d *DataFeed) GetSignatureForPayload(payload *proto.DataFeedReport) (string, error) {
 	clonedMsg, ok := protobuf.Clone(payload).(*proto.DataFeedReport)
 	if !ok {
 		return "", fmt.Errorf("error while trying to clone datafeed report")
@@ -350,7 +350,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 				dataFeedReportGossip.Epoch = d.consensusInfo().Epoch
 				dataFeedReportGossip.Timestamp = time.Now().Unix()
 
-				mySig, err := d.getSignatureForPayload(dataFeedReportGossip)
+				mySig, err := d.GetSignatureForPayload(dataFeedReportGossip)
 				if err != nil {
 					d.logger.Error("failed to get payload signature", "err", err)
 				}
