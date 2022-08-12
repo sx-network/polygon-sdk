@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/0xPolygon/polygon-edge/consensus"
+	"github.com/0xPolygon/polygon-edge/crypto"
 	"github.com/0xPolygon/polygon-edge/datafeed"
 	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 	"github.com/0xPolygon/polygon-edge/helper/hex"
@@ -17,6 +18,7 @@ import (
 	"github.com/umbracle/ethgo/contract"
 	"github.com/umbracle/ethgo/jsonrpc"
 	"github.com/umbracle/ethgo/wallet"
+	protobuf "google.golang.org/protobuf/proto"
 )
 
 // tests invoking reportOutcome() function on SC
@@ -26,21 +28,36 @@ func TestReportOutcome(t *testing.T) {
 	pk2 := "0x91abf5c93aada2af7b98ac3cccbcbc8e6b7cc2ad4b5540923ace3418eb76ac62" // validator-2
 	pk3 := "0x5ec98cbbf3bdd1c175a12a9b3f91f10171712a236ae5004c8306da394bbe416a" // validator-3
 	pk4 := "0x021dda5e6919eb47d633dd790578be4b0059ed73318a65e2bf333f3eb610eec2" // validator-4
-	contractAddress := "0x475ec4F6c9c61c02aa11d38c959f266bb6F7A9fd"             // SXNode.sol on hamilton
+	contractAddress := "0xB6cf28AC402FD0139d6a3222055adC51e452d685"             // SXNode.sol on hamilton
 
 	// function params
-	marketHashParam, _ := hex.DecodeHex("0x0000000000000000000000000000000000000000000000000000000000000006")
+	marketHashParam, _ := hex.DecodeHex("0x000000000000000000000000000000000000000000000000000000000000000011")
 	outcomeParam := 2
 	epochParam := 50
 	timestampParam := time.Now().Unix()
-	sig1 := getSigForPayload(string(marketHashParam), int32(outcomeParam), uint64(epochParam), timestampParam, pk1)
-	sig2 := getSigForPayload(string(marketHashParam), int32(outcomeParam), uint64(epochParam), timestampParam, pk2)
-	sig3 := getSigForPayload(string(marketHashParam), int32(outcomeParam), uint64(epochParam), timestampParam, pk3)
-	sig4 := getSigForPayload(string(marketHashParam), int32(outcomeParam), uint64(epochParam), timestampParam, pk4)
+	sig1, _ := hex.DecodeHex(getSigForPayload(string(marketHashParam), int32(outcomeParam), uint64(epochParam), timestampParam, pk1))
+	sig2, _ := hex.DecodeHex(getSigForPayload(string(marketHashParam), int32(outcomeParam), uint64(epochParam), timestampParam, pk2))
+	sig3, _ := hex.DecodeHex(getSigForPayload(string(marketHashParam), int32(outcomeParam), uint64(epochParam), timestampParam, pk3))
+	sig4, _ := hex.DecodeHex(getSigForPayload(string(marketHashParam), int32(outcomeParam), uint64(epochParam), timestampParam, pk4))
+
+	t.Logf("sig1 %s", hex.EncodeToHex(sig1))
+
+	report := &proto.DataFeedReport{
+		MarketHash: string(marketHashParam),
+		Outcome:    int32(outcomeParam),
+		Epoch:      uint64(epochParam),
+		Timestamp:  timestampParam,
+	}
+	marshaled, _ := protobuf.Marshal(report)
+	hashedReport := crypto.Keccak256(marshaled)
+	t.Logf("hashedReport: %s", hex.EncodeToHex(hashedReport))
+
+	pub, _ := crypto.RecoverPubkey(sig1, hashedReport)
+	t.Logf("signer address: %s", crypto.PubKeyToAddress(pub))
 
 	var functions = []string{
 		//nolint:lll
-		`function reportOutcome(bytes32 marketHash, uint8 reportedOutcome, uint64 epoch, uint256 timestamp, string[] signatures)`,
+		`function reportOutcome(bytes32 marketHash, uint8 reportedOutcome, uint64 epoch, uint256 timestamp, bytes[] signatures)`,
 	}
 
 	abiContract, err := abi.NewABIFromList(functions)
@@ -75,7 +92,7 @@ func TestReportOutcome(t *testing.T) {
 		new(big.Int).SetInt64(int64(outcomeParam)),
 		new(big.Int).SetUint64(uint64(epochParam)),
 		new(big.Int).SetInt64(timestampParam),
-		[]string{sig1, sig2, sig3, sig4},
+		[][]byte{sig1, sig2, sig3, sig4},
 	)
 	if err != nil {
 		t.Fatalf("failed to create txn via ethgo, %v", err)
