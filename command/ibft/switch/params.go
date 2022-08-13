@@ -14,12 +14,13 @@ import (
 )
 
 const (
-	chainFlag         = "chain"
-	typeFlag          = "type"
-	deploymentFlag    = "deployment"
-	fromFlag          = "from"
-	minValidatorCount = "min-validator-count"
-	maxValidatorCount = "max-validator-count"
+	chainFlag             = "chain"
+	typeFlag              = "type"
+	deploymentFlag        = "deployment"
+	fromFlag              = "from"
+	minValidatorCount     = "min-validator-count"
+	maxValidatorCount     = "max-validator-count"
+	customContractAddress = "custom-contract-address"
 )
 
 var (
@@ -31,12 +32,13 @@ var (
 )
 
 type switchParams struct {
-	typeRaw              string
-	fromRaw              string
-	deploymentRaw        string
-	maxValidatorCountRaw string
-	minValidatorCountRaw string
-	genesisPath          string
+	typeRaw                  string
+	fromRaw                  string
+	customContractAddressRaw string
+	deploymentRaw            string
+	maxValidatorCountRaw     string
+	minValidatorCountRaw     string
+	genesisPath              string
 
 	mechanismType ibft.MechanismType
 	deployment    *uint64
