@@ -105,8 +105,9 @@ type BaseConsensusMechanism struct {
 	mechanismType MechanismType
 
 	// Available periods
-	From uint64
-	To   *uint64
+	From                  uint64
+	To                    *uint64
+	CustomContractAddress string
 }
 
 // initializeParams initializes mechanism parameters from chain config
@@ -127,6 +128,7 @@ func (base *BaseConsensusMechanism) initializeParams(params *IBFTFork) error {
 		}
 
 		base.To = &params.To.Value
+		base.CustomContractAddress = params.CustomContractAddress
 	}
 
 	return nil
