@@ -327,8 +327,16 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		sigList := strings.Split(message.Signatures, ",")
 
 		sigByteList := make([][]byte, len(sigList))
+
 		for i, v := range sigList {
-			sigByteList[i] = []byte(v)
+			decoded, err := hex.DecodeHex(v)
+			if err != nil {
+				d.logger.Error("failed to prepare signatures arg for reportOutcome() txn ", "err", err)
+
+				return
+			}
+
+			sigByteList[i] = decoded
 		}
 
 		txn, err := c.Txn(
@@ -340,7 +348,14 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 			sigByteList,
 		)
 		if err != nil {
-			d.logger.Error("failed to send raw txn via ethgo", "err", err)
+			d.logger.Error("failed to create txn via ethgo", "err", err)
+
+			return
+		}
+
+		err = txn.Do()
+		if err != nil {
+			d.logger.Error("failed to send raw txn via ethgo, %v", err)
 
 			return
 		}
@@ -351,6 +366,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		receipt, err := txn.Wait()
 		if err != nil {
 			d.logger.Error("failed to get txn receipt via ethgo", "err", err)
+
 			return
 		}
 
