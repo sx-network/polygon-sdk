@@ -403,19 +403,19 @@ func (s *Server) setupConsensus() error {
 
 	consensus, err := engine(
 		&consensus.Params{
-			Context:               context.Background(),
-			Seal:                  s.config.Seal,
-			Config:                config,
-			TxPool:                s.txpool,
-			Network:               s.network,
-			Blockchain:            s.blockchain,
-			Executor:              s.executor,
-			Grpc:                  s.grpcServer,
-			Logger:                s.logger,
-			Metrics:               s.serverMetrics.consensus,
-			SecretsManager:        s.secretsManager,
-			BlockTime:             s.config.BlockTime,
-			CustomContractAddress: s.config.CustomContractAddress,
+			Context:        context.Background(),
+			Seal:           s.config.Seal,
+			Config:         config,
+			TxPool:         s.txpool,
+			Network:        s.network,
+			Blockchain:     s.blockchain,
+			Executor:       s.executor,
+			Grpc:           s.grpcServer,
+			Logger:         s.logger,
+			Metrics:        s.serverMetrics.consensus,
+			SecretsManager: s.secretsManager,
+			BlockTime:      s.config.BlockTime,
+			// CustomContractAddress: s.config.CustomContractAddress,
 		},
 	)
 

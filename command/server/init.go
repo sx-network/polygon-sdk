@@ -228,9 +228,9 @@ func (p *serverParams) initAddresses() error {
 		return err
 	}
 
-	if err := p.initCustomContractAddress(); err != nil {
-		return err
-	}
+	// if err := p.initCustomContractAddress(); err != nil {
+	// 	return err
+	// }
 
 	return p.initGRPCAddress()
 }
@@ -315,11 +315,11 @@ func (p *serverParams) initDataFeedMQAddress() error {
 	return nil
 }
 
-func (p *serverParams) initCustomContractAddress() error {
-	p.customContractAddress = types.StringToAddress(p.rawConfig.CustomContractAddress)
+// func (p *serverParams) initCustomContractAddress() error {
+// 	p.customContractAddress = types.StringToAddress(p.rawConfig.CustomContractAddress)
 
-	return nil
-}
+// 	return nil
+// }
 
 func (p *serverParams) initGRPCAddress() error {
 	var parseErr error
