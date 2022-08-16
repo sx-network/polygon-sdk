@@ -128,8 +128,10 @@ func (base *BaseConsensusMechanism) initializeParams(params *IBFTFork) error {
 		}
 
 		base.To = &params.To.Value
-		base.CustomContractAddress = params.CustomContractAddress
+
 	}
+
+	base.CustomContractAddress = params.CustomContractAddress
 
 	return nil
 }
