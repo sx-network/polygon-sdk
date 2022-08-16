@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/go-hclog v1.2.2
 	github.com/hashicorp/go-immutable-radix v1.3.1
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/golang-lru v0.5.4
+	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/hashicorp/hcl v1.0.0
 	github.com/hashicorp/vault/api v1.7.2
 	github.com/libp2p/go-libp2p v0.20.0
@@ -63,6 +63,7 @@ require (
 
 require (
 	github.com/0xPolygon/go-ibft v0.0.0-20220810095021-e43142f8d267
+	github.com/ethereum/go-ethereum v1.10.21
 	github.com/rabbitmq/amqp091-go v1.4.0
 )
 

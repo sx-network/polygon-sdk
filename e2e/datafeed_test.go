@@ -18,7 +18,6 @@ import (
 	"github.com/umbracle/ethgo/contract"
 	"github.com/umbracle/ethgo/jsonrpc"
 	"github.com/umbracle/ethgo/wallet"
-	protobuf "google.golang.org/protobuf/proto"
 )
 
 // tests invoking reportOutcome() function on SC
@@ -28,36 +27,33 @@ func TestReportOutcome(t *testing.T) {
 	pk2 := "0x91abf5c93aada2af7b98ac3cccbcbc8e6b7cc2ad4b5540923ace3418eb76ac62" // validator-2
 	pk3 := "0x5ec98cbbf3bdd1c175a12a9b3f91f10171712a236ae5004c8306da394bbe416a" // validator-3
 	pk4 := "0x021dda5e6919eb47d633dd790578be4b0059ed73318a65e2bf333f3eb610eec2" // validator-4
-	contractAddress := "0xB6cf28AC402FD0139d6a3222055adC51e452d685"             // SXNode.sol on hamilton
+	contractAddress := "0xA173954Cc4b1810C0dBdb007522ADbC182DaB380"             // SXNode.sol on hamilton
 
 	// function params
-	marketHashParam, _ := hex.DecodeHex("0x000000000000000000000000000000000000000000000000000000000000000011")
-	outcomeParam := 2
-	epochParam := 50
-	timestampParam := time.Now().Unix()
-	sig1, _ := hex.DecodeHex(getSigForPayload(string(marketHashParam), int32(outcomeParam), uint64(epochParam), timestampParam, pk1))
-	sig2, _ := hex.DecodeHex(getSigForPayload(string(marketHashParam), int32(outcomeParam), uint64(epochParam), timestampParam, pk2))
-	sig3, _ := hex.DecodeHex(getSigForPayload(string(marketHashParam), int32(outcomeParam), uint64(epochParam), timestampParam, pk3))
-	sig4, _ := hex.DecodeHex(getSigForPayload(string(marketHashParam), int32(outcomeParam), uint64(epochParam), timestampParam, pk4))
+	marketHashParam := types.BytesToHash([]byte("3"))
+	outcomeParam := int32(2)
+	epochParam := uint64(50)
+	timestampParam := new(big.Int).SetInt64(time.Now().Unix())
 
-	t.Logf("sig1 %s", hex.EncodeToHex(sig1))
+	sig1, hashed1 := getSigAndHashedPayload(marketHashParam, outcomeParam, epochParam, timestampParam, pk1)
+	sig1Decoded, _ := hex.DecodeHex(sig1)
+	sig2, _ := getSigAndHashedPayload(marketHashParam, outcomeParam, epochParam, timestampParam, pk2)
+	sig2Decoded, _ := hex.DecodeHex(sig2)
+	sig3, _ := getSigAndHashedPayload(marketHashParam, outcomeParam, epochParam, timestampParam, pk3)
+	sig3Decoded, _ := hex.DecodeHex(sig3)
+	sig4, _ := getSigAndHashedPayload(marketHashParam, outcomeParam, epochParam, timestampParam, pk4)
+	sig4Decoded, _ := hex.DecodeHex(sig4)
 
-	report := &proto.DataFeedReport{
-		MarketHash: string(marketHashParam),
-		Outcome:    int32(outcomeParam),
-		Epoch:      uint64(epochParam),
-		Timestamp:  timestampParam,
-	}
-	marshaled, _ := protobuf.Marshal(report)
-	hashedReport := crypto.Keccak256(marshaled)
-	t.Logf("hashedReport: %s", hex.EncodeToHex(hashedReport))
+	t.Logf("sig1 %s", sig1)
 
-	pub, _ := crypto.RecoverPubkey(sig1, hashedReport)
-	t.Logf("signer address: %s", crypto.PubKeyToAddress(pub))
+	t.Logf("hashedReport1: %s", hex.EncodeToHex(hashed1))
+
+	pub, _ := crypto.RecoverPubkey(sig1Decoded, hashed1)
+	t.Logf("signer1 address: %s", crypto.PubKeyToAddress(pub))
 
 	var functions = []string{
 		//nolint:lll
-		`function reportOutcome(bytes32 marketHash, uint8 reportedOutcome, uint64 epoch, uint256 timestamp, bytes[] signatures)`,
+		`function reportOutcome(bytes32 marketHash, int32 outcome, uint64 epoch, uint256 timestamp, bytes[] signatures)`,
 	}
 
 	abiContract, err := abi.NewABIFromList(functions)
@@ -89,10 +85,10 @@ func TestReportOutcome(t *testing.T) {
 	txn, err := c.Txn(
 		"reportOutcome",
 		marketHashParam,
-		new(big.Int).SetInt64(int64(outcomeParam)),
-		new(big.Int).SetUint64(uint64(epochParam)),
-		new(big.Int).SetInt64(timestampParam),
-		[][]byte{sig1, sig2, sig3, sig4},
+		outcomeParam,
+		epochParam,
+		timestampParam,
+		[][]byte{sig1Decoded, sig2Decoded, sig3Decoded, sig4Decoded},
 	)
 	if err != nil {
 		t.Fatalf("failed to create txn via ethgo, %v", err)
@@ -118,7 +114,13 @@ func TestReportOutcome(t *testing.T) {
 }
 
 // helper function used in e2e test
-func getSigForPayload(marketHash string, outcome int32, epoch uint64, timestamp int64, privateKey string) string {
+func getSigAndHashedPayload(
+	marketHash [32]byte,
+	outcome int32,
+	epoch uint64,
+	timestamp *big.Int,
+	privateKey string,
+) (string, []byte) {
 	getPrivateKey := func(privateKeyStr string) *ecdsa.PrivateKey {
 		privateKeyBytes, _ := hex.DecodeHex(privateKeyStr)
 		privateKey, _ := wallet.ParsePrivateKey(privateKeyBytes)
@@ -162,12 +164,16 @@ func getSigForPayload(marketHash string, outcome int32, epoch uint64, timestamp 
 		getConsensusInfo(),
 	)
 
-	sig, _ := dataFeedService.GetSignatureForPayload(&proto.DataFeedReport{
-		MarketHash: marketHash,
+	payload := &proto.DataFeedReport{
+		MarketHash: string(marketHash[:]),
 		Outcome:    outcome,
 		Epoch:      epoch,
-		Timestamp:  timestamp,
-	})
+		Timestamp:  timestamp.Int64(),
+	}
 
-	return sig
+	sig, _ := dataFeedService.GetSignatureForPayload(payload)
+
+	hashedPayload := dataFeedService.AbiEncode(payload)
+
+	return sig, hashedPayload
 }
