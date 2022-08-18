@@ -315,12 +315,6 @@ func (p *serverParams) initDataFeedMQAddress() error {
 	return nil
 }
 
-// func (p *serverParams) initCustomContractAddress() error {
-// 	p.customContractAddress = types.StringToAddress(p.rawConfig.CustomContractAddress)
-
-// 	return nil
-// }
-
 func (p *serverParams) initGRPCAddress() error {
 	var parseErr error
 
