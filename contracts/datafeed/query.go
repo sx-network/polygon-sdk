@@ -25,10 +25,6 @@ func SetValidators(t TxQueryHandler, from types.Address, to types.Address, valid
 		return nil, errors.New("setValidators method doesn't exist in OutcomeReporter contract ABI")
 	}
 
-	// TODO: figure out how to pass arguments using eth-go
-	// encodedInput, encodeErr := method.Inputs.Encode(map[string]interface{}{
-	// 	"test": uint8(len(validators)),
-	// })
 	encodedInput, encodeErr := method.Inputs.Encode(map[string]interface{}{
 		"addresses": validators,
 	})

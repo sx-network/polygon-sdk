@@ -8,19 +8,20 @@ import (
 
 	"github.com/0xPolygon/polygon-edge/consensus"
 	"github.com/0xPolygon/polygon-edge/crypto"
+
 	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 	"github.com/0xPolygon/polygon-edge/helper/hex"
 	"github.com/0xPolygon/polygon-edge/network"
 	"github.com/0xPolygon/polygon-edge/types"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/hashicorp/go-hclog"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/umbracle/ethgo"
-	"github.com/umbracle/ethgo/abi"
+	ethgoabi "github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/contract"
 	"github.com/umbracle/ethgo/jsonrpc"
 	"github.com/umbracle/ethgo/wallet"
 	"google.golang.org/grpc"
-	protobuf "google.golang.org/protobuf/proto"
 )
 
 const (
@@ -164,20 +165,46 @@ func (d *DataFeed) validateGossipedPayload(dataFeedReportGossip *proto.DataFeedR
 	return nil
 }
 
+// encodes to conform to solidity's keccak256(abi.encode())
+func (d *DataFeed) AbiEncode(payload *proto.DataFeedReport) []byte {
+	bytes32Type, _ := abi.NewType("bytes32", "bytes32", nil)
+	int32Type, _ := abi.NewType("int32", "int32", nil)
+	uint64Type, _ := abi.NewType("uint64", "uint64", nil)
+	uint256Type, _ := abi.NewType("uint256", "uint256", nil)
+
+	arguments := abi.Arguments{
+		{
+			Type: bytes32Type,
+		},
+		{
+			Type: int32Type,
+		},
+		{
+			Type: uint64Type,
+		},
+		{
+			Type: uint256Type,
+		},
+	}
+
+	bytes, _ := arguments.Pack(
+		types.BytesToHash([]byte(payload.MarketHash)),
+		payload.Outcome,
+		payload.Epoch,
+		big.NewInt(payload.Timestamp),
+	)
+
+	//TODO: add 'Ethereum Signed Message' here?
+	// 	prefixedHash := crypto.Keccak256Hash(
+	// 		[]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%v", len(hash))),
+	// 		hash.Bytes(),
+	// )
+
+	return crypto.Keccak256(bytes)
+}
+
 // validateSignatures checks if the current validator has already signed the payload
 func (d *DataFeed) validateSignatures(dataFeedReportGossip *proto.DataFeedReport) (bool, error) {
-	clonedMsg, ok := protobuf.Clone(dataFeedReportGossip).(*proto.DataFeedReport)
-	if !ok {
-		return false, fmt.Errorf("error while determining if we already signed")
-	}
-
-	clonedMsg.Signatures = ""
-	data, err := protobuf.Marshal(clonedMsg)
-
-	if err != nil {
-		return false, err
-	}
-
 	sigList := strings.Split(dataFeedReportGossip.Signatures, ",")
 	for _, sig := range sigList {
 		buf, err := hex.DecodeHex(sig)
@@ -185,7 +212,7 @@ func (d *DataFeed) validateSignatures(dataFeedReportGossip *proto.DataFeedReport
 			return false, err
 		}
 
-		pub, err := crypto.RecoverPubkey(buf, crypto.Keccak256(data))
+		pub, err := crypto.RecoverPubkey(buf, d.AbiEncode(dataFeedReportGossip))
 		if err != nil {
 			return false, err
 		}
@@ -241,19 +268,7 @@ func (d *DataFeed) signGossipedPayload(dataFeedReportGossip *proto.DataFeedRepor
 
 // GetSignatureForPayload derives the signature of the current validator
 func (d *DataFeed) GetSignatureForPayload(payload *proto.DataFeedReport) (string, error) {
-	clonedMsg, ok := protobuf.Clone(payload).(*proto.DataFeedReport)
-	if !ok {
-		return "", fmt.Errorf("error while trying to clone datafeed report")
-	}
-
-	clonedMsg.Signatures = ""
-
-	data, err := protobuf.Marshal(clonedMsg)
-	if err != nil {
-		return "", err
-	}
-
-	signedData, err := crypto.Sign(d.consensusInfo().ValidatorKey, crypto.Keccak256(data))
+	signedData, err := crypto.Sign(d.consensusInfo().ValidatorKey, d.AbiEncode(payload))
 	if err != nil {
 		return "", err
 	}
@@ -285,10 +300,10 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		)
 
 		var functions = []string{
-			"function reportOutcome(uint outcome)",
+			"function reportOutcome(bytes32 marketHash, int32 outcome, uint64 epoch, uint256 timestamp, bytes[] signatures)",
 		}
 
-		abiContract, err := abi.NewABIFromList(functions)
+		abiContract, err := ethgoabi.NewABIFromList(functions)
 		if err != nil {
 			d.logger.Error("failed to retrieve ethgo ABI", "err", err)
 
@@ -309,7 +324,29 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 			contract.WithJsonRPC(client.Eth()),
 		)
 
-		txn, err := c.Txn("reportOutcome", new(big.Int).SetInt64(int64(message.Outcome)))
+		sigList := strings.Split(message.Signatures, ",")
+
+		sigByteList := make([][]byte, len(sigList))
+
+		for i, v := range sigList {
+			decoded, err := hex.DecodeHex(v)
+			if err != nil {
+				d.logger.Error("failed to prepare signatures arg for reportOutcome() txn ", "err", err)
+
+				return
+			}
+
+			sigByteList[i] = decoded
+		}
+
+		txn, err := c.Txn(
+			"reportOutcome",
+			types.BytesToHash([]byte(message.MarketHash)),
+			message.Outcome,
+			message.Epoch,
+			new(big.Int).SetInt64(message.Timestamp),
+			sigByteList,
+		)
 		if err != nil {
 			d.logger.Error("failed to create txn via ethgo", "err", err)
 
@@ -318,7 +355,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 
 		err = txn.Do()
 		if err != nil {
-			d.logger.Error("failed to send raw txn via ethgo", "err", err)
+			d.logger.Error("failed to send raw txn via ethgo, %v", err)
 
 			return
 		}
@@ -326,15 +363,14 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		d.lastPublishedPayload = message.MarketHash + fmt.Sprint(message.Timestamp)
 
 		// TODO: this actually waits until there's a receipt which we probably don't care about
-		// receipt, err := txn.Wait()
-		// if err != nil {
-		// 	d.logger.Error("failed to get txn receipt via ethgo", "err", err)
-		// 	return
-		// }
+		receipt, err := txn.Wait()
+		if err != nil {
+			d.logger.Error("failed to get txn receipt via ethgo", "err", err)
 
-		// d.logger.Debug("publishPayload - Transaction mined", "receiptHash", receipt.TransactionHash)
+			return
+		}
 
-		d.logger.Debug("publishPayload - Transaction pending", "txHash", txn.Hash())
+		d.logger.Debug("publishPayload - Transaction mined", "receiptHash", receipt.TransactionHash)
 	} else {
 		if d.topic != nil {
 			// broadcast the payload only if a topic subscription present
