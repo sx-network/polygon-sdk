@@ -77,7 +77,7 @@ type backendIBFT struct {
 
 	blockTime time.Duration // Minimum block generation time in seconds
 
-	customContractAddress types.Address // custom contract address used for on-chain interaction
+	customContractAddress string // custom contract address used for on-chain interaction
 
 	//TODO: eventually we want this to be a signedPayload queue?
 	signedPayload *types.ReportOutcome // signed payload to be written to SC on next block built
@@ -130,7 +130,6 @@ func Factory(params *consensus.Params) (consensus.Consensus, error) {
 		metrics:            params.Metrics,
 		secretsManager:     params.SecretsManager,
 		blockTime:          time.Duration(params.BlockTime) * time.Second,
-		// customContractAddress: params.CustomContractAddress,
 		syncer: syncer.NewSyncer(
 			params.Logger,
 			params.Network,
@@ -612,12 +611,13 @@ func (i *backendIBFT) GetConsensusInfo() consensus.ConsensusInfoFn {
 // GetValidatorInfo returns consensus info to be used outside consensus layer
 func (i *backendIBFT) getConsensusInfoImpl() *consensus.ConsensusInfo {
 	return &consensus.ConsensusInfo{
-		Validators:       i.activeValidatorSet,
-		ValidatorKey:     i.validatorKey,
-		ValidatorAddress: i.validatorKeyAddr,
-		Epoch:            i.GetEpoch(i.blockchain.Header().Number),
-		QuorumSize:       i.quorumSize(i.blockchain.Header().Number)(i.activeValidatorSet),
-		SetSignedPayload: i.setSignedPaload(),
+		Validators:            i.activeValidatorSet,
+		ValidatorKey:          i.validatorKey,
+		ValidatorAddress:      i.validatorKeyAddr,
+		Epoch:                 i.GetEpoch(i.blockchain.Header().Number),
+		QuorumSize:            i.quorumSize(i.blockchain.Header().Number)(i.activeValidatorSet),
+		SetSignedPayload:      i.setSignedPaload(),
+		CustomContractAddress: i.customContractAddress,
 	}
 }
 

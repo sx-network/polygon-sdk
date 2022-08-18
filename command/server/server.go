@@ -243,13 +243,6 @@ func setFlags(cmd *cobra.Command) {
 		"the AMQ queue that the DataFeedService's MQConsumer consumes from",
 	)
 
-	// cmd.Flags().StringVar(
-	// 	&params.rawConfig.CustomContractAddress,
-	// 	customContractAddressFlag,
-	// 	"",
-	// 	"the custom contract address used for SC interaction",
-	// )
-
 	setLegacyFlags(cmd)
 	setDevFlags(cmd)
 }

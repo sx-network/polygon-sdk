@@ -415,7 +415,6 @@ func (s *Server) setupConsensus() error {
 			Metrics:        s.serverMetrics.consensus,
 			SecretsManager: s.secretsManager,
 			BlockTime:      s.config.BlockTime,
-			// CustomContractAddress: s.config.CustomContractAddress,
 		},
 	)
 
@@ -587,7 +586,6 @@ func (s *Server) setupJSONRPC() error {
 // setupDataFeedService set up and start datafeed service
 func (s *Server) setupDataFeedService() error {
 	conf := &datafeed.Config{
-		CustomContractAddress: s.config.CustomContractAddress,
 		MQConfig: &datafeed.MQConfig{
 			AMQPURI: s.config.DataFeed.DataFeedAMQPURI,
 			QueueConfig: &datafeed.QueueConfig{

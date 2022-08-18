@@ -52,12 +52,13 @@ type Consensus interface {
 }
 
 type ConsensusInfo struct {
-	Validators       []types.Address
-	ValidatorKey     *ecdsa.PrivateKey
-	ValidatorAddress types.Address
-	Epoch            uint64
-	QuorumSize       int
-	SetSignedPayload SetSignedPayloadFn
+	Validators            []types.Address
+	ValidatorKey          *ecdsa.PrivateKey
+	ValidatorAddress      types.Address
+	Epoch                 uint64
+	QuorumSize            int
+	SetSignedPayload      SetSignedPayloadFn
+	CustomContractAddress string
 }
 
 type ConsensusInfoFn func() *ConsensusInfo
@@ -92,7 +93,6 @@ type Params struct {
 	Metrics        *Metrics
 	SecretsManager secrets.SecretsManager
 	BlockTime      uint64
-	// CustomContractAddress types.Address
 }
 
 // Factory is the factory function to create a discovery consensus

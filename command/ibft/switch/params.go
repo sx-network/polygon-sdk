@@ -315,8 +315,6 @@ func appendIBFTForks(
 		}
 	}
 
-	// newFork.CustomContractAddress = customContractAddress
-
 	ibftForks = append(ibftForks, newFork)
 	ibftConfig["types"] = ibftForks
 

@@ -42,7 +42,6 @@ const (
 	logFileLocationFlag          = "log-to"
 	dataFeedAMQPURIFlag          = "data-feed-amqp-uri"
 	dataFeedAMQPQueueNameFlag    = "data-feed-amqp-queue-name"
-	// customContractAddressFlag    = "custom-contract-address"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -93,7 +92,6 @@ type serverParams struct {
 
 	dataFeedAMQPURI       string
 	dataFeedAMQPQueueName string
-	// customContractAddress types.Address
 
 	ibftBaseTimeoutLegacy uint64
 
@@ -190,8 +188,7 @@ func (p *serverParams) generateConfig() *server.Config {
 		BlockTime:       p.rawConfig.BlockTime,
 		RPCNrAppName:    p.rpcNRAppName,
 		RPCNrLicenseKey: p.rpcNRLicenseKey,
-		// CustomContractAddress: p.customContractAddress,
-		LogLevel:    hclog.LevelFromString(p.rawConfig.LogLevel),
-		LogFilePath: p.logFileLocation,
+		LogLevel:        hclog.LevelFromString(p.rawConfig.LogLevel),
+		LogFilePath:     p.logFileLocation,
 	}
 }

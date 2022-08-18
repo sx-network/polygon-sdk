@@ -50,7 +50,7 @@ func (poa *PoAMechanism) IsAvailable(hookType HookType, height uint64) bool {
 	case VerifyHeadersHook, ProcessHeadersHook, CandidateVoteHook:
 		return poa.IsInRange(height)
 	case PreStateCommitHook:
-		return types.StringToAddress(poa.CustomContractAddress) != types.ZeroAddress &&
+		return types.StringToAddress(poa.ibft.customContractAddress) != types.ZeroAddress &&
 			(height+1 == poa.From || poa.IsInRange(height) && poa.ibft.IsLastOfEpoch(height))
 	default:
 		return false
@@ -224,7 +224,7 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 
 	poa.ibft.logger.Debug("preStateCommitHook - calling setValidators here..")
 	snap := poa.ibft.getSnapshot(params.header.Number)
-	_, err := datafeed.SetValidators(params.txn, types.ZeroAddress, types.StringToAddress(poa.CustomContractAddress), snap.Set)
+	_, err := datafeed.SetValidators(params.txn, types.ZeroAddress, types.StringToAddress(poa.ibft.customContractAddress), snap.Set)
 	if err != nil {
 		poa.ibft.logger.Error("failed to call setValidators", "err", err)
 	}
