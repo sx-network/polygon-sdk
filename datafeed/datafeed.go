@@ -52,8 +52,7 @@ type DataFeed struct {
 
 // Config
 type Config struct {
-	CustomContractAddress types.Address
-	MQConfig              *MQConfig
+	MQConfig *MQConfig
 }
 
 // NewDataFeedService returns the new datafeed service
@@ -318,7 +317,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		}
 
 		c := contract.NewContract(
-			ethgo.Address(d.config.CustomContractAddress),
+			ethgo.Address(d.consensusInfo().CustomContractAddress),
 			abiContract,
 			contract.WithSender(wallet.NewKey(d.consensusInfo().ValidatorKey)),
 			contract.WithJsonRPC(client.Eth()),

@@ -116,21 +116,20 @@ func Factory(params *consensus.Params) (consensus.Consensus, error) {
 	}
 
 	p := &backendIBFT{
-		logger:                params.Logger.Named("ibft"),
-		config:                params.Config,
-		Grpc:                  params.Grpc,
-		blockchain:            params.Blockchain,
-		executor:              params.Executor,
-		closeCh:               make(chan struct{}),
-		txpool:                params.TxPool,
-		network:               params.Network,
-		epochSize:             epochSize,
-		quorumSizeBlockNum:    quorumSizeBlockNum,
-		sealing:               params.Seal,
-		metrics:               params.Metrics,
-		secretsManager:        params.SecretsManager,
-		blockTime:             time.Duration(params.BlockTime) * time.Second,
-		customContractAddress: params.CustomContractAddress,
+		logger:             params.Logger.Named("ibft"),
+		config:             params.Config,
+		Grpc:               params.Grpc,
+		blockchain:         params.Blockchain,
+		executor:           params.Executor,
+		closeCh:            make(chan struct{}),
+		txpool:             params.TxPool,
+		network:            params.Network,
+		epochSize:          epochSize,
+		quorumSizeBlockNum: quorumSizeBlockNum,
+		sealing:            params.Seal,
+		metrics:            params.Metrics,
+		secretsManager:     params.SecretsManager,
+		blockTime:          time.Duration(params.BlockTime) * time.Second,
 		syncer: syncer.NewSyncer(
 			params.Logger,
 			params.Network,
@@ -612,12 +611,13 @@ func (i *backendIBFT) GetConsensusInfo() consensus.ConsensusInfoFn {
 // GetValidatorInfo returns consensus info to be used outside consensus layer
 func (i *backendIBFT) getConsensusInfoImpl() *consensus.ConsensusInfo {
 	return &consensus.ConsensusInfo{
-		Validators:       i.activeValidatorSet,
-		ValidatorKey:     i.validatorKey,
-		ValidatorAddress: i.validatorKeyAddr,
-		Epoch:            i.GetEpoch(i.blockchain.Header().Number),
-		QuorumSize:       i.quorumSize(i.blockchain.Header().Number)(i.activeValidatorSet),
-		SetSignedPayload: i.setSignedPaload(),
+		Validators:            i.activeValidatorSet,
+		ValidatorKey:          i.validatorKey,
+		ValidatorAddress:      i.validatorKeyAddr,
+		Epoch:                 i.GetEpoch(i.blockchain.Header().Number),
+		QuorumSize:            i.quorumSize(i.blockchain.Header().Number)(i.activeValidatorSet),
+		SetSignedPayload:      i.setSignedPaload(),
+		CustomContractAddress: i.customContractAddress,
 	}
 }
 

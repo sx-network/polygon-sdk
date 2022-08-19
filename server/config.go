@@ -8,7 +8,6 @@ import (
 	"github.com/0xPolygon/polygon-edge/chain"
 	"github.com/0xPolygon/polygon-edge/network"
 	"github.com/0xPolygon/polygon-edge/secrets"
-	"github.com/0xPolygon/polygon-edge/types"
 )
 
 const DefaultGRPCPort int = 9632
@@ -36,8 +35,6 @@ type Config struct {
 	RPCNrLicenseKey string
 
 	DataFeed *DataFeed
-
-	CustomContractAddress types.Address
 
 	Seal bool
 

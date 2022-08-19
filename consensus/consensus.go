@@ -52,12 +52,13 @@ type Consensus interface {
 }
 
 type ConsensusInfo struct {
-	Validators       []types.Address
-	ValidatorKey     *ecdsa.PrivateKey
-	ValidatorAddress types.Address
-	Epoch            uint64
-	QuorumSize       int
-	SetSignedPayload SetSignedPayloadFn
+	Validators            []types.Address
+	ValidatorKey          *ecdsa.PrivateKey
+	ValidatorAddress      types.Address
+	Epoch                 uint64
+	QuorumSize            int
+	SetSignedPayload      SetSignedPayloadFn
+	CustomContractAddress types.Address
 }
 
 type ConsensusInfoFn func() *ConsensusInfo
@@ -80,19 +81,18 @@ type Config struct {
 }
 
 type Params struct {
-	Context               context.Context
-	Seal                  bool
-	Config                *Config
-	TxPool                *txpool.TxPool
-	Network               *network.Server
-	Blockchain            *blockchain.Blockchain
-	Executor              *state.Executor
-	Grpc                  *grpc.Server
-	Logger                hclog.Logger
-	Metrics               *Metrics
-	SecretsManager        secrets.SecretsManager
-	BlockTime             uint64
-	CustomContractAddress types.Address
+	Context        context.Context
+	Seal           bool
+	Config         *Config
+	TxPool         *txpool.TxPool
+	Network        *network.Server
+	Blockchain     *blockchain.Blockchain
+	Executor       *state.Executor
+	Grpc           *grpc.Server
+	Logger         hclog.Logger
+	Metrics        *Metrics
+	SecretsManager secrets.SecretsManager
+	BlockTime      uint64
 }
 
 // Factory is the factory function to create a discovery consensus

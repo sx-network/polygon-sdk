@@ -5,7 +5,6 @@ import (
 	"net"
 
 	"github.com/0xPolygon/polygon-edge/command/server/config"
-	"github.com/0xPolygon/polygon-edge/types"
 
 	"github.com/0xPolygon/polygon-edge/chain"
 	"github.com/0xPolygon/polygon-edge/network"
@@ -43,7 +42,6 @@ const (
 	logFileLocationFlag          = "log-to"
 	dataFeedAMQPURIFlag          = "data-feed-amqp-uri"
 	dataFeedAMQPQueueNameFlag    = "data-feed-amqp-queue-name"
-	customContractAddressFlag    = "custom-contract-address"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -94,7 +92,6 @@ type serverParams struct {
 
 	dataFeedAMQPURI       string
 	dataFeedAMQPQueueName string
-	customContractAddress types.Address
 
 	ibftBaseTimeoutLegacy uint64
 
@@ -182,17 +179,16 @@ func (p *serverParams) generateConfig() *server.Config {
 			DataFeedAMQPURI:       p.dataFeedAMQPURI,
 			DataFeedAMQPQueueName: p.dataFeedAMQPQueueName,
 		},
-		DataDir:               p.rawConfig.DataDir,
-		Seal:                  p.rawConfig.ShouldSeal,
-		PriceLimit:            p.rawConfig.TxPool.PriceLimit,
-		MaxSlots:              p.rawConfig.TxPool.MaxSlots,
-		SecretsManager:        p.secretsConfig,
-		RestoreFile:           p.getRestoreFilePath(),
-		BlockTime:             p.rawConfig.BlockTime,
-		RPCNrAppName:          p.rpcNRAppName,
-		RPCNrLicenseKey:       p.rpcNRLicenseKey,
-		CustomContractAddress: p.customContractAddress,
-		LogLevel:              hclog.LevelFromString(p.rawConfig.LogLevel),
-		LogFilePath:           p.logFileLocation,
+		DataDir:         p.rawConfig.DataDir,
+		Seal:            p.rawConfig.ShouldSeal,
+		PriceLimit:      p.rawConfig.TxPool.PriceLimit,
+		MaxSlots:        p.rawConfig.TxPool.MaxSlots,
+		SecretsManager:  p.secretsConfig,
+		RestoreFile:     p.getRestoreFilePath(),
+		BlockTime:       p.rawConfig.BlockTime,
+		RPCNrAppName:    p.rpcNRAppName,
+		RPCNrLicenseKey: p.rpcNRLicenseKey,
+		LogLevel:        hclog.LevelFromString(p.rawConfig.LogLevel),
+		LogFilePath:     p.logFileLocation,
 	}
 }

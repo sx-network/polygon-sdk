@@ -64,6 +64,14 @@ func setFlags(cmd *cobra.Command) {
 		"",
 		"the maximum number of validators in the validator set for PoS",
 	)
+
+	cmd.Flags().StringVar(
+		&params.customContractAddressRaw,
+		customContractAddress,
+		"",
+		"the custom contract address to use for SC interaction",
+	)
+
 }
 
 func runPreRun(_ *cobra.Command, _ []string) error {
