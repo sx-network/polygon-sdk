@@ -77,11 +77,6 @@ type backendIBFT struct {
 
 	blockTime time.Duration // Minimum block generation time in seconds
 
-	customContractAddress types.Address // custom contract address used for on-chain interaction
-
-	//TODO: eventually we want this to be a signedPayload queue?
-	signedPayload *types.ReportOutcome // signed payload to be written to SC on next block built
-
 	sealing bool // Flag indicating if the node is a sealer
 
 	closeCh chan struct{} // Channel for closing
@@ -172,6 +167,19 @@ func (i *backendIBFT) runHook(hookName HookType, height uint64, hookParam interf
 	}
 
 	return nil
+}
+
+// getCustomContractAddressFromCurrentFork returns the customContractAddress from the current fork
+func (i *backendIBFT) getCustomContractAddressFromCurrentFork() types.Address {
+	for _, mechanism := range i.mechanisms {
+		if !mechanism.isCurrent(i.blockchain.Header().Number) {
+			continue
+		}
+
+		return mechanism.getCustomContractAddress()
+	}
+
+	return types.ZeroAddress
 }
 
 func (i *backendIBFT) Initialize() error {
@@ -616,15 +624,6 @@ func (i *backendIBFT) getConsensusInfoImpl() *consensus.ConsensusInfo {
 		ValidatorAddress:      i.validatorKeyAddr,
 		Epoch:                 i.GetEpoch(i.blockchain.Header().Number),
 		QuorumSize:            i.quorumSize(i.blockchain.Header().Number)(i.activeValidatorSet),
-		SetSignedPayload:      i.setSignedPaload(),
-		CustomContractAddress: i.customContractAddress,
+		CustomContractAddress: i.getCustomContractAddressFromCurrentFork(),
 	}
-}
-
-func (i *backendIBFT) setSignedPaload() consensus.SetSignedPayloadFn {
-	return i.setSignedPayloadImpl
-}
-
-func (i *backendIBFT) setSignedPayloadImpl(signedPayload *types.ReportOutcome) {
-	i.signedPayload = signedPayload
 }

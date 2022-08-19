@@ -128,12 +128,6 @@ func getSigAndHashedPayload(
 		return privateKey
 	}(privateKey)
 
-	setSignedPayloadImpl := func(signedPayload *types.ReportOutcome) {}
-
-	setSignedPaload := func() consensus.SetSignedPayloadFn {
-		return setSignedPayloadImpl
-	}
-
 	getConsensusInfoImpl := func() *consensus.ConsensusInfo {
 		return &consensus.ConsensusInfo{
 			Validators:       []types.Address{types.ZeroAddress},
@@ -141,7 +135,6 @@ func getSigAndHashedPayload(
 			ValidatorAddress: types.ZeroAddress,
 			Epoch:            0,
 			QuorumSize:       0,
-			SetSignedPayload: setSignedPaload(),
 		}
 	}
 

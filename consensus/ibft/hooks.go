@@ -92,6 +92,12 @@ type ConsensusMechanism interface {
 
 	// initializeHookMap initializes the hook map
 	initializeHookMap()
+
+	// isCurrent returns whether or not we are in the current mechanism
+	isCurrent(height uint64) bool
+
+	// gets the custom contract address for the current mechanism
+	getCustomContractAddress() types.Address
 }
 
 type BaseConsensusMechanism struct {
@@ -105,8 +111,10 @@ type BaseConsensusMechanism struct {
 	mechanismType MechanismType
 
 	// Available periods
-	From                  uint64
-	To                    *uint64
+	From uint64
+	To   *uint64
+
+	// Custom contract address
 	CustomContractAddress types.Address
 }
 
@@ -128,7 +136,6 @@ func (base *BaseConsensusMechanism) initializeParams(params *IBFTFork) error {
 		}
 
 		base.To = &params.To.Value
-
 	}
 
 	base.ibft.logger.Debug("initializeParams - init customContract", "customContract", params.CustomContractAddress)

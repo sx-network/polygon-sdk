@@ -57,13 +57,10 @@ type ConsensusInfo struct {
 	ValidatorAddress      types.Address
 	Epoch                 uint64
 	QuorumSize            int
-	SetSignedPayload      SetSignedPayloadFn
 	CustomContractAddress types.Address
 }
 
 type ConsensusInfoFn func() *ConsensusInfo
-
-type SetSignedPayloadFn func(*types.ReportOutcome)
 
 // Config is the configuration for the consensus
 type Config struct {

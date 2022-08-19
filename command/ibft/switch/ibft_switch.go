@@ -71,7 +71,6 @@ func setFlags(cmd *cobra.Command) {
 		"",
 		"the custom contract address to use for SC interaction",
 	)
-
 }
 
 func runPreRun(_ *cobra.Command, _ []string) error {

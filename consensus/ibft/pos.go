@@ -53,6 +53,16 @@ func (pos *PoSMechanism) IsAvailable(hookType HookType, height uint64) bool {
 	}
 }
 
+// IsInRange
+func (pos *PoSMechanism) isCurrent(height uint64) bool {
+	return pos.IsInRange(height)
+}
+
+// getCustomContractAddress returns the custom contract
+func (pos *PoSMechanism) getCustomContractAddress() types.Address {
+	return pos.CustomContractAddress
+}
+
 // initializeParams initializes mechanism parameters from chain config
 func (pos *PoSMechanism) initializeParams(params *IBFTFork) error {
 	if err := pos.BaseConsensusMechanism.initializeParams(params); err != nil {
