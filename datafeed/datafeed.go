@@ -363,15 +363,13 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 
 		d.lastPublishedPayload = message.MarketHash + fmt.Sprint(message.Timestamp)
 
-		// TODO: this actually waits until there's a receipt which we probably don't care about
-		receipt, err := txn.Wait()
-		if err != nil {
-			d.logger.Error("failed to get txn receipt via ethgo", "err", err)
+		// do not wait for receipt as it blocks
+		// receipt, err := txn.Wait()
+		// if err != nil {
+		// 	d.logger.Error("failed to get txn receipt via ethgo", "err", err)
 
-			return
-		}
-
-		d.logger.Debug("publishPayload - Transaction mined", "receiptHash", receipt.TransactionHash)
+		// 	return
+		// }
 	} else {
 		if d.topic != nil {
 			// broadcast the payload only if a topic subscription present
