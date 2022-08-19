@@ -176,6 +176,8 @@ func (i *backendIBFT) getCustomContractAddressFromCurrentFork() types.Address {
 			continue
 		}
 
+		i.logger.Debug("current blockNumber ", "block", i.blockchain.Header().Number)
+		i.logger.Debug("inside getCustomContractAddressFromCurrentFork", "contract", mechanism.getCustomContractAddress())
 		return mechanism.getCustomContractAddress()
 	}
 

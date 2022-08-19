@@ -316,6 +316,8 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 			return
 		}
 
+		d.logger.Debug("inside publishPayload - customContract call", "contract", d.consensusInfo().CustomContractAddress)
+
 		c := contract.NewContract(
 			ethgo.Address(d.consensusInfo().CustomContractAddress),
 			abiContract,
