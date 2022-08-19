@@ -58,7 +58,7 @@ type ConsensusInfo struct {
 	Epoch                 uint64
 	QuorumSize            int
 	SetSignedPayload      SetSignedPayloadFn
-	CustomContractAddress string
+	CustomContractAddress types.Address
 }
 
 type ConsensusInfoFn func() *ConsensusInfo

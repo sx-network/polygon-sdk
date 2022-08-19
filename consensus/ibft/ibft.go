@@ -77,7 +77,7 @@ type backendIBFT struct {
 
 	blockTime time.Duration // Minimum block generation time in seconds
 
-	customContractAddress string // custom contract address used for on-chain interaction
+	customContractAddress types.Address // custom contract address used for on-chain interaction
 
 	//TODO: eventually we want this to be a signedPayload queue?
 	signedPayload *types.ReportOutcome // signed payload to be written to SC on next block built

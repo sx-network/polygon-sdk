@@ -69,7 +69,7 @@ func setFlags(cmd *cobra.Command) {
 		&params.customContractAddressRaw,
 		customContractAddress,
 		"",
-		"the custom contract [SC] address to use with PoA fork for reporting",
+		"the custom contract address to use for SC interaction",
 	)
 
 }

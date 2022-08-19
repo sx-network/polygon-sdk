@@ -317,7 +317,7 @@ func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs b
 		}
 
 		c := contract.NewContract(
-			ethgo.Address(types.StringToAddress(d.consensusInfo().CustomContractAddress)),
+			ethgo.Address(d.consensusInfo().CustomContractAddress),
 			abiContract,
 			contract.WithSender(wallet.NewKey(d.consensusInfo().ValidatorKey)),
 			contract.WithJsonRPC(client.Eth()),

@@ -130,7 +130,7 @@ func (base *BaseConsensusMechanism) initializeParams(params *IBFTFork) error {
 
 	}
 
-	base.ibft.customContractAddress = params.CustomContractAddress
+	base.ibft.customContractAddress = types.StringToAddress(params.CustomContractAddress)
 
 	return nil
 }
