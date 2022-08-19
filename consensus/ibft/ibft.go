@@ -171,16 +171,20 @@ func (i *backendIBFT) runHook(hookName HookType, height uint64, hookParam interf
 
 // getCustomContractAddressFromCurrentFork returns the customContractAddress from the current fork
 func (i *backendIBFT) getCustomContractAddressFromCurrentFork(height uint64) types.Address {
+
 	for _, mechanism := range i.mechanisms {
+		i.logger.Debug("before current blockNumber", "block", i.blockchain.Header().Number)
+		i.logger.Debug("before inside getCustomContractAddressFromCurrentFork", "contract", mechanism.getCustomContractAddress())
 		if !mechanism.isCurrent(height) {
 			continue
 		}
 
-		i.logger.Debug("current blockNumber ", "block", i.blockchain.Header().Number)
-		i.logger.Debug("inside getCustomContractAddressFromCurrentFork", "contract", mechanism.getCustomContractAddress())
+		i.logger.Debug("after current blockNumber ", "block", i.blockchain.Header().Number)
+		i.logger.Debug("after inside getCustomContractAddressFromCurrentFork", "contract", mechanism.getCustomContractAddress())
 		return mechanism.getCustomContractAddress()
 	}
 
+	i.logger.Debug("last current blockNumber ", "block", i.blockchain.Header().Number)
 	return types.ZeroAddress
 }
 
