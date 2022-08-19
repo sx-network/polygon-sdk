@@ -170,9 +170,9 @@ func (i *backendIBFT) runHook(hookName HookType, height uint64, hookParam interf
 }
 
 // getCustomContractAddressFromCurrentFork returns the customContractAddress from the current fork
-func (i *backendIBFT) getCustomContractAddressFromCurrentFork() types.Address {
+func (i *backendIBFT) getCustomContractAddressFromCurrentFork(height uint64) types.Address {
 	for _, mechanism := range i.mechanisms {
-		if !mechanism.isCurrent(i.blockchain.Header().Number) {
+		if !mechanism.isCurrent(height) {
 			continue
 		}
 
@@ -626,6 +626,6 @@ func (i *backendIBFT) getConsensusInfoImpl() *consensus.ConsensusInfo {
 		ValidatorAddress:      i.validatorKeyAddr,
 		Epoch:                 i.GetEpoch(i.blockchain.Header().Number),
 		QuorumSize:            i.quorumSize(i.blockchain.Header().Number)(i.activeValidatorSet),
-		CustomContractAddress: i.getCustomContractAddressFromCurrentFork(),
+		CustomContractAddress: i.getCustomContractAddressFromCurrentFork(i.blockchain.Header().Number),
 	}
 }
