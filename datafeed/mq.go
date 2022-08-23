@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 	"github.com/0xPolygon/polygon-edge/helper/common"
-	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-hclog"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -75,7 +75,7 @@ func (mq *MQService) startConsumeLoop() {
 	for {
 		select {
 		case report := <-reports:
-			mq.datafeedService.publishPayload(&report, false)
+			mq.datafeedService.addNewReport(report)
 		case err = <-errors:
 			mq.logger.Error("error while consuming from message queue", "err", err)
 		case <-common.GetTerminationSignalCh():
@@ -102,7 +102,7 @@ func getConnection(rabbitMQURL string) (Connection, error) {
 // returns parsed deliveries within reports channel and any errors if they occurred within errors channel.
 func (mq *MQService) startConsumer(
 	ctx context.Context, concurrency int,
-) (<-chan types.ReportOutcome, <-chan error, error) {
+) (<-chan *proto.DataFeedReport, <-chan error, error) {
 	mq.logger.Debug("Starting MQConsumerService...")
 
 	// create the queue if it doesn't already exist
@@ -112,7 +112,7 @@ func (mq *MQService) startConsumer(
 	}
 
 	// bind the queue to the routing key
-	//TODO: eventually ensure the exchange name is configurable instead of hardcoded to 'toronto-exchange'
+	//TODO: eventually ensure the exchange name is configurable instead of hardcoded
 	err = mq.connection.Channel.QueueBind(mq.config.QueueConfig.QueueName, "", exchangeName, false, nil)
 	if err != nil {
 		return nil, nil, err
@@ -141,7 +141,7 @@ func (mq *MQService) startConsumer(
 		return nil, nil, err
 	}
 
-	reports := make(chan types.ReportOutcome)
+	reports := make(chan *proto.DataFeedReport)
 	errors := make(chan error)
 
 	for i := 0; i < concurrency; i++ {
@@ -172,17 +172,17 @@ func (mq *MQService) startConsumer(
 }
 
 // parseDelivery returns unmarshalled report or error if one occurred during parsing
-func (mq *MQService) parseDelivery(delivery amqp.Delivery) (types.ReportOutcome, error) {
+func (mq *MQService) parseDelivery(delivery amqp.Delivery) (*proto.DataFeedReport, error) {
 	if delivery.Body == nil {
-		return types.ReportOutcome{}, fmt.Errorf("no message body")
+		return &proto.DataFeedReport{}, fmt.Errorf("no message body")
 	}
 
-	var reportOutcome types.ReportOutcome
+	var reportOutcome proto.DataFeedReport
 	if err := json.Unmarshal(delivery.Body, &reportOutcome); err != nil {
-		return types.ReportOutcome{}, fmt.Errorf("error during report outcome json unmarshaling, %w", err)
+		return &proto.DataFeedReport{}, fmt.Errorf("error during report outcome json unmarshaling, %w", err)
 	}
 
 	mq.logger.Debug("MQ message received", "marketHash", reportOutcome.MarketHash)
 
-	return reportOutcome, nil
+	return &reportOutcome, nil
 }

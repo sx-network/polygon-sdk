@@ -1,7 +1,6 @@
 package abis
 
-//TODO: for now setValidators just sets a uint8
-const OutcomeReporterJSONABI = `[
+const SXNodeJSONABI = `[
 	{
 		"inputs": [
 			{

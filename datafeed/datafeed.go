@@ -27,6 +27,9 @@ import (
 const (
 	topicNameV1                    = "datafeed/0.1"
 	maxGossipTimestampDriftSeconds = 10
+	localJSONRPCHost               = "http://localhost:10002"
+	//nolint:lll
+	reportOutcomeSCFunction = "function reportOutcome(bytes32 marketHash, int32 outcome, uint64 epoch, uint256 timestamp, bytes[] signatures)"
 )
 
 // DataFeed
@@ -43,7 +46,7 @@ type DataFeed struct {
 	// consensus info function
 	consensusInfo consensus.ConsensusInfoFn
 
-	// the last paload we published to SC
+	// the last paload we published to SC, used to avoid posting dupes to SC
 	lastPublishedPayload string
 
 	// indicates which DataFeed operator commands should be implemented
@@ -89,27 +92,28 @@ func NewDataFeedService(
 	}
 
 	// configure libp2p
-	if network != nil {
-		// subscribe to the gossip protocol
-		topic, err := network.NewTopic(topicNameV1, &proto.DataFeedReport{})
-		if err != nil {
-			return nil, err
-		}
-
-		if subscribeErr := topic.Subscribe(datafeedService.addGossipMsg); subscribeErr != nil {
-			return nil, fmt.Errorf("unable to subscribe to gossip topic, %w", subscribeErr)
-		}
-
-		datafeedService.topic = topic
+	if network == nil {
+		return nil, fmt.Errorf("network must be non-nil to start gossip protocol")
 	}
+
+	// subscribe to the gossip protocol
+	topic, err := network.NewTopic(topicNameV1, &proto.DataFeedReport{})
+	if err != nil {
+		return nil, err
+	}
+
+	if subscribeErr := topic.Subscribe(datafeedService.addGossipMsg); subscribeErr != nil {
+		return nil, fmt.Errorf("unable to subscribe to gossip topic, %w", subscribeErr)
+	}
+
+	datafeedService.topic = topic
 
 	return datafeedService, nil
 }
 
-// addGossipMsg handles receiving msgs
-// gossiped by the network.
+// addGossipMsg handler for messages on the gossip protocol
 func (d *DataFeed) addGossipMsg(obj interface{}, _ peer.ID) {
-	dataFeedReportGossip, ok := obj.(*proto.DataFeedReport)
+	payload, ok := obj.(*proto.DataFeedReport)
 	if !ok {
 		d.logger.Error("failed to cast gossiped message to DataFeedReport")
 
@@ -117,23 +121,23 @@ func (d *DataFeed) addGossipMsg(obj interface{}, _ peer.ID) {
 	}
 
 	// Verify that the gossiped DataFeedReport message is not empty
-	if dataFeedReportGossip == nil {
+	if payload == nil {
 		d.logger.Error("malformed gossip DataFeedReport message received")
 
 		return
 	}
 
-	d.logger.Debug("handling gossiped datafeed msg", "msg", dataFeedReportGossip.MarketHash)
+	d.logger.Debug("handling gossiped datafeed msg", "msg", payload.MarketHash)
 
 	// validate the payload
-	if err := d.validateGossipedPayload(dataFeedReportGossip); err != nil {
+	if err := d.validateGossipedPayload(payload); err != nil {
 		d.logger.Warn("gossiped payload is invalid", "reason", err)
 
 		return
 	}
 
 	// sign payload
-	signedPayload, isMajoritySigs, err := d.signGossipedPayload(dataFeedReportGossip)
+	signedPayload, isMajoritySigs, err := d.signGossipedPayload(payload)
 	if err != nil {
 		d.logger.Error("unable to sign payload")
 
@@ -145,9 +149,9 @@ func (d *DataFeed) addGossipMsg(obj interface{}, _ peer.ID) {
 }
 
 // validateGossipedPayload performs validation steps on gossiped payload prior to signing
-func (d *DataFeed) validateGossipedPayload(dataFeedReportGossip *proto.DataFeedReport) error {
+func (d *DataFeed) validateGossipedPayload(payload *proto.DataFeedReport) error {
 	// check if we already signed
-	isAlreadySigned, err := d.validateSignatures(dataFeedReportGossip)
+	isAlreadySigned, err := d.validateSignatures(payload)
 	if err != nil {
 		return err
 	}
@@ -157,7 +161,7 @@ func (d *DataFeed) validateGossipedPayload(dataFeedReportGossip *proto.DataFeedR
 	}
 
 	// check if payload too old
-	if d.validateTimestamp(dataFeedReportGossip) {
+	if d.validateTimestamp(payload) {
 		return fmt.Errorf("proposed payload is too old")
 	}
 
@@ -203,15 +207,15 @@ func (d *DataFeed) AbiEncode(payload *proto.DataFeedReport) []byte {
 }
 
 // validateSignatures checks if the current validator has already signed the payload
-func (d *DataFeed) validateSignatures(dataFeedReportGossip *proto.DataFeedReport) (bool, error) {
-	sigList := strings.Split(dataFeedReportGossip.Signatures, ",")
+func (d *DataFeed) validateSignatures(payload *proto.DataFeedReport) (bool, error) {
+	sigList := strings.Split(payload.Signatures, ",")
 	for _, sig := range sigList {
 		buf, err := hex.DecodeHex(sig)
 		if err != nil {
 			return false, err
 		}
 
-		pub, err := crypto.RecoverPubkey(buf, d.AbiEncode(dataFeedReportGossip))
+		pub, err := crypto.RecoverPubkey(buf, d.AbiEncode(payload))
 		if err != nil {
 			return false, err
 		}
@@ -237,32 +241,31 @@ func (d *DataFeed) validateSignatures(dataFeedReportGossip *proto.DataFeedReport
 }
 
 // validateTimestamp  checks if payload too old
-func (d *DataFeed) validateTimestamp(dataFeedReportGossip *proto.DataFeedReport) bool {
-	d.logger.Debug("time", "time", time.Since(time.Unix(dataFeedReportGossip.Timestamp, 0)).Seconds())
+func (d *DataFeed) validateTimestamp(payload *proto.DataFeedReport) bool {
+	d.logger.Debug("time", "time", time.Since(time.Unix(payload.Timestamp, 0)).Seconds())
 
-	return time.Since(time.Unix(dataFeedReportGossip.Timestamp, 0)).Seconds() > maxGossipTimestampDriftSeconds
+	return time.Since(time.Unix(payload.Timestamp, 0)).Seconds() > maxGossipTimestampDriftSeconds
 }
 
 // signGossipedPayload sings the payload by concatenating our own signature to the signatures field
-func (d *DataFeed) signGossipedPayload(dataFeedReportGossip *proto.DataFeedReport) (*types.ReportOutcome, bool, error) {
-	reportOutcome := &types.ReportOutcome{
-		MarketHash: dataFeedReportGossip.MarketHash,
-		Outcome:    dataFeedReportGossip.Outcome,
-		Epoch:      dataFeedReportGossip.Epoch,
-		Timestamp:  dataFeedReportGossip.Timestamp,
-		IsGossip:   true,
+func (d *DataFeed) signGossipedPayload(payload *proto.DataFeedReport) (*proto.DataFeedReport, bool, error) {
+	reportMinusSigs := &proto.DataFeedReport{
+		MarketHash: payload.MarketHash,
+		Outcome:    payload.Outcome,
+		Epoch:      payload.Epoch,
+		Timestamp:  payload.Timestamp,
 	}
 
-	sig, err := d.GetSignatureForPayload(dataFeedReportGossip)
+	sig, err := d.GetSignatureForPayload(payload)
 	if err != nil {
 		return nil, false, err
 	}
 
-	reportOutcome.Signatures = dataFeedReportGossip.Signatures + "," + sig
+	reportMinusSigs.Signatures = payload.Signatures + "," + sig
 
-	numSigs := len(strings.Split(reportOutcome.Signatures, ","))
+	numSigs := len(strings.Split(reportMinusSigs.Signatures, ","))
 
-	return reportOutcome, numSigs >= d.consensusInfo().QuorumSize, nil
+	return reportMinusSigs, numSigs >= d.consensusInfo().QuorumSize, nil
 }
 
 // GetSignatureForPayload derives the signature of the current validator
@@ -275,141 +278,166 @@ func (d *DataFeed) GetSignatureForPayload(payload *proto.DataFeedReport) (string
 	return hex.EncodeToHex(signedData), nil
 }
 
+// addNewReport adds new report proposal (e.g. from MQ or GRPC)
+func (d *DataFeed) addNewReport(payload *proto.DataFeedReport) {
+	if d.topic == nil {
+		d.logger.Error("Topic must be set in order to gossip new report payload")
+
+		return
+	}
+
+	// broadcast the payload only if a topic subscription present
+	dataFeedReportGossip := &proto.DataFeedReport{
+		MarketHash: payload.MarketHash,
+		Outcome:    payload.Outcome,
+		Epoch:      d.consensusInfo().Epoch,
+		Timestamp:  time.Now().Unix(),
+	}
+
+	mySig, err := d.GetSignatureForPayload(dataFeedReportGossip)
+	if err != nil {
+		d.logger.Error("failed to get payload signature", "err", err)
+
+		return
+	}
+
+	dataFeedReportGossip.Signatures = mySig
+
+	d.logger.Debug(
+		"Publising new msg to topic",
+		"marketHash",
+		dataFeedReportGossip.MarketHash,
+		"outcome",
+		dataFeedReportGossip.Outcome,
+		"epoch",
+		dataFeedReportGossip.Epoch,
+		"timestamp",
+		dataFeedReportGossip.Timestamp,
+		"signatures",
+		dataFeedReportGossip.Signatures,
+	)
+
+	if err := d.topic.Publish(dataFeedReportGossip); err != nil {
+		d.logger.Error("failed to topic report", "err", err)
+	}
+}
+
 // publishPayload
-func (d *DataFeed) publishPayload(message *types.ReportOutcome, isMajoritySigs bool) {
+func (d *DataFeed) publishPayload(payload *proto.DataFeedReport, isMajoritySigs bool) {
 	if isMajoritySigs {
-		if d.lastPublishedPayload == message.MarketHash+fmt.Sprint(message.Timestamp) {
-			d.logger.Debug("we've already tried to report this signed outcome ", "marketHash", message.MarketHash)
+		d.logger.Debug(
+			"Majority of sigs reached, writing payload to SC",
+			"marketHash",
+			payload.MarketHash,
+			"outcome",
+			payload.Outcome,
+			"epoch",
+			payload.Epoch,
+			"timestamp",
+			payload.Timestamp,
+			"signatures",
+			payload.Signatures,
+		)
+		d.reportOutcomeToSC(payload)
+	} else {
+		if d.topic == nil {
+			d.logger.Error("Topic must be set in order to use gossip protocol")
 
 			return
 		}
 
 		d.logger.Debug(
-			"Majority of sigs reached, writing payload to SC",
+			"Publising msg to topic",
 			"marketHash",
-			message.MarketHash,
+			payload.MarketHash,
 			"outcome",
-			message.Outcome,
+			payload.Outcome,
 			"epoch",
-			message.Epoch,
+			payload.Epoch,
 			"timestamp",
-			message.Timestamp,
+			payload.Timestamp,
 			"signatures",
-			message.Signatures,
+			payload.Signatures,
 		)
 
-		var functions = []string{
-			"function reportOutcome(bytes32 marketHash, int32 outcome, uint64 epoch, uint256 timestamp, bytes[] signatures)",
-		}
-
-		abiContract, err := ethgoabi.NewABIFromList(functions)
-		if err != nil {
-			d.logger.Error("failed to retrieve ethgo ABI", "err", err)
-
-			return
-		}
-
-		client, err := jsonrpc.NewClient("http://localhost:10002")
-		if err != nil {
-			d.logger.Error("failed to initialize new ethgo client", "err", err)
-
-			return
-		}
-
-		d.logger.Debug("inside publishPayload - customContract call", "contract", d.consensusInfo().CustomContractAddress)
-
-		c := contract.NewContract(
-			ethgo.Address(d.consensusInfo().CustomContractAddress),
-			abiContract,
-			contract.WithSender(wallet.NewKey(d.consensusInfo().ValidatorKey)),
-			contract.WithJsonRPC(client.Eth()),
-		)
-
-		sigList := strings.Split(message.Signatures, ",")
-
-		sigByteList := make([][]byte, len(sigList))
-
-		for i, v := range sigList {
-			decoded, err := hex.DecodeHex(v)
-			if err != nil {
-				d.logger.Error("failed to prepare signatures arg for reportOutcome() txn ", "err", err)
-
-				return
-			}
-
-			sigByteList[i] = decoded
-		}
-
-		txn, err := c.Txn(
-			"reportOutcome",
-			types.BytesToHash([]byte(message.MarketHash)),
-			message.Outcome,
-			message.Epoch,
-			new(big.Int).SetInt64(message.Timestamp),
-			sigByteList,
-		)
-		if err != nil {
-			d.logger.Error("failed to create txn via ethgo", "err", err)
-
-			return
-		}
-
-		err = txn.Do()
-		if err != nil {
-			d.logger.Error("failed to send raw txn via ethgo, %v", err)
-
-			return
-		}
-
-		d.lastPublishedPayload = message.MarketHash + fmt.Sprint(message.Timestamp)
-
-		// do not wait for receipt as it blocks
-		// receipt, err := txn.Wait()
-		// if err != nil {
-		// 	d.logger.Error("failed to get txn receipt via ethgo", "err", err)
-
-		// 	return
-		// }
-	} else {
-		if d.topic != nil {
-			// broadcast the payload only if a topic subscription present
-			dataFeedReportGossip := &proto.DataFeedReport{
-				MarketHash: message.MarketHash,
-				Outcome:    message.Outcome,
-			}
-			if message.IsGossip {
-				dataFeedReportGossip.Epoch = message.Epoch
-				dataFeedReportGossip.Timestamp = message.Timestamp
-				dataFeedReportGossip.Signatures = message.Signatures
-			} else {
-				dataFeedReportGossip.Epoch = d.consensusInfo().Epoch
-				dataFeedReportGossip.Timestamp = time.Now().Unix()
-
-				mySig, err := d.GetSignatureForPayload(dataFeedReportGossip)
-				if err != nil {
-					d.logger.Error("failed to get payload signature", "err", err)
-				}
-
-				dataFeedReportGossip.Signatures = mySig
-			}
-
-			d.logger.Debug(
-				"Publising new msg to topic",
-				"marketHash",
-				dataFeedReportGossip.MarketHash,
-				"outcome",
-				dataFeedReportGossip.Outcome,
-				"epoch",
-				dataFeedReportGossip.Epoch,
-				"timestamp",
-				dataFeedReportGossip.Timestamp,
-				"signatures",
-				dataFeedReportGossip.Signatures,
-			)
-
-			if err := d.topic.Publish(dataFeedReportGossip); err != nil {
-				d.logger.Error("failed to topic report", "err", err)
-			}
+		if err := d.topic.Publish(payload); err != nil {
+			d.logger.Error("failed to topic report", "err", err)
 		}
 	}
+}
+
+// reportOutcomeToSC write the report outcome to the current ibft fork's customContractAddress SC
+func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
+	if d.lastPublishedPayload == payload.MarketHash+fmt.Sprint(payload.Timestamp) {
+		d.logger.Debug("we've already tried to report this signed outcome ", "marketHash", payload.MarketHash)
+
+		return
+	}
+
+	abiContract, err := ethgoabi.NewABIFromList([]string{reportOutcomeSCFunction})
+	if err != nil {
+		d.logger.Error("failed to retrieve ethgo ABI", "err", err)
+
+		return
+	}
+
+	client, err := jsonrpc.NewClient(localJSONRPCHost)
+	if err != nil {
+		d.logger.Error("failed to initialize new ethgo client", "err", err)
+
+		return
+	}
+
+	c := contract.NewContract(
+		ethgo.Address(d.consensusInfo().CustomContractAddress),
+		abiContract,
+		contract.WithSender(wallet.NewKey(d.consensusInfo().ValidatorKey)),
+		contract.WithJsonRPC(client.Eth()),
+	)
+
+	sigList := strings.Split(payload.Signatures, ",")
+
+	sigByteList := make([][]byte, len(sigList))
+
+	for i, v := range sigList {
+		decoded, err := hex.DecodeHex(v)
+		if err != nil {
+			d.logger.Error("failed to prepare signatures arg for reportOutcome() txn ", "err", err)
+
+			return
+		}
+
+		sigByteList[i] = decoded
+	}
+
+	txn, err := c.Txn(
+		"reportOutcome",
+		types.BytesToHash([]byte(payload.MarketHash)),
+		payload.Outcome,
+		payload.Epoch,
+		new(big.Int).SetInt64(payload.Timestamp),
+		sigByteList,
+	)
+	if err != nil {
+		d.logger.Error("failed to create txn via ethgo", "err", err)
+
+		return
+	}
+
+	err = txn.Do()
+	if err != nil {
+		d.logger.Error("failed to send raw txn via ethgo, %v", err)
+
+		return
+	}
+
+	// do not wait for receipt as it blocks
+	// receipt, err := txn.Wait()
+	// if err != nil {
+	// 	d.logger.Error("failed to get txn receipt via ethgo", "err", err)
+
+	// 	return
+	// }
+
+	d.lastPublishedPayload = payload.MarketHash + fmt.Sprint(payload.Timestamp)
 }
