@@ -12,7 +12,6 @@ import (
 	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 	"github.com/0xPolygon/polygon-edge/helper/hex"
 	"github.com/0xPolygon/polygon-edge/network"
-	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/hashicorp/go-hclog"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -191,7 +190,7 @@ func (d *DataFeed) AbiEncode(payload *proto.DataFeedReport) []byte {
 	}
 
 	bytes, _ := arguments.Pack(
-		types.BytesToHash([]byte(payload.MarketHash)),
+		[]byte(payload.MarketHash),
 		payload.Outcome,
 		payload.Epoch,
 		big.NewInt(payload.Timestamp),
@@ -412,7 +411,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 
 	txn, err := c.Txn(
 		"reportOutcome",
-		types.BytesToHash([]byte(payload.MarketHash)),
+		[]byte(payload.MarketHash),
 		payload.Outcome,
 		payload.Epoch,
 		new(big.Int).SetInt64(payload.Timestamp),
