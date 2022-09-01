@@ -190,7 +190,7 @@ func (d *DataFeed) AbiEncode(payload *proto.DataFeedReport) []byte {
 	}
 
 	bytes, _ := arguments.Pack(
-		[]byte(payload.MarketHash),
+		payload.MarketHash,
 		payload.Outcome,
 		payload.Epoch,
 		big.NewInt(payload.Timestamp),
@@ -411,7 +411,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 
 	txn, err := c.Txn(
 		"reportOutcome",
-		[]byte(payload.MarketHash),
+		payload.MarketHash,
 		payload.Outcome,
 		payload.Epoch,
 		new(big.Int).SetInt64(payload.Timestamp),
