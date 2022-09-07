@@ -40,22 +40,28 @@ type endpoints struct {
 // Dispatcher handles all json rpc requests by delegating
 // the execution flow to the corresponding service
 type Dispatcher struct {
-	logger           hclog.Logger
-	serviceMap       map[string]*serviceData
-	filterManager    *FilterManager
-	endpoints        endpoints
-	chainID          uint64
-	priceLimit       uint64
-	batchLengthLimit uint64
+	logger                  hclog.Logger
+	serviceMap              map[string]*serviceData
+	filterManager           *FilterManager
+	endpoints               endpoints
+	chainID                 uint64
+	priceLimit              uint64
+	jsonRPCBatchLengthLimit uint64
 }
 
-func newDispatcher(logger hclog.Logger, store JSONRPCStore, chainID uint64, priceLimit uint64,
-	batchLengthLimit uint64, blockRangeLimit uint64) *Dispatcher {
+func newDispatcher(
+	logger hclog.Logger,
+	store JSONRPCStore,
+	chainID uint64,
+	priceLimit uint64,
+	jsonRPCBatchLengthLimit uint64,
+	blockRangeLimit uint64,
+) *Dispatcher {
 	d := &Dispatcher{
-		logger:           logger.Named("dispatcher"),
-		chainID:          chainID,
-		priceLimit:       priceLimit,
-		batchLengthLimit: batchLengthLimit,
+		logger:                  logger.Named("dispatcher"),
+		chainID:                 chainID,
+		priceLimit:              priceLimit,
+		jsonRPCBatchLengthLimit: jsonRPCBatchLengthLimit,
 	}
 
 	if store != nil {
@@ -104,6 +110,8 @@ func (d *Dispatcher) getFnHandler(req Request) (*serviceData, *funcData, Error) 
 
 type wsConn interface {
 	WriteMessage(messageType int, data []byte) error
+	GetFilterID() string
+	SetFilterID(string)
 }
 
 // as per https://www.jsonrpc.org/specification, the `id` in JSON-RPC 2.0
@@ -171,6 +179,10 @@ func (d *Dispatcher) handleUnsubscribe(req Request) (bool, Error) {
 	}
 
 	return d.filterManager.Uninstall(filterID), nil
+}
+
+func (d *Dispatcher) RemoveFilterByWs(conn wsConn) {
+	d.filterManager.RemoveFilterByWs(conn)
 }
 
 func (d *Dispatcher) HandleWs(reqBody []byte, conn wsConn) ([]byte, error) {
@@ -267,7 +279,13 @@ func (d *Dispatcher) Handle(reqBody []byte, txn *newrelic.Transaction) ([]byte, 
 	}
 
 	// avoid handling long batch requests
-	if len(requests) > int(d.batchLengthLimit) {
+	if len(requests) > int(d.jsonRPCBatchLengthLimit) {
+		return NewRPCResponse(nil, "2.0", nil, NewInvalidRequestError("Batch request length too long")).Bytes()
+	}
+
+	// if not disabled, avoid handling long batch requests
+	if d.jsonRPCBatchLengthLimit != 0 &&
+		len(requests) > int(d.jsonRPCBatchLengthLimit) {
 		return NewRPCResponse(nil, "2.0", nil, NewInvalidRequestError("Batch request length too long")).Bytes()
 	}
 
