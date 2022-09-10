@@ -243,6 +243,13 @@ func setFlags(cmd *cobra.Command) {
 		"write all logs to the file at specified location instead of writing them to console",
 	)
 
+	cmd.Flags().StringVar(
+		&params.rawConfig.VerifyOutcomeApi,
+		verifyOutcomeApiFlag,
+		defaultConfig.VerifyOutcomeApi,
+		"API to verify market outcome payload",
+	)
+
 	setLegacyFlags(cmd)
 	setDevFlags(cmd)
 }

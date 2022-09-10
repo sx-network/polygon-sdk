@@ -40,6 +40,7 @@ const (
 	devFlag                      = "dev"
 	corsOriginFlag               = "access-control-allow-origins"
 	logFileLocationFlag          = "log-to"
+	verifyOutcomeApiFlag         = "verify-outcome-api"
 )
 
 // Flags that are deprecated, but need to be preserved for
