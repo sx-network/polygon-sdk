@@ -43,6 +43,7 @@ const (
 	logFileLocationFlag          = "log-to"
 	dataFeedAMQPURIFlag          = "data-feed-amqp-uri"
 	dataFeedAMQPQueueNameFlag    = "data-feed-amqp-queue-name"
+	verifyOutcomeApiFlag         = "verify-outcome-api"
 )
 
 // Flags that are deprecated, but need to be preserved for
