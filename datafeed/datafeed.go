@@ -424,7 +424,9 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		return
 	}
 
-	d.logger.Debug("sent tx", "from", wallet.NewKey(d.consensusInfo().ValidatorKey).Address(), "hash", txn.Hash())
+	// TODO: investigating simultaneous tx failures due to nonce
+	nonce, _ := client.Eth().GetNonce(wallet.NewKey(d.consensusInfo().ValidatorKey).Address(), ethgo.Latest)
+	d.logger.Debug("sent tx", "from", wallet.NewKey(d.consensusInfo().ValidatorKey).Address(), "hash", txn.Hash(), "nonce", nonce)
 
 	err = txn.Do()
 	if err != nil {
