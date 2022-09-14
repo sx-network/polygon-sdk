@@ -14,7 +14,7 @@ import (
 
 const (
 	mqConsumerConcurrency = 1
-	exchangeName          = "toronto-test-exchange"
+	exchangeName          = "main-exchange"
 )
 
 // MQService
