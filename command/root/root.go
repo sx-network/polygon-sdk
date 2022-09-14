@@ -18,6 +18,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/command/status"
 	"github.com/0xPolygon/polygon-edge/command/txpool"
 	"github.com/0xPolygon/polygon-edge/command/version"
+	"github.com/0xPolygon/polygon-edge/command/whitelist"
 	"github.com/spf13/cobra"
 )
 
@@ -52,6 +53,7 @@ func (rc *RootCommand) registerSubCommands() {
 		backup.GetCommand(),
 		genesis.GetCommand(),
 		server.GetCommand(),
+		whitelist.GetCommand(),
 		license.GetCommand(),
 		datafeed.GetCommand(),
 	)

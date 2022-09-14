@@ -29,13 +29,14 @@ const (
 	priceLimitFlag               = "price-limit"
 	jsonRPCBatchRequestLimitFlag = "json-rpc-batch-request-limit"
 	jsonRPCBlockRangeLimitFlag   = "json-rpc-block-range-limit"
+	rpcNRAppNameFlag             = "rpc-nr-app-name"
+	rpcNRLicenseKeyFlag          = "rpc-nr-license-key"
 	maxSlotsFlag                 = "max-slots"
+	maxEnqueuedFlag              = "max-enqueued"
 	blockGasTargetFlag           = "block-gas-target"
 	secretsConfigFlag            = "secrets-config"
 	restoreFlag                  = "restore"
 	blockTimeFlag                = "block-time"
-	rpcNRAppNameFlag             = "rpc-nr-app-name"
-	rpcNRLicenseKeyFlag          = "rpc-nr-license-key"
 	devIntervalFlag              = "dev-interval"
 	devFlag                      = "dev"
 	corsOriginFlag               = "access-control-allow-origins"
@@ -156,8 +157,8 @@ func (p *serverParams) generateConfig() *server.Config {
 		JSONRPC: &server.JSONRPC{
 			JSONRPCAddr:              p.jsonRPCAddress,
 			AccessControlAllowOrigin: p.corsAllowedOrigins,
-			BatchLengthLimit:         p.jsonRPCBatchLengthLimit,
-			BlockRangeLimit:          p.jsonRPCBlockRangeLimit,
+			BatchLengthLimit:         p.rawConfig.JSONRPCBatchRequestLimit,
+			BlockRangeLimit:          p.rawConfig.JSONRPCBlockRangeLimit,
 		},
 		GRPCAddr:   p.grpcAddress,
 		LibP2PAddr: p.libp2pAddress,
@@ -166,6 +167,7 @@ func (p *serverParams) generateConfig() *server.Config {
 		},
 		Network: &network.Config{
 			NoDiscover:       p.rawConfig.Network.NoDiscover,
+			BootnodeOnlySync: p.rawConfig.Network.BootnodeOnlySync,
 			Addr:             p.libp2pAddress,
 			NatAddr:          p.natAddress,
 			DNS:              p.dnsAddress,
@@ -179,16 +181,17 @@ func (p *serverParams) generateConfig() *server.Config {
 			DataFeedAMQPURI:       p.dataFeedAMQPURI,
 			DataFeedAMQPQueueName: p.dataFeedAMQPQueueName,
 		},
-		DataDir:         p.rawConfig.DataDir,
-		Seal:            p.rawConfig.ShouldSeal,
-		PriceLimit:      p.rawConfig.TxPool.PriceLimit,
-		MaxSlots:        p.rawConfig.TxPool.MaxSlots,
-		SecretsManager:  p.secretsConfig,
-		RestoreFile:     p.getRestoreFilePath(),
-		BlockTime:       p.rawConfig.BlockTime,
-		RPCNrAppName:    p.rpcNRAppName,
-		RPCNrLicenseKey: p.rpcNRLicenseKey,
-		LogLevel:        hclog.LevelFromString(p.rawConfig.LogLevel),
-		LogFilePath:     p.logFileLocation,
+		DataDir:            p.rawConfig.DataDir,
+		Seal:               p.rawConfig.ShouldSeal,
+		PriceLimit:         p.rawConfig.TxPool.PriceLimit,
+		MaxSlots:           p.rawConfig.TxPool.MaxSlots,
+		MaxAccountEnqueued: p.rawConfig.TxPool.MaxAccountEnqueued,
+		SecretsManager:     p.secretsConfig,
+		RestoreFile:        p.getRestoreFilePath(),
+		BlockTime:          p.rawConfig.BlockTime,
+		RPCNrAppName:       p.rpcNRAppName,
+		RPCNrLicenseKey:    p.rpcNRLicenseKey,
+		LogLevel:           hclog.LevelFromString(p.rawConfig.LogLevel),
+		LogFilePath:        p.logFileLocation,
 	}
 }

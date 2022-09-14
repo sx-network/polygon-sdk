@@ -11,6 +11,7 @@ import (
 // Config details the params for the base networking server
 type Config struct {
 	NoDiscover       bool                   // flag indicating if the discovery mechanism should be turned on
+	BootnodeOnlySync bool                   // flag indicating if the node should only sync up to bootnodes
 	Addr             *net.TCPAddr           // the base address
 	NatAddr          net.IP                 // the NAT address
 	DNS              multiaddr.Multiaddr    // the DNS address
@@ -27,6 +28,8 @@ func DefaultConfig() *Config {
 	return &Config{
 		// The discovery service is turned on by default
 		NoDiscover: false,
+		// Client can sync to all peers by default
+		BootnodeOnlySync: false,
 		// Addresses are bound to localhost by default
 		Addr: &net.TCPAddr{
 			IP:   net.ParseIP("127.0.0.1"),

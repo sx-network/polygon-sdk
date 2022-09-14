@@ -283,6 +283,12 @@ func (d *Dispatcher) Handle(reqBody []byte, txn *newrelic.Transaction) ([]byte, 
 		return NewRPCResponse(nil, "2.0", nil, NewInvalidRequestError("Batch request length too long")).Bytes()
 	}
 
+	// if not disabled, avoid handling long batch requests
+	if d.jsonRPCBatchLengthLimit != 0 &&
+		len(requests) > int(d.jsonRPCBatchLengthLimit) {
+		return NewRPCResponse(nil, "2.0", nil, NewInvalidRequestError("Batch request length too long")).Bytes()
+	}
+
 	responses := make([]Response, 0)
 
 	for _, req := range requests {

@@ -374,8 +374,10 @@ func (i *backendIBFT) startConsensus() {
 	// to insert a valid block. Used for cancelling active consensus
 	// rounds for a specific height
 	go func() {
+		eventCh := newBlockSub.GetEventCh()
+
 		for {
-			if ev := <-newBlockSub.GetEventCh(); ev.Source == "syncer" {
+			if ev := <-eventCh; ev.Source == "syncer" {
 				if ev.NewChain[0].Number < i.blockchain.Header().Number {
 					// The blockchain notification system can eventually deliver
 					// stale block notifications. These should be ignored
@@ -389,6 +391,11 @@ func (i *backendIBFT) startConsensus() {
 
 	defer newBlockSub.Close()
 
+	var (
+		sequenceCh  = make(<-chan struct{})
+		isValidator bool
+	)
+
 	for {
 		var (
 			latest  = i.blockchain.Header().Number
@@ -397,22 +404,23 @@ func (i *backendIBFT) startConsensus() {
 
 		i.updateActiveValidatorSet(latest)
 
-		if !i.isActiveValidator() {
-			// we are not participating in consensus for this height
-			continue
+		isValidator = i.isActiveValidator()
+
+		if isValidator {
+			sequenceCh = i.consensus.runSequence(pending)
 		}
 
 		select {
-		case <-i.consensus.runSequence(pending):
-			// consensus inserted block
-			continue
 		case <-syncerBlockCh:
-			// syncer inserted block -> stop running consensus
-			i.consensus.stopSequence()
-			i.logger.Info("canceled sequence", "sequence", pending)
+			if isValidator {
+				i.consensus.stopSequence()
+				i.logger.Info("canceled sequence", "sequence", pending)
+			}
+		case <-sequenceCh:
 		case <-i.closeCh:
-			// IBFT consensus stopped
-			i.consensus.stopSequence()
+			if isValidator {
+				i.consensus.stopSequence()
+			}
 
 			return
 		}
