@@ -424,6 +424,8 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		return
 	}
 
+	d.logger.Debug("sent tx", "from", wallet.NewKey(d.consensusInfo().ValidatorKey).Address(), "hash", txn.Hash())
+
 	err = txn.Do()
 	if err != nil {
 		d.logger.Error("failed to send raw txn via ethgo, %v", err)
