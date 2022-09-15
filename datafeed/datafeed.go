@@ -27,7 +27,7 @@ import (
 const (
 	topicNameV1                    = "datafeed/0.1"
 	maxGossipTimestampDriftSeconds = 10
-	JSONRPCHost                    = "http://sx-hamilton-rpc.us-east-1.elasticbeanstalk.com/"
+	JSONRPCHost                    = "http://3.221.242.145:10002"
 	//nolint:lll
 	reportOutcomeSCFunction = "function reportOutcome(bytes32 marketHash, int32 outcome, uint64 epoch, uint256 timestamp, bytes[] signatures)"
 )
