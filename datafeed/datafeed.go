@@ -426,6 +426,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 			GasPrice: 30,
 		},
 	)
+	// gas used: 157917 * 30
 
 	if err != nil {
 		d.logger.Error("failed to create txn via ethgo", "err", err)

@@ -619,7 +619,9 @@ func (p *TxPool) validateTx(tx *types.Transaction) error {
 	stateRoot := p.store.Header().StateRoot
 
 	// Check nonce ordering
-	if p.store.GetNonce(stateRoot, tx.From) > tx.Nonce {
+	currNonce := p.store.GetNonce(stateRoot, tx.From)
+	if currNonce > tx.Nonce {
+		p.logger.Debug("nonce too low for tx", "txNonce", tx.Nonce, "expectedNonce", currNonce, "from", tx.From)
 		return ErrNonceTooLow
 	}
 
