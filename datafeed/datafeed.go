@@ -20,6 +20,7 @@ import (
 	ethgoabi "github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/contract"
 	"github.com/umbracle/ethgo/jsonrpc"
+	"github.com/umbracle/ethgo/wallet"
 	"google.golang.org/grpc"
 )
 
@@ -390,7 +391,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 	c := contract.NewContract(
 		ethgo.Address(d.consensusInfo().CustomContractAddress),
 		abiContract,
-		contract.WithSender(ethgo.Address(d.consensusInfo().ValidatorAddress)),
+		contract.WithSender(wallet.NewKey(d.consensusInfo().ValidatorKey)),
 		contract.WithJsonRPC(client.Eth()),
 	)
 
