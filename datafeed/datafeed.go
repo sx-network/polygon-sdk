@@ -27,7 +27,7 @@ import (
 const (
 	topicNameV1                    = "datafeed/0.1"
 	maxGossipTimestampDriftSeconds = 10
-	JSONRPCHost                    = "http://3.221.242.145:10002"
+	JSONRPCHost                    = "http://34.225.14.139:10002"
 	//nolint:lll
 	reportOutcomeSCFunction = "function reportOutcome(bytes32 marketHash, int32 outcome, uint64 epoch, uint256 timestamp, bytes[] signatures)"
 )
