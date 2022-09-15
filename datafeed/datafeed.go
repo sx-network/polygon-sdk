@@ -20,7 +20,6 @@ import (
 	ethgoabi "github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/contract"
 	"github.com/umbracle/ethgo/jsonrpc"
-	"github.com/umbracle/ethgo/wallet"
 	"google.golang.org/grpc"
 )
 
@@ -391,7 +390,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 	c := contract.NewContract(
 		ethgo.Address(d.consensusInfo().CustomContractAddress),
 		abiContract,
-		contract.WithSender(wallet.NewKey(d.consensusInfo().ValidatorKey)),
+		contract.WithSender(ethgo.Address(d.consensusInfo().ValidatorAddress)),
 		contract.WithJsonRPC(client.Eth()),
 	)
 
@@ -418,22 +417,31 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		new(big.Int).SetInt64(payload.Timestamp),
 		sigByteList,
 	)
+
+	//TODO: derive these gas params better
+	txn.WithOpts(
+		&contract.TxnOpts{
+			GasLimit: 200000,
+			GasPrice: 30,
+		},
+	)
+
 	if err != nil {
 		d.logger.Error("failed to create txn via ethgo", "err", err)
 
 		return
 	}
 
-	// TODO: investigating simultaneous tx failures due to nonce
-	nonce, _ := client.Eth().GetNonce(wallet.NewKey(d.consensusInfo().ValidatorKey).Address(), ethgo.Latest)
-	d.logger.Debug("sent tx", "from", wallet.NewKey(d.consensusInfo().ValidatorKey).Address(), "hash", txn.Hash(), "nonce", nonce)
-
 	err = txn.Do()
 	if err != nil {
-		d.logger.Error("failed to send raw txn via ethgo, %v", err)
+		d.logger.Error("failed to send raw txn via ethgo", "err", err)
 
 		return
 	}
+
+	// TODO: investigating simultaneous tx failures due to nonce
+	nonce, _ := client.Eth().GetNonce(ethgo.Address(d.consensusInfo().ValidatorAddress), ethgo.Latest)
+	d.logger.Debug("sent tx", "market", payload.MarketHash, "from", ethgo.Address(d.consensusInfo().ValidatorAddress), "hash", txn.Hash(), "nonce", nonce)
 
 	// do not wait for receipt as it blocks
 	// receipt, err := txn.Wait()
