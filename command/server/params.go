@@ -181,6 +181,7 @@ func (p *serverParams) generateConfig() *server.Config {
 		DataFeed: &server.DataFeed{
 			DataFeedAMQPURI:       p.dataFeedAMQPURI,
 			DataFeedAMQPQueueName: p.dataFeedAMQPQueueName,
+			VerifyOutcomeURI:      p.rawConfig.VerifyOutcomeApi,
 		},
 		DataDir:            p.rawConfig.DataDir,
 		Seal:               p.rawConfig.ShouldSeal,

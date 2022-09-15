@@ -55,7 +55,8 @@ type DataFeed struct {
 
 // Config
 type Config struct {
-	MQConfig *MQConfig
+	MQConfig         *MQConfig
+	VerifyOutcomeURI string
 }
 
 // NewDataFeedService returns the new datafeed service
@@ -150,6 +151,11 @@ func (d *DataFeed) addGossipMsg(obj interface{}, _ peer.ID) {
 
 // validateGossipedPayload performs validation steps on gossiped payload prior to signing
 func (d *DataFeed) validateGossipedPayload(payload *proto.DataFeedReport) error {
+
+	d.logger.Debug(
+		d.config.VerifyOutcomeURI,
+	)
+
 	// check if we already signed
 	isAlreadySigned, err := d.validateSignatures(payload)
 	if err != nil {
