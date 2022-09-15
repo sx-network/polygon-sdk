@@ -27,7 +27,7 @@ import (
 const (
 	topicNameV1                    = "datafeed/0.1"
 	maxGossipTimestampDriftSeconds = 10
-	localJSONRPCHost               = "http://localhost:10002"
+	JSONRPCHost                    = "http://sx-hamilton-rpc.us-east-1.elasticbeanstalk.com/"
 	//nolint:lll
 	reportOutcomeSCFunction = "function reportOutcome(bytes32 marketHash, int32 outcome, uint64 epoch, uint256 timestamp, bytes[] signatures)"
 )
@@ -381,7 +381,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		return
 	}
 
-	client, err := jsonrpc.NewClient(localJSONRPCHost)
+	client, err := jsonrpc.NewClient(JSONRPCHost)
 	if err != nil {
 		d.logger.Error("failed to initialize new ethgo client", "err", err)
 
