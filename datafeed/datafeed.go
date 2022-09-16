@@ -46,8 +46,8 @@ type DataFeed struct {
 	// consensus info function
 	consensusInfo consensus.ConsensusInfoFn
 
-	// the last paload we published to SC, used to avoid posting dupes to SC
-	lastPublishedPayload string
+	// the last paload marketHash we published to SC, used to avoid posting dupes to SC
+	lastPublishedMarketHash string
 
 	// indicates which DataFeed operator commands should be implemented
 	proto.UnimplementedDataFeedOperatorServer
@@ -368,8 +368,8 @@ func (d *DataFeed) publishPayload(payload *proto.DataFeedReport, isMajoritySigs 
 
 // reportOutcomeToSC write the report outcome to the current ibft fork's customContractAddress SC
 func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
-	if d.lastPublishedPayload == payload.MarketHash+fmt.Sprint(payload.Timestamp) {
-		d.logger.Debug("we've already tried to report this signed outcome ", "marketHash", payload.MarketHash)
+	if d.lastPublishedMarketHash == payload.MarketHash {
+		d.logger.Debug("skipping sending tx for payload we already reported", "marketHash", payload.MarketHash)
 
 		return
 	}
@@ -454,5 +454,5 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 	// 	return
 	// }
 
-	d.lastPublishedPayload = payload.MarketHash + fmt.Sprint(payload.Timestamp)
+	d.lastPublishedMarketHash = payload.MarketHash
 }
