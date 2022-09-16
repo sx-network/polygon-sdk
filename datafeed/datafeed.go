@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/0xPolygon/polygon-edge/consensus"
@@ -46,11 +47,16 @@ type DataFeed struct {
 	// consensus info function
 	consensusInfo consensus.ConsensusInfoFn
 
+	// indicates which DataFeed operator commands should be implemented
+	proto.UnimplementedDataFeedOperatorServer
+
 	// the last paload marketHash we published to SC, used to avoid posting dupes to SC
 	lastPublishedMarketHash string
 
-	// indicates which DataFeed operator commands should be implemented
-	proto.UnimplementedDataFeedOperatorServer
+	// the last nonce sent
+	lastNonce uint64
+
+	lock sync.Mutex
 }
 
 // Config
@@ -368,6 +374,9 @@ func (d *DataFeed) publishPayload(payload *proto.DataFeedReport, isMajoritySigs 
 
 // reportOutcomeToSC write the report outcome to the current ibft fork's customContractAddress SC
 func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+
 	if d.lastPublishedMarketHash == payload.MarketHash {
 		d.logger.Debug("skipping sending tx for payload we already reported", "marketHash", payload.MarketHash)
 
@@ -419,7 +428,14 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		sigByteList,
 	)
 
+	// in the event that the account's nonce hasn't been updated yet on state,
+	// ensure we increment the nonce
 	currNonce := d.consensusInfo().Nonce
+	if d.lastNonce == currNonce {
+		currNonce = currNonce + 1
+	}
+	d.lastNonce = currNonce
+
 	//TODO: derive these gas params better
 	txn.WithOpts(
 		&contract.TxnOpts{
