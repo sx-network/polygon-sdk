@@ -419,18 +419,13 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		sigByteList,
 	)
 
-	d.logger.Debug("nonce from txpool", "nonce", d.consensusInfo().Nonce)
-
-	nonce, _ := client.Eth().GetNonce(ethgo.Address(d.consensusInfo().ValidatorAddress), ethgo.Latest)
-
-	d.logger.Debug("nonce from getTxCount", "nonce", nonce)
-
+	nextNonce := d.consensusInfo().Nonce + 1
 	//TODO: derive these gas params better
 	txn.WithOpts(
 		&contract.TxnOpts{
 			GasLimit: 200000,
 			GasPrice: 1000000000,
-			Nonce:    d.consensusInfo().Nonce,
+			Nonce:    nextNonce,
 		},
 	)
 
@@ -449,7 +444,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 	}
 
 	// TODO: investigating simultaneous tx failures due to nonce
-	d.logger.Debug("sent tx", "market", payload.MarketHash, "from", ethgo.Address(d.consensusInfo().ValidatorAddress), "hash", txn.Hash(), "nonce", nonce)
+	d.logger.Debug("sent tx", "market", payload.MarketHash, "from", ethgo.Address(d.consensusInfo().ValidatorAddress), "hash", txn.Hash(), "nonce", nextNonce)
 
 	// do not wait for receipt as it blocks
 	// receipt, err := txn.Wait()
