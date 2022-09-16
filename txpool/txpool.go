@@ -753,6 +753,7 @@ func (p *TxPool) handleEnqueueRequest(req enqueueRequest) {
 
 	// enqueue tx
 	if err := account.enqueue(tx); err != nil {
+		p.logger.Debug("nonce too low for tx", "txNonce", tx.Nonce, "expectedNonce", account.getNonce(), "from", tx.From)
 		p.logger.Error("enqueue request", "err", err)
 
 		p.index.remove(tx)
