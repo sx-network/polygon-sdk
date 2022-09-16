@@ -58,6 +58,7 @@ type ConsensusInfo struct {
 	Epoch                 uint64
 	QuorumSize            int
 	CustomContractAddress types.Address
+	Nonce                 uint64
 }
 
 type ConsensusInfoFn func() *ConsensusInfo

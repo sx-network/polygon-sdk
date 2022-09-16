@@ -41,6 +41,7 @@ type txPoolInterface interface {
 	Drop(tx *types.Transaction)
 	Demote(tx *types.Transaction)
 	ResetWithHeaders(headers ...*types.Header)
+	GetNonce(addr types.Address) uint64
 }
 
 // backendIBFT represents the IBFT consensus mechanism object
@@ -633,5 +634,6 @@ func (i *backendIBFT) getConsensusInfoImpl() *consensus.ConsensusInfo {
 		Epoch:                 i.GetEpoch(i.blockchain.Header().Number),
 		QuorumSize:            i.quorumSize(i.blockchain.Header().Number)(i.activeValidatorSet),
 		CustomContractAddress: i.getCustomContractAddressFromCurrentFork(i.blockchain.Header().Number),
+		Nonce:                 i.txpool.GetNonce(i.validatorKeyAddr),
 	}
 }

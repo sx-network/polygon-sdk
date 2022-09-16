@@ -27,7 +27,7 @@ import (
 const (
 	topicNameV1                    = "datafeed/0.1"
 	maxGossipTimestampDriftSeconds = 10
-	JSONRPCHost                    = "http://34.225.14.139:10002"
+	JSONRPCHost                    = "http://localhost:10002"
 	//nolint:lll
 	reportOutcomeSCFunction = "function reportOutcome(bytes32 marketHash, int32 outcome, uint64 epoch, uint256 timestamp, bytes[] signatures)"
 )
@@ -419,14 +419,20 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		sigByteList,
 	)
 
+	d.logger.Debug("nonce from txpool", "nonce", d.consensusInfo().Nonce)
+
+	nonce, _ := client.Eth().GetNonce(ethgo.Address(d.consensusInfo().ValidatorAddress), ethgo.Latest)
+
+	d.logger.Debug("nonce from getTxCount", "nonce", nonce)
+
 	//TODO: derive these gas params better
 	txn.WithOpts(
 		&contract.TxnOpts{
 			GasLimit: 200000,
-			GasPrice: 30,
+			GasPrice: 1000000000,
+			Nonce:    d.consensusInfo().Nonce,
 		},
 	)
-	// gas used: 157917 * 30
 
 	if err != nil {
 		d.logger.Error("failed to create txn via ethgo", "err", err)
@@ -434,6 +440,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		return
 	}
 
+	// TODO: consider adding directly to txpool txpool.AddTx() instead of over local jsonrpc
 	err = txn.Do()
 	if err != nil {
 		d.logger.Error("failed to send raw txn via ethgo", "err", err)
@@ -442,7 +449,6 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 	}
 
 	// TODO: investigating simultaneous tx failures due to nonce
-	nonce, _ := client.Eth().GetNonce(ethgo.Address(d.consensusInfo().ValidatorAddress), ethgo.Latest)
 	d.logger.Debug("sent tx", "market", payload.MarketHash, "from", ethgo.Address(d.consensusInfo().ValidatorAddress), "hash", txn.Hash(), "nonce", nonce)
 
 	// do not wait for receipt as it blocks
