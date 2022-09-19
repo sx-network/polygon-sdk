@@ -229,7 +229,7 @@ func (p *serverParams) initAddresses() error {
 		return err
 	}
 
-	if err := p.initDataFeedMQAddress(); err != nil {
+	if err := p.initDataFeedParams(); err != nil {
 		return err
 	}
 
@@ -313,7 +313,7 @@ func (p *serverParams) initJSONRPCAddress() error {
 	return nil
 }
 
-func (p *serverParams) initDataFeedMQAddress() error {
+func (p *serverParams) initDataFeedParams() error {
 	p.dataFeedAMQPURI = p.rawConfig.DataFeed.AMQPURI
 	p.dataFeedAMQPQueueName = p.rawConfig.DataFeed.AMQPQueueName
 	p.verifyOutcomeApiUrl = p.rawConfig.DataFeed.VerifyOutcomeApiUrl
