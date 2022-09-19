@@ -258,9 +258,9 @@ func setFlags(cmd *cobra.Command) {
 	)
 
 	cmd.Flags().StringVar(
-		&params.rawConfig.VerifyOutcomeApi,
+		&params.rawConfig.DataFeed.VerifyOutcomeApiUrl,
 		verifyOutcomeApiFlag,
-		defaultConfig.VerifyOutcomeApi,
+		defaultConfig.DataFeed.VerifyOutcomeApiUrl,
 		"API to verify market outcome payload",
 	)
 

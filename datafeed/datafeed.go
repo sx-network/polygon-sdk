@@ -73,6 +73,10 @@ func NewDataFeedService(
 		consensusInfo: consensusInfoFn,
 	}
 
+	if config.VerifyOutcomeURI == "" {
+		return nil, fmt.Errorf("DataFeed VerifyOutcomeURI is not configured")
+	}
+
 	// configure and start mqService
 	if config.MQConfig.AMQPURI != "" {
 		if config.MQConfig.QueueConfig.QueueName == "" {
@@ -166,7 +170,7 @@ func (d *DataFeed) validateGossipedPayload(payload *proto.DataFeedReport) error 
 		return fmt.Errorf("proposed payload is too old")
 	}
 
-	_, verifyErr := d.verifyMarketOutcome(payload, d.config.VerifyOutcomeURI)
+	verifyErr := d.verifyMarketOutcome(payload, d.config.VerifyOutcomeURI)
 
 	if verifyErr != nil {
 		return verifyErr

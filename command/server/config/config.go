@@ -32,7 +32,6 @@ type Config struct {
 	LogFilePath              string     `json:"log_to" yaml:"log_to"`
 	JSONRPCBatchRequestLimit uint64     `json:"json_rpc_batch_request_limit" yaml:"json_rpc_batch_request_limit"`
 	JSONRPCBlockRangeLimit   uint64     `json:"json_rpc_block_range_limit" yaml:"json_rpc_block_range_limit"`
-	VerifyOutcomeApi         string     `json:"verify_outcome_api" yaml:"verify_outcome_api"`
 }
 
 // Telemetry holds the config details for metric services.
@@ -54,8 +53,9 @@ type Network struct {
 
 // DataFeed defines the DataFeed configuration params
 type DataFeed struct {
-	AMQPURI       string `json:"amqp_uri" yaml:"amqp_uri"`
-	AMQPQueueName string `json:"amqp_queue_name" yaml:"amqp_queue_name"`
+	AMQPURI             string `json:"amqp_uri" yaml:"amqp_uri"`
+	AMQPQueueName       string `json:"amqp_queue_name" yaml:"amqp_queue_name"`
+	VerifyOutcomeApiUrl string `json:"verify_outcome_api_url" yaml:"verify_outcome_api_url"`
 }
 
 // TxPool defines the TxPool configuration params
@@ -112,8 +112,9 @@ func DefaultConfig() *Config {
 			MaxAccountEnqueued: 128,
 		},
 		DataFeed: &DataFeed{
-			AMQPURI:       "",
-			AMQPQueueName: "",
+			AMQPURI:             "",
+			AMQPQueueName:       "",
+			VerifyOutcomeApiUrl: "",
 		},
 		LogLevel:    "INFO",
 		RestoreFile: "",
@@ -124,7 +125,6 @@ func DefaultConfig() *Config {
 		LogFilePath:              "",
 		JSONRPCBatchRequestLimit: DefaultJSONRPCBatchRequestLimit,
 		JSONRPCBlockRangeLimit:   DefaultJSONRPCBlockRangeLimit,
-		VerifyOutcomeApi:         "",
 	}
 }
 

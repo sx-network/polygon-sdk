@@ -18,13 +18,15 @@ type verifyApiResponse struct {
 	Timestamp int64
 }
 
-func (d *DataFeed) verifyMarketOutcome(payload *proto.DataFeedReport, verifyApiHost string) (bool, error) {
-	requestURL := fmt.Sprintf("%s/api/outcome/%s", verifyApiHost, payload.MarketHash)
+// verifyMarketOutcome compares the payload's proposed market outcome with the verify outcome api outcome, returning error if outcome does not match
+func (d *DataFeed) verifyMarketOutcome(payload *proto.DataFeedReport, verifyApiHost string) error {
+	marketHash := payload.MarketHash
+	requestURL := fmt.Sprintf("%s/%s", verifyApiHost, marketHash)
 	response, err := http.Get(requestURL)
 
 	if err != nil {
 		d.logger.Error("[MARKET-VERIFICATION] Failed to verify market outcome with server error", "error", err)
-		return false, err
+		return err
 	}
 
 	defer response.Body.Close()
@@ -32,12 +34,12 @@ func (d *DataFeed) verifyMarketOutcome(payload *proto.DataFeedReport, verifyApiH
 
 	if parseErr != nil {
 		d.logger.Error("[MARKET-VERIFICATION] Failed to parse response", "parseError", parseErr)
-		return false, parseErr
+		return parseErr
 	}
 
 	if response.StatusCode != 200 {
 		d.logger.Error("[MARKET-VERIFICATION] Failed to verify market with invalid outcome/payload", "market", payload.MarketHash, "outcome", payload.Outcome, "parsedBody", body)
-		return false, fmt.Errorf("Failed to verify market with invalid outcome/payload")
+		return fmt.Errorf("Failed to verify market with invalid outcome/payload")
 	}
 
 	var data verifyApiResponse
@@ -45,15 +47,14 @@ func (d *DataFeed) verifyMarketOutcome(payload *proto.DataFeedReport, verifyApiH
 
 	if marshalErr != nil {
 		d.logger.Error("[MARKET-VERIFICATION] Failed to unmarshal outcome", "body", body, "parseError", marshalErr)
-		return false, marshalErr
+		return marshalErr
 	}
 
-	if data.Outcome == payload.Outcome {
-		return true, nil
+	if data.Outcome != payload.Outcome {
+		errorMsg := fmt.Sprintf("failed to verify market %s, expected outcome %d got %d", marketHash, payload.Outcome, data.Outcome)
+		return fmt.Errorf(errorMsg)
 	}
-
-	return false, fmt.Errorf("Failed to verify market")
-
+	return nil
 }
 
 // validateTimestamp  checks if payload too old
