@@ -63,4 +63,5 @@ type JSONRPC struct {
 type DataFeed struct {
 	DataFeedAMQPURI       string
 	DataFeedAMQPQueueName string
+	VerifyOutcomeURI      string
 }

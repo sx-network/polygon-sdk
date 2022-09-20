@@ -53,8 +53,9 @@ type Network struct {
 
 // DataFeed defines the DataFeed configuration params
 type DataFeed struct {
-	AMQPURI       string `json:"amqp_uri" yaml:"amqp_uri"`
-	AMQPQueueName string `json:"amqp_queue_name" yaml:"amqp_queue_name"`
+	AMQPURI             string `json:"amqp_uri" yaml:"amqp_uri"`
+	AMQPQueueName       string `json:"amqp_queue_name" yaml:"amqp_queue_name"`
+	VerifyOutcomeApiUrl string `json:"verify_outcome_api_url" yaml:"verify_outcome_api_url"`
 }
 
 // TxPool defines the TxPool configuration params
@@ -111,8 +112,9 @@ func DefaultConfig() *Config {
 			MaxAccountEnqueued: 128,
 		},
 		DataFeed: &DataFeed{
-			AMQPURI:       "",
-			AMQPQueueName: "",
+			AMQPURI:             "",
+			AMQPQueueName:       "",
+			VerifyOutcomeApiUrl: "",
 		},
 		LogLevel:    "INFO",
 		RestoreFile: "",

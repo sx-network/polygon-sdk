@@ -257,6 +257,13 @@ func setFlags(cmd *cobra.Command) {
 		"the AMQ queue that the DataFeedService's MQConsumer consumes from",
 	)
 
+	cmd.Flags().StringVar(
+		&params.rawConfig.DataFeed.VerifyOutcomeApiUrl,
+		verifyOutcomeApiFlag,
+		defaultConfig.DataFeed.VerifyOutcomeApiUrl,
+		"API to verify market outcome payload",
+	)
+
 	setLegacyFlags(cmd)
 	setDevFlags(cmd)
 }

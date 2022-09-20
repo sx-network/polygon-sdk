@@ -43,6 +43,7 @@ const (
 	logFileLocationFlag          = "log-to"
 	dataFeedAMQPURIFlag          = "data-feed-amqp-uri"
 	dataFeedAMQPQueueNameFlag    = "data-feed-amqp-queue-name"
+	verifyOutcomeApiFlag         = "verify-outcome-api-url"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -93,6 +94,7 @@ type serverParams struct {
 
 	dataFeedAMQPURI       string
 	dataFeedAMQPQueueName string
+	verifyOutcomeApiUrl   string
 
 	ibftBaseTimeoutLegacy uint64
 
@@ -180,6 +182,7 @@ func (p *serverParams) generateConfig() *server.Config {
 		DataFeed: &server.DataFeed{
 			DataFeedAMQPURI:       p.dataFeedAMQPURI,
 			DataFeedAMQPQueueName: p.dataFeedAMQPQueueName,
+			VerifyOutcomeURI:      p.verifyOutcomeApiUrl,
 		},
 		DataDir:            p.rawConfig.DataDir,
 		Seal:               p.rawConfig.ShouldSeal,

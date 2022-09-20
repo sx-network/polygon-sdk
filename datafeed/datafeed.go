@@ -61,7 +61,8 @@ type DataFeed struct {
 
 // Config
 type Config struct {
-	MQConfig *MQConfig
+	MQConfig         *MQConfig
+	VerifyOutcomeURI string
 }
 
 // NewDataFeedService returns the new datafeed service
@@ -76,6 +77,10 @@ func NewDataFeedService(
 		logger:        logger.Named("datafeed"),
 		config:        config,
 		consensusInfo: consensusInfoFn,
+	}
+
+	if config.VerifyOutcomeURI == "" {
+		return nil, fmt.Errorf("DataFeed VerifyOutcomeURI is not configured")
 	}
 
 	// configure and start mqService
@@ -171,6 +176,12 @@ func (d *DataFeed) validateGossipedPayload(payload *proto.DataFeedReport) error 
 		return fmt.Errorf("proposed payload is too old")
 	}
 
+	verifyErr := d.verifyMarketOutcome(payload, d.config.VerifyOutcomeURI)
+
+	if verifyErr != nil {
+		return verifyErr
+	}
+
 	return nil
 }
 
@@ -210,47 +221,6 @@ func (d *DataFeed) AbiEncode(payload *proto.DataFeedReport) []byte {
 	// )
 
 	return crypto.Keccak256(bytes)
-}
-
-// validateSignatures checks if the current validator has already signed the payload
-func (d *DataFeed) validateSignatures(payload *proto.DataFeedReport) (bool, error) {
-	sigList := strings.Split(payload.Signatures, ",")
-	for _, sig := range sigList {
-		buf, err := hex.DecodeHex(sig)
-		if err != nil {
-			return false, err
-		}
-
-		pub, err := crypto.RecoverPubkey(buf, d.AbiEncode(payload))
-		if err != nil {
-			return false, err
-		}
-
-		// see if we signed it
-		if d.consensusInfo().ValidatorAddress == crypto.PubKeyToAddress(pub) {
-			return true, nil
-		} else {
-			// if we haven't signed it, see if a recognized validator from the current validator set signed it
-			otherValidatorSigned := false
-			for _, validator := range d.consensusInfo().Validators {
-				if validator == crypto.PubKeyToAddress(pub) {
-					otherValidatorSigned = true
-				}
-			}
-			if !otherValidatorSigned {
-				return false, fmt.Errorf("unrecognized signature detected")
-			}
-		}
-	}
-
-	return false, nil
-}
-
-// validateTimestamp  checks if payload too old
-func (d *DataFeed) validateTimestamp(payload *proto.DataFeedReport) bool {
-	d.logger.Debug("time", "time", time.Since(time.Unix(payload.Timestamp, 0)).Seconds())
-
-	return time.Since(time.Unix(payload.Timestamp, 0)).Seconds() > maxGossipTimestampDriftSeconds
 }
 
 // signGossipedPayload sings the payload by concatenating our own signature to the signatures field
