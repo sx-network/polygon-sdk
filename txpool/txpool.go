@@ -622,6 +622,7 @@ func (p *TxPool) validateTx(tx *types.Transaction) error {
 	currNonce := p.store.GetNonce(stateRoot, tx.From)
 	if currNonce > tx.Nonce {
 		p.logger.Debug("nonce too low for tx", "txNonce", tx.Nonce, "expectedNonce", currNonce, "from", tx.From)
+
 		return ErrNonceTooLow
 	}
 
@@ -633,6 +634,7 @@ func (p *TxPool) validateTx(tx *types.Transaction) error {
 	// Check if the sender has enough funds to execute the transaction
 	if accountBalance.Cmp(tx.Cost()) < 0 {
 		p.logger.Debug("insufficient funds for tx", "accountBalance", accountBalance, "from", tx.From, "txCost", tx.Cost())
+
 		return ErrInsufficientFunds
 	}
 

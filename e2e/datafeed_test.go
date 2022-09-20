@@ -52,8 +52,7 @@ func TestReportOutcome(t *testing.T) {
 	t.Logf("signer1 address: %s", crypto.PubKeyToAddress(pub))
 
 	var functions = []string{
-		//nolint:lll
-		`function reportOutcome(bytes32 marketHash, int32 outcome, uint64 epoch, uint256 timestamp, bytes[] signatures)`,
+		`function reportOutcome(bytes32 marketHash, int32 outcome, uint64 epoch, uint256 timestamp, bytes[] signatures)`, //nolint:lll
 	}
 
 	abiContract, err := abi.NewABIFromList(functions)

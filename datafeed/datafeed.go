@@ -404,6 +404,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 	if d.lastNonce == currNonce {
 		currNonce = currNonce + 1
 	}
+
 	d.lastNonce = currNonce
 
 	//TODO: derive these gas params better
@@ -429,9 +430,19 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		return
 	}
 
-	// TODO: investigating simultaneous tx failures due to nonce
-	d.logger.Debug("sent tx", "market", payload.MarketHash, "from", ethgo.Address(d.consensusInfo().ValidatorAddress), "hash", txn.Hash(), "nonce", currNonce)
+	d.logger.Debug(
+		"sent tx",
+		"hash", txn.Hash(),
+		"from", ethgo.Address(d.consensusInfo().ValidatorAddress),
+		"nonce", currNonce,
+		"market", payload.MarketHash,
+		"outcome", payload.Outcome,
+		"signatures", payload.Signatures,
+		"timestamp", payload.Timestamp,
+		"epoch", payload.Epoch,
+	)
 
+	// TODO: have wait occur in separate goroutine?
 	// do not wait for receipt as it blocks
 	// receipt, err := txn.Wait()
 	// if err != nil {

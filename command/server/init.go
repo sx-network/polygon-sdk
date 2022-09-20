@@ -310,13 +310,16 @@ func (p *serverParams) initJSONRPCAddress() error {
 		return parseErr
 	}
 
+	p.jsonRPCBatchLengthLimit = p.rawConfig.JSONRPCBatchRequestLimit
+	p.jsonRPCBlockRangeLimit = p.rawConfig.JSONRPCBlockRangeLimit
+
 	return nil
 }
 
 func (p *serverParams) initDataFeedParams() error {
 	p.dataFeedAMQPURI = p.rawConfig.DataFeed.AMQPURI
 	p.dataFeedAMQPQueueName = p.rawConfig.DataFeed.AMQPQueueName
-	p.verifyOutcomeApiUrl = p.rawConfig.DataFeed.VerifyOutcomeApiUrl
+	p.verifyOutcomeAPIURL = p.rawConfig.DataFeed.VerifyOutcomeAPIURL
 
 	return nil
 }

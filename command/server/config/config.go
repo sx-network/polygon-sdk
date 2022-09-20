@@ -55,7 +55,7 @@ type Network struct {
 type DataFeed struct {
 	AMQPURI             string `json:"amqp_uri" yaml:"amqp_uri"`
 	AMQPQueueName       string `json:"amqp_queue_name" yaml:"amqp_queue_name"`
-	VerifyOutcomeApiUrl string `json:"verify_outcome_api_url" yaml:"verify_outcome_api_url"`
+	VerifyOutcomeAPIURL string `json:"verify_outcome_api_url" yaml:"verify_outcome_api_url"`
 }
 
 // TxPool defines the TxPool configuration params
@@ -114,7 +114,7 @@ func DefaultConfig() *Config {
 		DataFeed: &DataFeed{
 			AMQPURI:             "",
 			AMQPQueueName:       "",
-			VerifyOutcomeApiUrl: "",
+			VerifyOutcomeAPIURL: "",
 		},
 		LogLevel:    "INFO",
 		RestoreFile: "",
