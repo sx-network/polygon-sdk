@@ -21,12 +21,12 @@ import (
 
 // tests invoking reportOutcome() function on SC
 func TestReportOutcome(t *testing.T) {
-	jsonRPCURL := "http://34.225.14.139:10002"                                  //"http://127.0.0.1:8545"                                       // hamilton testnet
+	jsonRPCURL := "http://34.225.14.139:10002"                                  //"http://127.0.0.1:8545"    // hamilton testnet
 	pk1 := "0x1cda74434f94025b01c74c34a1e913d07de4b7e653a9c534da1f6b1f1b97686f" // validator-1
 	pk2 := "0x91abf5c93aada2af7b98ac3cccbcbc8e6b7cc2ad4b5540923ace3418eb76ac62" // validator-2
 	pk3 := "0x5ec98cbbf3bdd1c175a12a9b3f91f10171712a236ae5004c8306da394bbe416a" // validator-3
 	pk4 := "0x021dda5e6919eb47d633dd790578be4b0059ed73318a65e2bf333f3eb610eec2" // validator-4
-	contractAddress := "0x53813CD4aCD7145A716B4686b195511FA93e4Cb7"             // SXNode.sol on hamilton
+	contractAddress := "0xE2d7B14aB17D8053de962bcAF9C5b273D41d44b3"             // SXNode.sol on hamilton
 
 	// function params
 	marketHashParam := "0x50ed19e2397382c3fa9130033534636d2e290b46e034aef10c0c6d7186f4f3ab"
