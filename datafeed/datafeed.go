@@ -80,7 +80,7 @@ func NewDataFeedService(
 	}
 
 	if config.VerifyOutcomeURI == "" {
-		return nil, fmt.Errorf("DataFeed VerifyOutcomeURI is not configured")
+		return nil, fmt.Errorf("DataFeed 'verify_outcome_api_url' is not configured")
 	}
 
 	// configure and start mqService
