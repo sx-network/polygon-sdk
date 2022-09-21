@@ -374,6 +374,7 @@ func (t *Transition) nonceCheck(msg *types.Transaction) error {
 	nonce := t.state.GetNonce(msg.From)
 
 	if nonce != msg.Nonce {
+		t.logger.Debug("Incorrect nonce", "msg nonce", msg.Nonce, "expected state nonce", nonce)
 		return ErrNonceIncorrect
 	}
 
