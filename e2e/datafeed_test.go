@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/0xPolygon/polygon-edge/consensus"
 	"github.com/0xPolygon/polygon-edge/crypto"
@@ -22,18 +21,18 @@ import (
 
 // tests invoking reportOutcome() function on SC
 func TestReportOutcome(t *testing.T) {
-	jsonRPCURL := "http://34.225.14.139:10002"                                  // hamilton testnet
+	jsonRPCURL := "http://34.225.14.139:10002"                                  //"http://127.0.0.1:8545"                                       // hamilton testnet
 	pk1 := "0x1cda74434f94025b01c74c34a1e913d07de4b7e653a9c534da1f6b1f1b97686f" // validator-1
 	pk2 := "0x91abf5c93aada2af7b98ac3cccbcbc8e6b7cc2ad4b5540923ace3418eb76ac62" // validator-2
 	pk3 := "0x5ec98cbbf3bdd1c175a12a9b3f91f10171712a236ae5004c8306da394bbe416a" // validator-3
 	pk4 := "0x021dda5e6919eb47d633dd790578be4b0059ed73318a65e2bf333f3eb610eec2" // validator-4
-	contractAddress := "0xA173954Cc4b1810C0dBdb007522ADbC182DaB380"             // SXNode.sol on hamilton
+	contractAddress := "0x53813CD4aCD7145A716B4686b195511FA93e4Cb7"             // SXNode.sol on hamilton
 
 	// function params
-	marketHashParam := types.BytesToHash([]byte("3"))
-	outcomeParam := int32(2)
-	epochParam := uint64(50)
-	timestampParam := new(big.Int).SetInt64(time.Now().Unix())
+	marketHashParam := "0x50ed19e2397382c3fa9130033534636d2e290b46e034aef10c0c6d7186f4f3ab"
+	outcomeParam := int32(1)
+	epochParam := uint64(8239)
+	timestampParam := int64(1663711090)
 
 	sig1, hashed1 := getSigAndHashedPayload(marketHashParam, outcomeParam, epochParam, timestampParam, pk1)
 	sig1Decoded, _ := hex.DecodeHex(sig1)
@@ -83,10 +82,10 @@ func TestReportOutcome(t *testing.T) {
 
 	txn, err := c.Txn(
 		"reportOutcome",
-		marketHashParam,
+		types.StringToHash(marketHashParam),
 		outcomeParam,
 		epochParam,
-		timestampParam,
+		new(big.Int).SetInt64(timestampParam),
 		[][]byte{sig1Decoded, sig2Decoded, sig3Decoded, sig4Decoded},
 	)
 	if err != nil {
@@ -109,15 +108,15 @@ func TestReportOutcome(t *testing.T) {
 		return
 	}
 
-	t.Logf("txReceipt=%s", receipt.TransactionHash)
+	t.Log("txReceipt", "status", receipt.Status)
 }
 
 // helper function used in e2e test
 func getSigAndHashedPayload(
-	marketHash [32]byte,
+	marketHash string,
 	outcome int32,
 	epoch uint64,
-	timestamp *big.Int,
+	timestamp int64,
 	privateKey string,
 ) (string, []byte) {
 	getPrivateKey := func(privateKeyStr string) *ecdsa.PrivateKey {
@@ -131,7 +130,7 @@ func getSigAndHashedPayload(
 		return &consensus.ConsensusInfo{
 			Validators:       []types.Address{types.ZeroAddress},
 			ValidatorKey:     getPrivateKey,
-			ValidatorAddress: types.ZeroAddress,
+			ValidatorAddress: crypto.PubKeyToAddress(&getPrivateKey.PublicKey),
 			Epoch:            0,
 			QuorumSize:       0,
 		}
@@ -157,13 +156,14 @@ func getSigAndHashedPayload(
 	)
 
 	payload := &proto.DataFeedReport{
-		MarketHash: string(marketHash[:]),
+		MarketHash: marketHash,
 		Outcome:    outcome,
 		Epoch:      epoch,
-		Timestamp:  timestamp.Int64(),
+		Timestamp:  timestamp,
 	}
 
-	sig, _ := dataFeedService.GetSignatureForPayload(payload)
+	signedData, _ := crypto.Sign(getConsensusInfoImpl().ValidatorKey, dataFeedService.AbiEncode(payload))
+	sig := hex.EncodeToHex(signedData)
 
 	hashedPayload := dataFeedService.AbiEncode(payload)
 
