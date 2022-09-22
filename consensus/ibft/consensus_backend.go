@@ -119,7 +119,7 @@ func (i *backendIBFT) buildBlock(snap *Snapshot, parent *types.Header) (*types.B
 	header := &types.Header{
 		ParentHash: parent.Hash,
 		Number:     parent.Number + 1,
-		Miner:      types.Address{},
+		Miner:      i.validatorKeyAddr,
 		Nonce:      types.Nonce{},
 		MixHash:    IstanbulDigest,
 		// this is required because blockchain needs difficulty to organize blocks and forks
