@@ -42,6 +42,7 @@ const (
 	corsOriginFlag               = "access-control-allow-origins"
 	logFileLocationFlag          = "log-to"
 	dataFeedAMQPURIFlag          = "data-feed-amqp-uri"
+	dataFeedAMQPExchangeNameFlag = "data-feed-amqp-exchange-name"
 	dataFeedAMQPQueueNameFlag    = "data-feed-amqp-queue-name"
 	verifyOutcomeAPIURLFlag      = "verify-outcome-api-url"
 )
@@ -92,9 +93,10 @@ type serverParams struct {
 	jsonRPCBatchLengthLimit uint64
 	jsonRPCBlockRangeLimit  uint64
 
-	dataFeedAMQPURI       string
-	dataFeedAMQPQueueName string
-	verifyOutcomeAPIURL   string
+	dataFeedAMQPURI          string
+	dataFeedAMQPExchangeName string
+	dataFeedAMQPQueueName    string
+	verifyOutcomeAPIURL      string
 
 	ibftBaseTimeoutLegacy uint64
 
@@ -180,9 +182,10 @@ func (p *serverParams) generateConfig() *server.Config {
 			Chain:            p.genesisConfig,
 		},
 		DataFeed: &server.DataFeed{
-			DataFeedAMQPURI:       p.dataFeedAMQPURI,
-			DataFeedAMQPQueueName: p.dataFeedAMQPQueueName,
-			VerifyOutcomeURI:      p.verifyOutcomeAPIURL,
+			DataFeedAMQPURI:          p.dataFeedAMQPURI,
+			DataFeedAMQPExchangeName: p.dataFeedAMQPExchangeName,
+			DataFeedAMQPQueueName:    p.dataFeedAMQPQueueName,
+			VerifyOutcomeURI:         p.verifyOutcomeAPIURL,
 		},
 		DataDir:            p.rawConfig.DataDir,
 		Seal:               p.rawConfig.ShouldSeal,

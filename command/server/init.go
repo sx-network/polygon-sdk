@@ -317,6 +317,7 @@ func (p *serverParams) initJSONRPCAddress() error {
 
 func (p *serverParams) initDataFeedParams() error {
 	p.dataFeedAMQPURI = p.rawConfig.DataFeed.AMQPURI
+	p.dataFeedAMQPExchangeName = p.rawConfig.DataFeed.AMQPExchangeName
 	p.dataFeedAMQPQueueName = p.rawConfig.DataFeed.AMQPQueueName
 	p.verifyOutcomeAPIURL = p.rawConfig.DataFeed.VerifyOutcomeAPIURL
 

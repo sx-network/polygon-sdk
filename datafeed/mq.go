@@ -14,7 +14,6 @@ import (
 
 const (
 	mqConsumerConcurrency = 1
-	exchangeName          = "main-exchange"
 )
 
 // MQService
@@ -31,8 +30,9 @@ type Connection struct {
 }
 
 type MQConfig struct {
-	AMQPURI     string
-	QueueConfig *QueueConfig
+	AMQPURI      string
+	ExchangeName string
+	QueueConfig  *QueueConfig
 }
 
 // QueueConfig
@@ -112,8 +112,7 @@ func (mq *MQService) startConsumer(
 	}
 
 	// bind the queue to the routing key
-	//TODO: eventually ensure the exchange name is configurable instead of hardcoded
-	err = mq.connection.Channel.QueueBind(mq.config.QueueConfig.QueueName, "", exchangeName, false, nil)
+	err = mq.connection.Channel.QueueBind(mq.config.QueueConfig.QueueName, "", mq.config.ExchangeName, false, nil)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -61,7 +61,8 @@ type JSONRPC struct {
 
 // DataFeed holds the config details for the DataFeedService
 type DataFeed struct {
-	DataFeedAMQPURI       string
-	DataFeedAMQPQueueName string
-	VerifyOutcomeURI      string
+	DataFeedAMQPURI          string
+	DataFeedAMQPExchangeName string
+	DataFeedAMQPQueueName    string
+	VerifyOutcomeURI         string
 }

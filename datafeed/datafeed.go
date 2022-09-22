@@ -85,6 +85,10 @@ func NewDataFeedService(
 
 	// configure and start mqService
 	if config.MQConfig.AMQPURI != "" {
+		if config.MQConfig.ExchangeName == "" {
+			return nil, fmt.Errorf("DataFeed AMQPURI provided without a valid ExchangeName")
+		}
+
 		if config.MQConfig.QueueConfig.QueueName == "" {
 			return nil, fmt.Errorf("DataFeed AMQPURI provided without a valid QueueName")
 		}
@@ -404,6 +408,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 	if d.lastNonce == currNonce {
 		currNonce = currNonce + 1
 	}
+
 	d.lastNonce = currNonce
 
 	//TODO: derive these gas params better

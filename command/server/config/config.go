@@ -54,6 +54,7 @@ type Network struct {
 // DataFeed defines the DataFeed configuration params
 type DataFeed struct {
 	AMQPURI             string `json:"amqp_uri" yaml:"amqp_uri"`
+	AMQPExchangeName    string `json:"amqp_exchange_name" yaml:"amqp_exchange_name"`
 	AMQPQueueName       string `json:"amqp_queue_name" yaml:"amqp_queue_name"`
 	VerifyOutcomeAPIURL string `json:"verify_outcome_api_url" yaml:"verify_outcome_api_url"`
 }
@@ -113,6 +114,7 @@ func DefaultConfig() *Config {
 		},
 		DataFeed: &DataFeed{
 			AMQPURI:             "",
+			AMQPExchangeName:    "",
 			AMQPQueueName:       "",
 			VerifyOutcomeAPIURL: "",
 		},
