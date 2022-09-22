@@ -42,7 +42,7 @@ func (d *DataFeed) verifyMarketOutcome(payload *proto.DataFeedReport, verifyAPIH
 
 	if response.StatusCode != 200 {
 		d.logger.Error(
-			"[MARKET-VERIFICATION] Got non-200 response from Verify Out",
+			"[MARKET-VERIFICATION] Got non-200 response from verify outcome",
 			"market", payload.MarketHash,
 			"outcome", payload.Outcome,
 			"parsedBody", body,

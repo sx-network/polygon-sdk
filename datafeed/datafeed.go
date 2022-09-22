@@ -53,6 +53,9 @@ type DataFeed struct {
 	// the last paload marketHash we published to SC, used to avoid posting dupes to SC
 	lastPublishedMarketHash string
 
+	// the last nonce sent
+	lastNonce uint64
+
 	lock sync.Mutex
 }
 
@@ -396,13 +399,12 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 	)
 
 	currNonce := d.consensusInfo().Nonce
-
-	// in the event that the account's nonce hasn't been updated yet on state,
+	// in the event that the account's nonce hasn't been updated yet in memory or on state,
 	// ensure we increment the nonce
-	// if d.lastNonce == currNonce {
-	// 	currNonce = currNonce + 1
-	// }
-	// d.lastNonce = currNonce
+	if d.lastNonce == currNonce {
+		currNonce = currNonce + 1
+	}
+	d.lastNonce = currNonce
 
 	//TODO: derive these gas params better
 	txn.WithOpts(
@@ -447,6 +449,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 
 	// 	return
 	// }
+	// d.logger.Debug("go receipt", "status", receipt.Status)
 
 	d.lastPublishedMarketHash = payload.MarketHash
 }
