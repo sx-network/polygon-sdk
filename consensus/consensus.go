@@ -80,7 +80,6 @@ type Config struct {
 
 type Params struct {
 	Context        context.Context
-	Seal           bool
 	Config         *Config
 	TxPool         *txpool.TxPool
 	Network        *network.Server

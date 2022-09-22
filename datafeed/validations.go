@@ -21,7 +21,6 @@ type verifyAPIResponse struct {
 // verifyMarketOutcome compares the payload's proposed market outcome with the verify outcome api outcome,
 // returning error if outcome does not match
 func (d *DataFeed) verifyMarketOutcome(payload *proto.DataFeedReport, verifyAPIHost string) error {
-
 	return nil
 
 	marketHash := payload.MarketHash

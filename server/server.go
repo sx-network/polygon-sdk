@@ -192,8 +192,11 @@ func NewServer(config *Config) (*Server, error) {
 	genesisRoot := m.executor.WriteGenesis(config.Chain.Genesis.Alloc)
 	config.Chain.Genesis.StateRoot = genesisRoot
 
+	// use the eip155 signer
+	signer := crypto.NewEIP155Signer(uint64(m.config.Chain.Params.ChainID))
+
 	// blockchain object
-	m.blockchain, err = blockchain.NewBlockchain(logger, m.config.DataDir, config.Chain, nil, m.executor)
+	m.blockchain, err = blockchain.NewBlockchain(logger, m.config.DataDir, config.Chain, nil, m.executor, signer)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +223,6 @@ func NewServer(config *Config) (*Server, error) {
 			m.network,
 			m.serverMetrics.txpool,
 			&txpool.Config{
-				Sealing:             m.config.Seal,
 				MaxSlots:            m.config.MaxSlots,
 				PriceLimit:          m.config.PriceLimit,
 				MaxAccountEnqueued:  m.config.MaxAccountEnqueued,
@@ -231,8 +233,6 @@ func NewServer(config *Config) (*Server, error) {
 			return nil, err
 		}
 
-		// use the eip155 signer
-		signer := crypto.NewEIP155Signer(uint64(m.config.Chain.Params.ChainID))
 		m.txpool.SetSigner(signer)
 	}
 
@@ -413,7 +413,6 @@ func (s *Server) setupConsensus() error {
 	consensus, err := engine(
 		&consensus.Params{
 			Context:        context.Background(),
-			Seal:           s.config.Seal,
 			Config:         config,
 			TxPool:         s.txpool,
 			Network:        s.network,
