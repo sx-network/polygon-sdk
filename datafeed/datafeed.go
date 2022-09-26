@@ -432,9 +432,10 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		// TODO: consider adding directly to txpool txpool.AddTx() instead of over local jsonrpc
 		err = txn.Do()
 		if err != nil {
-			d.logger.Error("failed to send raw txn via ethgo", "err", err)
+			retry++
+			d.logger.Error("failed to send raw txn via ethgo", "err", err, "try #", retry)
 
-			return
+			continue
 		}
 
 		d.logger.Debug(
@@ -452,18 +453,19 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		// this blocks current goroutine until the tx is mined
 		receipt, err := txn.Wait()
 		if err != nil {
-			d.logger.Error("failed to get txn receipt via ethgo", "err", err)
+			retry++
+			d.logger.Error("failed to get txn receipt via ethgo", "err", err, "try #", retry)
 
-			return
+			continue
 		}
 
 		if receipt.Status == 1 {
 			d.logger.Debug("got success receipt", "status", receipt.Status)
 
-			break
+			return
 		} else {
 			retry++
-			d.logger.Debug("got failed receipt, retrying 2 more times..", "retry #", retry)
+			d.logger.Debug("got failed receipt, retrying", "try #", retry)
 		}
 	}
 }
