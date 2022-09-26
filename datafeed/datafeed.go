@@ -356,6 +356,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 
 		return
 	}
+	d.lastPublishedMarketHash = payload.MarketHash
 
 	abiContract, err := ethgoabi.NewABIFromList([]string{reportOutcomeSCFunction})
 	if err != nil {
@@ -402,59 +403,67 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		sigByteList,
 	)
 
-	currNonce := d.consensusInfo().Nonce
-	// in the event that the account's nonce hasn't been updated yet in memory or on state,
-	// ensure we increment the nonce
-	if d.lastNonce == currNonce {
-		currNonce = currNonce + 1
-	}
-
-	d.lastNonce = currNonce
-
-	//TODO: derive these gas params better
-	txn.WithOpts(
-		&contract.TxnOpts{
-			GasLimit: 200000,
-			GasPrice: 1000000000,
-			Nonce:    currNonce,
-		},
-	)
-
 	if err != nil {
 		d.logger.Error("failed to create txn via ethgo", "err", err)
 
 		return
 	}
 
-	// TODO: consider adding directly to txpool txpool.AddTx() instead of over local jsonrpc
-	err = txn.Do()
-	if err != nil {
-		d.logger.Error("failed to send raw txn via ethgo", "err", err)
+	retry := uint64(0)
+	for retry < 3 {
+		currNonce := d.consensusInfo().Nonce
+		// in the event that the account's nonce hasn't been updated yet in memory or on state,
+		// ensure we increment the nonce
+		if d.lastNonce == currNonce {
+			currNonce = currNonce + 1
+		}
 
-		return
+		d.lastNonce = currNonce
+
+		//TODO: derive these gas params better
+		txn.WithOpts(
+			&contract.TxnOpts{
+				GasLimit: 200000 + (retry * 200000),
+				GasPrice: 1000000000,
+				Nonce:    currNonce,
+			},
+		)
+
+		// TODO: consider adding directly to txpool txpool.AddTx() instead of over local jsonrpc
+		err = txn.Do()
+		if err != nil {
+			d.logger.Error("failed to send raw txn via ethgo", "err", err)
+
+			return
+		}
+
+		d.logger.Debug(
+			"sent tx",
+			"hash", txn.Hash(),
+			"from", ethgo.Address(d.consensusInfo().ValidatorAddress),
+			"nonce", currNonce,
+			"market", payload.MarketHash,
+			"outcome", payload.Outcome,
+			"signatures", payload.Signatures,
+			"timestamp", payload.Timestamp,
+			"epoch", payload.Epoch,
+		)
+
+		// this blocks current goroutine until the tx is mined
+		receipt, err := txn.Wait()
+		if err != nil {
+			d.logger.Error("failed to get txn receipt via ethgo", "err", err)
+
+			return
+		}
+
+		if receipt.Status == 1 {
+			d.logger.Debug("got success receipt", "status", receipt.Status)
+
+			break
+		} else {
+			retry++
+			d.logger.Debug("got failed receipt, retrying 2 more times..", "retry #", retry)
+		}
 	}
-
-	d.logger.Debug(
-		"sent tx",
-		"hash", txn.Hash(),
-		"from", ethgo.Address(d.consensusInfo().ValidatorAddress),
-		"nonce", currNonce,
-		"market", payload.MarketHash,
-		"outcome", payload.Outcome,
-		"signatures", payload.Signatures,
-		"timestamp", payload.Timestamp,
-		"epoch", payload.Epoch,
-	)
-
-	// this blocks current goroutine until the tx is mined
-	receipt, err := txn.Wait()
-	if err != nil {
-		d.logger.Error("failed to get txn receipt via ethgo", "err", err)
-
-		return
-	}
-	//TODO: add some retry logic in case status is 0?
-	d.logger.Debug("go receipt", "status", receipt.Status)
-
-	d.lastPublishedMarketHash = payload.MarketHash
 }
