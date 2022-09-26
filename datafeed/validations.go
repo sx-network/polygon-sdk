@@ -46,6 +46,7 @@ func (d *DataFeed) verifyMarketOutcome(payload *proto.DataFeedReport, verifyAPIH
 			"market", payload.MarketHash,
 			"outcome", payload.Outcome,
 			"parsedBody", body,
+			"statusCode", response.StatusCode,
 		)
 
 		return fmt.Errorf("got non-200 response from Verify Outcome API response")
