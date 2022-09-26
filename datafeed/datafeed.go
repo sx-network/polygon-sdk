@@ -446,15 +446,15 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		"epoch", payload.Epoch,
 	)
 
-	// TODO: have wait occur in separate goroutine?
-	// do not wait for receipt as it blocks
-	// receipt, err := txn.Wait()
-	// if err != nil {
-	// 	d.logger.Error("failed to get txn receipt via ethgo", "err", err)
+	// this blocks current goroutine until the tx is mined
+	receipt, err := txn.Wait()
+	if err != nil {
+		d.logger.Error("failed to get txn receipt via ethgo", "err", err)
 
-	// 	return
-	// }
-	// d.logger.Debug("go receipt", "status", receipt.Status)
+		return
+	}
+	//TODO: add some retry logic in case status is 0?
+	d.logger.Debug("go receipt", "status", receipt.Status)
 
 	d.lastPublishedMarketHash = payload.MarketHash
 }
