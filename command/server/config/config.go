@@ -31,6 +31,8 @@ type Config struct {
 	LogFilePath              string     `json:"log_to" yaml:"log_to"`
 	JSONRPCBatchRequestLimit uint64     `json:"json_rpc_batch_request_limit" yaml:"json_rpc_batch_request_limit"`
 	JSONRPCBlockRangeLimit   uint64     `json:"json_rpc_block_range_limit" yaml:"json_rpc_block_range_limit"`
+	RpcNRAppName             string     `json:"rpc_nr_app_name" yaml:"rpc_nr_app_name"`
+	RpcNRLicenseKey          string     `json:"rpc_nr_license_key" yaml:"rpc_nr_license_key"`
 }
 
 // Telemetry holds the config details for metric services.

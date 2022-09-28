@@ -83,12 +83,6 @@ type serverParams struct {
 
 	corsAllowedOrigins []string
 
-	rpcNRAppName    string
-	rpcNRLicenseKey string
-
-	jsonRPCBatchLengthLimit uint64
-	jsonRPCBlockRangeLimit  uint64
-
 	ibftBaseTimeoutLegacy uint64
 
 	genesisConfig *chain.Chain
@@ -180,8 +174,8 @@ func (p *serverParams) generateConfig() *server.Config {
 		SecretsManager:     p.secretsConfig,
 		RestoreFile:        p.getRestoreFilePath(),
 		BlockTime:          p.rawConfig.BlockTime,
-		RPCNrAppName:       p.rpcNRAppName,
-		RPCNrLicenseKey:    p.rpcNRLicenseKey,
+		RPCNrAppName:       p.rawConfig.RpcNRAppName,
+		RPCNrLicenseKey:    p.rawConfig.RpcNRLicenseKey,
 		LogLevel:           hclog.LevelFromString(p.rawConfig.LogLevel),
 		LogFilePath:        p.logFileLocation,
 	}
