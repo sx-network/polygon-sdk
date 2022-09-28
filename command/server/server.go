@@ -201,14 +201,14 @@ func setFlags(cmd *cobra.Command) {
 	)
 
 	cmd.Flags().StringVar(
-		&params.rpcNRAppName,
+		&params.rawConfig.RpcNRAppName,
 		rpcNRAppNameFlag,
 		"",
 		"the New Relic Agent App Name, used for reporting json-rpc metrics.",
 	)
 
 	cmd.Flags().StringVar(
-		&params.rpcNRLicenseKey,
+		&params.rawConfig.RpcNRLicenseKey,
 		rpcNRLicenseKeyFlag,
 		"",
 		"the New Relic Agent License Key, used for reporting json-rpc metrics.",
