@@ -73,7 +73,8 @@ type Blockchain struct {
 
 	gpAverage *gasPriceAverage // A reference to the average gas price
 
-	writeLock sync.Mutex
+	writeLock                       sync.Mutex
+	gasPriceBlockUtilizationMinimum float64
 }
 
 // gasPriceAverage keeps track of the average gas price (rolling average)
@@ -192,6 +193,7 @@ func NewBlockchain(
 	consensus Verifier,
 	executor Executor,
 	txSigner TxSigner,
+	gasPriceBlockUtilizationMinimum float64,
 ) (*Blockchain, error) {
 	b := &Blockchain{
 		logger:    logger.Named("blockchain"),
@@ -204,6 +206,7 @@ func NewBlockchain(
 			price: big.NewInt(0),
 			count: big.NewInt(0),
 		},
+		gasPriceBlockUtilizationMinimum: gasPriceBlockUtilizationMinimum,
 	}
 
 	var (
@@ -967,6 +970,13 @@ func (b *Blockchain) updateGasPriceAvgWithBlock(block *types.Block) {
 	if len(block.Transactions) < 1 {
 		// No transactions in the block,
 		// so no gas price average to update
+		return
+	}
+
+
+	if float64(block.Header.GasUsed)/float64(block.Header.GasLimit) < b.gasPriceBlockUtilizationMinimum {
+		// We want to ignore blocks where the usage is less than that minimum
+		// Default is 0, so this is a no-op if it's not set.
 		return
 	}
 

@@ -201,17 +201,25 @@ func setFlags(cmd *cobra.Command) {
 	)
 
 	cmd.Flags().StringVar(
-		&params.rawConfig.RpcNRAppName,
+		&params.rawConfig.RPCNrAppName,
 		rpcNRAppNameFlag,
 		"",
 		"the New Relic Agent App Name, used for reporting json-rpc metrics.",
 	)
 
 	cmd.Flags().StringVar(
-		&params.rawConfig.RpcNRLicenseKey,
+		&params.rawConfig.RPCNrLicenseKey,
 		rpcNRLicenseKeyFlag,
 		"",
 		"the New Relic Agent License Key, used for reporting json-rpc metrics.",
+	)
+
+	cmd.Flags().Float64Var(
+		&params.rawConfig.GasPriceBlockUtilizationMinimum,
+		gasPriceBlockUtilizationMinimumFlag,
+		0,
+		"the gas price utilization threshold used to compute eth_gasPrice."+
+			"If a block's gas utilization is under this threshold, it will not affect the running average gas price.",
 	)
 
 	cmd.Flags().StringArrayVar(

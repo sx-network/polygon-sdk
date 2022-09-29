@@ -259,12 +259,12 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"chain": &bintree{nil, map[string]*bintree{
-		"chains": &bintree{nil, map[string]*bintree{
-			"foundation.json": &bintree{chainChainsFoundationJson, map[string]*bintree{}},
-			"goerli.json":     &bintree{chainChainsGoerliJson, map[string]*bintree{}},
-			"ibft.json":       &bintree{chainChainsIbftJson, map[string]*bintree{}},
-			"test.json":       &bintree{chainChainsTestJson, map[string]*bintree{}},
+	"chain": {nil, map[string]*bintree{
+		"chains": {nil, map[string]*bintree{
+			"foundation.json": {chainChainsFoundationJson, map[string]*bintree{}},
+			"goerli.json":     {chainChainsGoerliJson, map[string]*bintree{}},
+			"ibft.json":       {chainChainsIbftJson, map[string]*bintree{}},
+			"test.json":       {chainChainsTestJson, map[string]*bintree{}},
 		}},
 	}},
 }}
