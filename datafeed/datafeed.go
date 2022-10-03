@@ -284,7 +284,7 @@ func (d *DataFeed) addNewReport(payload *proto.DataFeedReport) {
 	dataFeedReportGossip.Signatures = mySig
 
 	d.logger.Debug(
-		"Publising new msg to topic",
+		"Publishing new msg to topic",
 		"marketHash",
 		dataFeedReportGossip.MarketHash,
 		"outcome",
@@ -327,7 +327,7 @@ func (d *DataFeed) publishPayload(payload *proto.DataFeedReport, isMajoritySigs 
 		}
 
 		d.logger.Debug(
-			"Publising msg to topic",
+			"Publishing msg to topic",
 			"marketHash",
 			payload.MarketHash,
 			"outcome",
@@ -410,7 +410,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 	}
 
 	retry := uint64(0)
-	for retry < 3 {
+	for retry < 4 {
 		currNonce := d.consensusInfo().Nonce
 		// in the event that the account's nonce hasn't been updated yet in memory or on state,
 		// ensure we increment the nonce
@@ -419,12 +419,13 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		}
 
 		d.lastNonce = currNonce
+		d.logger.Debug("lastNonce", "nonce", d.lastNonce)
 
 		//TODO: derive these gas params better
 		txn.WithOpts(
 			&contract.TxnOpts{
-				GasLimit: 200000 + (retry * 200000),
-				GasPrice: 1000000000,
+				GasLimit: 20000000,
+				GasPrice: 1000000000 + (retry * 1000000000),
 				Nonce:    currNonce,
 			},
 		)
@@ -433,7 +434,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		err = txn.Do()
 		if err != nil {
 			retry++
-			d.logger.Error("failed to send raw txn via ethgo", "err", err, "try #", retry)
+			d.logger.Error("failed to send raw txn via ethgo", "err", err, "try #", retry, "nonce", currNonce, "marketHash", payload.MarketHash)
 
 			continue
 		}
@@ -454,18 +455,18 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		receipt, err := txn.Wait()
 		if err != nil {
 			retry++
-			d.logger.Error("failed to get txn receipt via ethgo", "err", err, "try #", retry)
+			d.logger.Error("failed to get txn receipt via ethgo", "err", err, "try #", retry, "nonce", currNonce, "marketHash", payload.MarketHash)
 
 			continue
 		}
 
 		if receipt.Status == 1 {
-			d.logger.Debug("got success receipt", "status", receipt.Status)
+			d.logger.Debug("got success receipt", "status", receipt.Status, "marketHash", payload.MarketHash)
 
 			return
 		} else {
 			retry++
-			d.logger.Debug("got failed receipt, retrying", "try #", retry)
+			d.logger.Debug("got failed receipt, retrying", "try #", retry, "nonce", currNonce, "marketHash", payload.MarketHash)
 		}
 	}
 }
