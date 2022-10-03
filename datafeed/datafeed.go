@@ -419,16 +419,20 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 	}
 
 	txTry := uint64(0)
-	for txTry < maxTxTries {
-		currNonce := d.consensusInfo().Nonce
-		// in the event that the account's nonce hasn't been updated yet in memory or on state,
-		// ensure we increment the nonce
-		if d.lastNonce == currNonce {
-			currNonce = currNonce + 1
-		}
+	currNonce := d.consensusInfo().Nonce
 
-		d.lastNonce = currNonce
-		d.logger.Debug("lastNonce", "nonce", d.lastNonce)
+	//TODO: we don't need this anymore as we are now waiting for receipt
+	// in the event that the account's nonce hasn't been updated yet in memory or on state,
+	// ensure we increment the nonce
+	// if d.lastNonce == currNonce {
+	// 	currNonce = currNonce + 1
+	// }
+
+	// d.lastNonce = currNonce
+
+	for txTry < maxTxTries {
+
+		d.logger.Debug("attempting tx with nonce", "nonce", currNonce, "try", txTry)
 
 		//TODO: derive these gas params better
 		txn.WithOpts(
@@ -453,12 +457,12 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 
 			if strings.Contains(err.Error(), "nonce too low") {
 				// if nonce too low, retry with higher nonce
+				currNonce++
 				continue
-			} else if strings.Contains(err.Error(), "already known") {
-				// if already known, then already in txpool so return
-				return
 			} else {
-				continue
+				// if any other error, just log and return for now
+
+				return
 			}
 		}
 
@@ -509,9 +513,12 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		if receipt.Status == 1 {
 			d.logger.Debug("got success receipt", "status", receipt.Status, "marketHash", payload.MarketHash)
 
+			d.logger.Debug("lastNonce", "nonce", d.lastNonce)
+
 			return
 		} else {
 			txTry++
+			currNonce++
 			d.logger.Debug("got failed receipt, retrying", "try #", txTry, "nonce", currNonce, "marketHash", payload.MarketHash)
 		}
 	}
