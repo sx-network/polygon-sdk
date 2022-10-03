@@ -424,7 +424,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		//TODO: derive these gas params better
 		txn.WithOpts(
 			&contract.TxnOpts{
-				GasLimit: 20000000,
+				GasLimit: 1000000,
 				GasPrice: 1000000000 + (retry * 1000000000),
 				Nonce:    currNonce,
 			},
