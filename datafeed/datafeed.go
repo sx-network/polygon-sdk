@@ -446,22 +446,26 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		// TODO: consider adding directly to txpool txpool.AddTx() instead of over local jsonrpc
 		err = txn.Do()
 		if err != nil {
-			txTry++
-			d.logger.Error(
-				"failed to send raw txn via ethgo",
-				"err", err,
-				"try #", txTry,
-				"nonce", currNonce,
-				"marketHash", payload.MarketHash,
-			)
-
 			if strings.Contains(err.Error(), "nonce too low") {
 				// if nonce too low, retry with higher nonce
+				d.logger.Debug(
+					"encountered nonce too low error trying to send raw txn via ethgo, retrying...",
+					"try #", txTry,
+					"nonce", currNonce,
+					"marketHash", payload.MarketHash,
+				)
 				currNonce++
+				txTry++
 				continue
 			} else {
 				// if any other error, just log and return for now
-
+				d.logger.Error(
+					"failed to send raw txn via ethgo due to non-recoverable error",
+					"err", err,
+					"try #", txTry,
+					"nonce", currNonce,
+					"marketHash", payload.MarketHash,
+				)
 				return
 			}
 		}
@@ -498,28 +502,36 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		}
 
 		if receipt == nil {
-			txTry++
 			d.logger.Error(
-				"failed to get txn receipt via ethgo",
+				"failed to get txn receipt via ethgo, retry with same nonce and more gas",
 				"try #", txTry,
 				"nonce", currNonce,
 				"txHash", txn.Hash(),
 				"marketHash", payload.MarketHash,
 			)
-
+			txTry++
 			continue
 		}
 
 		if receipt.Status == 1 {
-			d.logger.Debug("got success receipt", "status", receipt.Status, "marketHash", payload.MarketHash)
-
-			d.logger.Debug("lastNonce", "nonce", d.lastNonce)
+			d.logger.Debug(
+				"got success receipt",
+				"nonce", currNonce,
+				"txHash", txn.Hash(),
+				"marketHash", payload.MarketHash,
+			)
 
 			return
 		} else {
-			txTry++
 			currNonce++
-			d.logger.Debug("got failed receipt, retrying", "try #", txTry, "nonce", currNonce, "marketHash", payload.MarketHash)
+			d.logger.Debug(
+				"got failed receipt, retrying with nextNonce and more gas",
+				"try #", txTry,
+				"nonce", currNonce,
+				"txHash", txn.Hash(),
+				"marketHash", payload.MarketHash,
+			)
+			txTry++
 		}
 	}
 }
