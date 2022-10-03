@@ -348,6 +348,14 @@ func (d *DataFeed) publishPayload(payload *proto.DataFeedReport, isMajoritySigs 
 
 // reportOutcomeToSC write the report outcome to the current ibft fork's customContractAddress SC
 func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
+	const (
+		maxTxTries        = 4
+		txGasPriceWei     = 1000000000
+		txGasLimitWei     = 1000000
+		maxTxReceiptTries = 3
+		txReceiptWaitMs   = 5000
+	)
+
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
@@ -410,8 +418,8 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		return
 	}
 
-	retry := uint64(0)
-	for retry < 4 {
+	txTry := uint64(0)
+	for txTry < maxTxTries {
 		currNonce := d.consensusInfo().Nonce
 		// in the event that the account's nonce hasn't been updated yet in memory or on state,
 		// ensure we increment the nonce
@@ -425,8 +433,8 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		//TODO: derive these gas params better
 		txn.WithOpts(
 			&contract.TxnOpts{
-				GasLimit: 1000000,
-				GasPrice: 1000000000 + (retry * 1000000000),
+				GasPrice: txGasPriceWei + (txTry * txGasPriceWei),
+				GasLimit: txGasLimitWei,
 				Nonce:    currNonce,
 			},
 		)
@@ -434,16 +442,24 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		// TODO: consider adding directly to txpool txpool.AddTx() instead of over local jsonrpc
 		err = txn.Do()
 		if err != nil {
-			retry++
+			txTry++
 			d.logger.Error(
 				"failed to send raw txn via ethgo",
 				"err", err,
-				"try #", retry,
+				"try #", txTry,
 				"nonce", currNonce,
 				"marketHash", payload.MarketHash,
 			)
 
-			continue
+			if strings.Contains(err.Error(), "nonce too low") {
+				// if nonce too low, retry with higher nonce
+				continue
+			} else if strings.Contains(err.Error(), "already known") {
+				// if already known, then already in txpool so return
+				return
+			} else {
+				continue
+			}
 		}
 
 		d.logger.Debug(
@@ -460,13 +476,9 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 
 		var receipt *ethgo.Receipt
 
-		if (txn.Hash() == ethgo.Hash{}) {
-			d.logger.Error("transaction not executed")
-		}
-
-		receiptRetry := uint64(0)
-		for receiptRetry < 3 {
-			time.Sleep(5000 * time.Millisecond)
+		receiptTry := uint64(0)
+		for receiptTry < maxTxReceiptTries {
+			time.Sleep(txReceiptWaitMs * time.Millisecond)
 
 			err := client.Call("eth_getTransactionReceipt", &receipt, txn.Hash())
 
@@ -475,20 +487,21 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 			}
 
 			if err != nil {
-				d.logger.Error("error while waiting for transaction receipt", "err", err.Error())
+				d.logger.Error("error while waiting for transaction receipt", "err", err.Error(), "try", receiptTry)
 			}
 
-			receiptRetry++
+			receiptTry++
 		}
 
 		if receipt == nil {
-			retry++
+			txTry++
 			d.logger.Error(
-				"failed to get txn receipt after 15sec via ethgo",
-				"err", err,
-				"try #", retry,
+				"failed to get txn receipt via ethgo",
+				"try #", txTry,
 				"nonce", currNonce,
-				"marketHash", payload.MarketHash)
+				"txHash", txn.Hash(),
+				"marketHash", payload.MarketHash,
+			)
 
 			continue
 		}
@@ -498,8 +511,8 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 
 			return
 		} else {
-			retry++
-			d.logger.Debug("got failed receipt, retrying", "try #", retry, "nonce", currNonce, "marketHash", payload.MarketHash)
+			txTry++
+			d.logger.Debug("got failed receipt, retrying", "try #", txTry, "nonce", currNonce, "marketHash", payload.MarketHash)
 		}
 	}
 }
