@@ -356,6 +356,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 
 		return
 	}
+
 	d.lastPublishedMarketHash = payload.MarketHash
 
 	abiContract, err := ethgoabi.NewABIFromList([]string{reportOutcomeSCFunction})
@@ -434,7 +435,13 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		err = txn.Do()
 		if err != nil {
 			retry++
-			d.logger.Error("failed to send raw txn via ethgo", "err", err, "try #", retry, "nonce", currNonce, "marketHash", payload.MarketHash)
+			d.logger.Error(
+				"failed to send raw txn via ethgo",
+				"err", err,
+				"try #", retry,
+				"nonce", currNonce,
+				"marketHash", payload.MarketHash,
+			)
 
 			continue
 		}
@@ -451,11 +458,37 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 			"epoch", payload.Epoch,
 		)
 
-		// this blocks current goroutine until the tx is mined
-		receipt, err := txn.Wait()
-		if err != nil {
+		var receipt *ethgo.Receipt
+
+		if (txn.Hash() == ethgo.Hash{}) {
+			d.logger.Error("transaction not executed")
+		}
+
+		receiptRetry := uint64(0)
+		for receiptRetry < 3 {
+			time.Sleep(5000 * time.Millisecond)
+
+			err := client.Call("eth_getTransactionReceipt", &receipt, txn.Hash())
+
+			if receipt != nil {
+				break
+			}
+
+			if err != nil {
+				d.logger.Error("error while waiting for transaction receipt", "err", err.Error())
+			}
+
+			receiptRetry++
+		}
+
+		if receipt == nil {
 			retry++
-			d.logger.Error("failed to get txn receipt via ethgo", "err", err, "try #", retry, "nonce", currNonce, "marketHash", payload.MarketHash)
+			d.logger.Error(
+				"failed to get txn receipt after 15sec via ethgo",
+				"err", err,
+				"try #", retry,
+				"nonce", currNonce,
+				"marketHash", payload.MarketHash)
 
 			continue
 		}
