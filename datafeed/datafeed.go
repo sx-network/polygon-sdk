@@ -534,4 +534,5 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 			txTry++
 		}
 	}
+	d.logger.Debug("could not get success tx receipt even after max tx retries")
 }
