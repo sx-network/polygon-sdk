@@ -8,13 +8,12 @@ import (
 	"time"
 
 	"github.com/0xPolygon/polygon-edge/consensus"
-	"github.com/0xPolygon/polygon-edge/crypto"
-
 	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 	"github.com/0xPolygon/polygon-edge/helper/hex"
 	"github.com/0xPolygon/polygon-edge/network"
 	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/hashicorp/go-hclog"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/umbracle/ethgo"
@@ -52,9 +51,6 @@ type DataFeed struct {
 
 	// the last paload marketHash we published to SC, used to avoid posting dupes to SC
 	lastPublishedMarketHash string
-
-	// the last nonce sent
-	lastNonce uint64
 
 	lock sync.Mutex
 }
@@ -218,13 +214,13 @@ func (d *DataFeed) AbiEncode(payload *proto.DataFeedReport) []byte {
 		big.NewInt(payload.Timestamp),
 	)
 
-	//TODO: add 'Ethereum Signed Message' here?
-	// 	prefixedHash := crypto.Keccak256Hash(
-	// 		[]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%v", len(hash))),
-	// 		hash.Bytes(),
-	// )
+	hashedPayload := crypto.Keccak256(bytes)
+	prefixedHash := crypto.Keccak256(
+		[]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d", len(hashedPayload))),
+		hashedPayload,
+	)
 
-	return crypto.Keccak256(bytes)
+	return prefixedHash
 }
 
 // signGossipedPayload sings the payload by concatenating our own signature to the signatures field
@@ -250,10 +246,12 @@ func (d *DataFeed) signGossipedPayload(payload *proto.DataFeedReport) (*proto.Da
 
 // GetSignatureForPayload derives the signature of the current validator
 func (d *DataFeed) GetSignatureForPayload(payload *proto.DataFeedReport) (string, error) {
-	signedData, err := crypto.Sign(d.consensusInfo().ValidatorKey, d.AbiEncode(payload))
+	signedData, err := crypto.Sign(d.AbiEncode(payload), d.consensusInfo().ValidatorKey)
 	if err != nil {
 		return "", err
 	}
+	// add 27 to V since go-ethereum crypto.Sign() produces V as 0 or 1
+	signedData[64] = signedData[64] + 27
 
 	return hex.EncodeToHex(signedData), nil
 }
@@ -431,10 +429,9 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 	// d.lastNonce = currNonce
 
 	for txTry < maxTxTries {
-
 		d.logger.Debug("attempting tx with nonce", "nonce", currNonce, "try", txTry)
 
-		//TODO: derive these gas params better
+		//TODO: derive these gas params better, have it dynamic?
 		txn.WithOpts(
 			&contract.TxnOpts{
 				GasPrice: txGasPriceWei + (txTry * txGasPriceWei),
@@ -456,6 +453,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 				)
 				currNonce++
 				txTry++
+
 				continue
 			} else {
 				// if any other error, just log and return for now
@@ -466,6 +464,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 					"nonce", currNonce,
 					"marketHash", payload.MarketHash,
 				)
+
 				return
 			}
 		}
@@ -510,6 +509,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 				"marketHash", payload.MarketHash,
 			)
 			txTry++
+
 			continue
 		}
 
@@ -534,5 +534,9 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 			txTry++
 		}
 	}
-	d.logger.Debug("could not get success tx receipt even after max tx retries")
+	d.logger.Debug("could not get success tx receipt even after max tx retries",
+		"try #", txTry,
+		"nonce", currNonce,
+		"txHash", txn.Hash(),
+		"marketHash", payload.MarketHash)
 }

@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/0xPolygon/polygon-edge/consensus"
-	"github.com/0xPolygon/polygon-edge/crypto"
+	cryptoutils "github.com/0xPolygon/polygon-edge/crypto"
 	"github.com/0xPolygon/polygon-edge/datafeed"
 	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 	"github.com/0xPolygon/polygon-edge/helper/hex"
 	"github.com/0xPolygon/polygon-edge/types"
+	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/hashicorp/go-hclog"
 	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/abi"
@@ -26,10 +27,10 @@ func TestReportOutcome(t *testing.T) {
 	pk2 := "0x91abf5c93aada2af7b98ac3cccbcbc8e6b7cc2ad4b5540923ace3418eb76ac62" // validator-2
 	pk3 := "0x5ec98cbbf3bdd1c175a12a9b3f91f10171712a236ae5004c8306da394bbe416a" // validator-3
 	pk4 := "0x021dda5e6919eb47d633dd790578be4b0059ed73318a65e2bf333f3eb610eec2" // validator-4
-	contractAddress := "0xE2d7B14aB17D8053de962bcAF9C5b273D41d44b3"             // SXNode.sol on hamilton
+	contractAddress := "0x58150BAD6fC2ecd84962732dD568770248EEd750"             // SXNode.sol on hamilton
 
 	// function params
-	marketHashParam := "0x50ed19e2397382c3fa9130033534636d2e290b46e034aef10c0c6d7186f4f3ab"
+	marketHashParam := "0x50ed19e2397382c3fa9130033534636d2e290b46e034aef10c0c6d7186f4f3ac"
 	outcomeParam := int32(1)
 	epochParam := uint64(8239)
 	timestampParam := int64(1663711090)
@@ -46,9 +47,6 @@ func TestReportOutcome(t *testing.T) {
 	t.Logf("sig1 %s", sig1)
 
 	t.Logf("hashedReport1: %s", hex.EncodeToHex(hashed1))
-
-	pub, _ := crypto.RecoverPubkey(sig1Decoded, hashed1)
-	t.Logf("signer1 address: %s", crypto.PubKeyToAddress(pub))
 
 	var functions = []string{
 		`function reportOutcome(bytes32 marketHash, int32 outcome, uint64 epoch, uint256 timestamp, bytes[] signatures)`, //nolint:lll
@@ -130,7 +128,7 @@ func getSigAndHashedPayload(
 		return &consensus.ConsensusInfo{
 			Validators:       []types.Address{types.ZeroAddress},
 			ValidatorKey:     getPrivateKey,
-			ValidatorAddress: crypto.PubKeyToAddress(&getPrivateKey.PublicKey),
+			ValidatorAddress: cryptoutils.PubKeyToAddress(&getPrivateKey.PublicKey),
 			Epoch:            0,
 			QuorumSize:       0,
 		}
@@ -163,8 +161,10 @@ func getSigAndHashedPayload(
 		Timestamp:  timestamp,
 	}
 
-	signedData, _ := crypto.Sign(getConsensusInfoImpl().ValidatorKey, dataFeedService.AbiEncode(payload))
-	sig := hex.EncodeToHex(signedData)
+	signedDataGeth, _ := gethcrypto.Sign(dataFeedService.AbiEncode(payload), getConsensusInfoImpl().ValidatorKey)
+	signedDataGeth[64] = signedDataGeth[64] + 27
+
+	sig := hex.EncodeToHex(signedDataGeth)
 
 	hashedPayload := dataFeedService.AbiEncode(payload)
 
