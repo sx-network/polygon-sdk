@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/0xPolygon/polygon-edge/crypto"
+	cryptoutils "github.com/0xPolygon/polygon-edge/crypto"
 	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 	"github.com/0xPolygon/polygon-edge/helper/hex"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type verifyAPIResponse struct {
@@ -94,25 +95,27 @@ func (d *DataFeed) validateSignatures(payload *proto.DataFeedReport) (bool, erro
 		if err != nil {
 			return false, err
 		}
+		// subtract 27 from V since go-ethereum crypto.Ecrecover() expects V as 0 or 1
+		buf[64] = buf[64] - 27
 
-		pub, err := crypto.RecoverPubkey(buf, d.AbiEncode(payload))
+		pub, err := crypto.SigToPub(d.AbiEncode(payload), buf)
 		if err != nil {
 			return false, err
 		}
 
 		// see if we signed it
-		if d.consensusInfo().ValidatorAddress == crypto.PubKeyToAddress(pub) {
+		if d.consensusInfo().ValidatorAddress == cryptoutils.PubKeyToAddress(pub) {
 			return true, nil
 		} else {
 			// if we haven't signed it, see if a recognized validator from the current validator set signed it
 			otherValidatorSigned := false
 			for _, validator := range d.consensusInfo().Validators {
-				if validator == crypto.PubKeyToAddress(pub) {
+				if validator == cryptoutils.PubKeyToAddress(pub) {
 					otherValidatorSigned = true
 				}
 			}
 			if !otherValidatorSigned {
-				return false, fmt.Errorf("unrecognized signature detected")
+				return false, fmt.Errorf("unrecognized signature detected, got address: %s", cryptoutils.PubKeyToAddress(pub))
 			}
 		}
 	}
