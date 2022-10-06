@@ -75,18 +75,14 @@ func NewDataFeedService(
 		consensusInfo: consensusInfoFn,
 	}
 
-	if config.VerifyOutcomeURI == "" {
-		return nil, fmt.Errorf("DataFeed 'verify_outcome_api_url' is not configured")
-	}
-
 	// configure and start mqService
 	if config.MQConfig.AMQPURI != "" {
 		if config.MQConfig.ExchangeName == "" {
-			return nil, fmt.Errorf("DataFeed AMQPURI provided without a valid ExchangeName")
+			return nil, fmt.Errorf("DataFeed 'amqp_uri' provided but missing a valid 'amqp_exchange_name'")
 		}
 
 		if config.MQConfig.QueueConfig.QueueName == "" {
-			return nil, fmt.Errorf("DataFeed AMQPURI provided without a valid QueueName")
+			return nil, fmt.Errorf("DataFeed 'amqp_uri' provided but missing a valid 'amqp_queue_name'")
 		}
 
 		mqService, err := newMQService(datafeedService.logger, config.MQConfig, datafeedService)
@@ -100,6 +96,11 @@ func NewDataFeedService(
 	// configure grpc operator service
 	if grpcServer != nil {
 		proto.RegisterDataFeedOperatorServer(grpcServer, datafeedService)
+	}
+
+	if config.VerifyOutcomeURI == "" && config.MQConfig.AMQPURI == "" {
+		logger.Warn("DataFeed 'verify_outcome_api_url' is missing but required for reporting - we will avoid participating in reporting gossiping")
+		return datafeedService, nil
 	}
 
 	// configure libp2p
