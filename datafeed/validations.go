@@ -10,8 +10,6 @@ import (
 
 	cryptoutils "github.com/0xPolygon/polygon-edge/crypto"
 	"github.com/0xPolygon/polygon-edge/datafeed/proto"
-	"github.com/0xPolygon/polygon-edge/helper/hex"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type verifyAPIResponse struct {
@@ -91,14 +89,9 @@ func (d *DataFeed) validateTimestamp(payload *proto.DataFeedReport) bool {
 func (d *DataFeed) validateSignatures(payload *proto.DataFeedReport) (bool, error) {
 	sigList := strings.Split(payload.Signatures, ",")
 	for _, sig := range sigList {
-		buf, err := hex.DecodeHex(sig)
-		if err != nil {
-			return false, err
-		}
-		// subtract 27 from V since go-ethereum crypto.Ecrecover() expects V as 0 or 1
-		buf[64] = buf[64] - 27
 
-		pub, err := crypto.SigToPub(d.AbiEncode(payload), buf)
+		pub, err := d.signatureToAddress(payload, sig)
+
 		if err != nil {
 			return false, err
 		}

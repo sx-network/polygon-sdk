@@ -244,18 +244,6 @@ func (d *DataFeed) signGossipedPayload(payload *proto.DataFeedReport) (*proto.Da
 	return reportMinusSigs, numSigs >= d.consensusInfo().QuorumSize, nil
 }
 
-// GetSignatureForPayload derives the signature of the current validator
-func (d *DataFeed) GetSignatureForPayload(payload *proto.DataFeedReport) (string, error) {
-	signedData, err := crypto.Sign(d.AbiEncode(payload), d.consensusInfo().ValidatorKey)
-	if err != nil {
-		return "", err
-	}
-	// add 27 to V since go-ethereum crypto.Sign() produces V as 0 or 1
-	signedData[64] = signedData[64] + 27
-
-	return hex.EncodeToHex(signedData), nil
-}
-
 // addNewReport adds new report proposal (e.g. from MQ or GRPC)
 func (d *DataFeed) addNewReport(payload *proto.DataFeedReport) {
 	if d.topic == nil {
