@@ -131,15 +131,6 @@ func (b *Blockchain) updateGasPriceAvg(newValues []*big.Int) {
 	b.calcRollingAverage(newValues, sum)
 }
 
-// setZeroGasPriceAvg set averageGasPrice to 0, useful when empty blocks or below min block utilization
-// we also reset the count to represent a single tx so that future averages are calculated correctly
-func (b *Blockchain) setZeroGasPriceAvg() {
-	b.gpAverage.Lock()
-	defer b.gpAverage.Unlock()
-	b.gpAverage.price = big.NewInt(0)
-	b.gpAverage.count = big.NewInt(1)
-}
-
 // calcArithmeticAverage calculates and sets the arithmetic average
 // of the passed in data set
 func (b *Blockchain) calcArithmeticAverage(newValues []*big.Int, sum *big.Int) {
@@ -979,8 +970,8 @@ func (b *Blockchain) updateGasPriceAvgWithBlock(block *types.Block) {
 	if len(block.Transactions) < 1 {
 		// No transactions in the block,
 		// so no gas price average to update
-		// set gasPriceAvg to 0 so that eth_gasPrice will return defined price-limit
-		b.setZeroGasPriceAvg()
+		// treat as single tx with gas price 0 so that eth_gasPrice will return configured price-limit
+		b.updateGasPriceAvg([]*big.Int{big.NewInt(0)})
 		return
 	}
 
@@ -994,8 +985,8 @@ func (b *Blockchain) updateGasPriceAvgWithBlock(block *types.Block) {
 	if float64(block.Header.GasUsed)/float64(block.Header.GasLimit) < b.gasPriceBlockUtilizationMinimum {
 		// We want to ignore blocks where the usage is less than that minimum
 		// Default is 0, so this is a no-op if it's not set.
-		// set gasPriceAvg to 0 so that eth_gasPrice will return defined price-limit
-		b.setZeroGasPriceAvg()
+		// treat as single tx with gas price 0 so that eth_gasPrice will return configured price-limit
+		b.updateGasPriceAvg([]*big.Int{big.NewInt(0)})
 		return
 	}
 
