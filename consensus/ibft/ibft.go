@@ -235,6 +235,11 @@ func (i *backendIBFT) startSyncing() {
 	}
 }
 
+// IsIbftStateStale returns whether or not ibft node is stale
+func (i *backendIBFT) IsIbftStateStale() bool {
+	return false
+}
+
 // Start starts the IBFT consensus
 func (i *backendIBFT) Start() error {
 	// Start the syncer

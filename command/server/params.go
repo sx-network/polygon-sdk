@@ -5,7 +5,6 @@ import (
 	"net"
 
 	"github.com/0xPolygon/polygon-edge/chain"
-	"github.com/0xPolygon/polygon-edge/command/server/config"
 	"github.com/0xPolygon/polygon-edge/network"
 	"github.com/0xPolygon/polygon-edge/secrets"
 	"github.com/0xPolygon/polygon-edge/server"
@@ -14,32 +13,33 @@ import (
 )
 
 const (
-	configFlag                   = "config"
-	genesisPathFlag              = "chain"
-	dataDirFlag                  = "data-dir"
-	libp2pAddressFlag            = "libp2p"
-	prometheusAddressFlag        = "prometheus"
-	natFlag                      = "nat"
-	dnsFlag                      = "dns"
-	sealFlag                     = "seal"
-	maxPeersFlag                 = "max-peers"
-	maxInboundPeersFlag          = "max-inbound-peers"
-	maxOutboundPeersFlag         = "max-outbound-peers"
-	priceLimitFlag               = "price-limit"
-	jsonRPCBatchRequestLimitFlag = "json-rpc-batch-request-limit"
-	jsonRPCBlockRangeLimitFlag   = "json-rpc-block-range-limit"
-	maxSlotsFlag                 = "max-slots"
-	maxEnqueuedFlag              = "max-enqueued"
-	blockGasTargetFlag           = "block-gas-target"
-	secretsConfigFlag            = "secrets-config"
-	restoreFlag                  = "restore"
-	blockTimeFlag                = "block-time"
-	rpcNRAppNameFlag             = "rpc-nr-app-name"
-	rpcNRLicenseKeyFlag          = "rpc-nr-license-key"
-	devIntervalFlag              = "dev-interval"
-	devFlag                      = "dev"
-	corsOriginFlag               = "access-control-allow-origins"
-	logFileLocationFlag          = "log-to"
+	configFlag                          = "config"
+	genesisPathFlag                     = "chain"
+	dataDirFlag                         = "data-dir"
+	libp2pAddressFlag                   = "libp2p"
+	prometheusAddressFlag               = "prometheus"
+	natFlag                             = "nat"
+	dnsFlag                             = "dns"
+	sealFlag                            = "seal"
+	maxPeersFlag                        = "max-peers"
+	maxInboundPeersFlag                 = "max-inbound-peers"
+	maxOutboundPeersFlag                = "max-outbound-peers"
+	priceLimitFlag                      = "price-limit"
+	jsonRPCBatchRequestLimitFlag        = "json-rpc-batch-request-limit"
+	jsonRPCBlockRangeLimitFlag          = "json-rpc-block-range-limit"
+	rpcNRAppNameFlag                    = "rpc-nr-app-name"
+	rpcNRLicenseKeyFlag                 = "rpc-nr-license-key"
+	gasPriceBlockUtilizationMinimumFlag = "gas-price-block-utilization-minimum"
+	maxSlotsFlag                        = "max-slots"
+	maxEnqueuedFlag                     = "max-enqueued"
+	blockGasTargetFlag                  = "block-gas-target"
+	secretsConfigFlag                   = "secrets-config"
+	restoreFlag                         = "restore"
+	blockTimeFlag                       = "block-time"
+	devIntervalFlag                     = "dev-interval"
+	devFlag                             = "dev"
+	corsOriginFlag                      = "access-control-allow-origins"
+	logFileLocationFlag                 = "log-to"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -166,17 +166,18 @@ func (p *serverParams) generateConfig() *server.Config {
 			MaxOutboundPeers: p.rawConfig.Network.MaxOutboundPeers,
 			Chain:            p.genesisConfig,
 		},
-		DataDir:            p.rawConfig.DataDir,
-		Seal:               p.rawConfig.ShouldSeal,
-		PriceLimit:         p.rawConfig.TxPool.PriceLimit,
-		MaxSlots:           p.rawConfig.TxPool.MaxSlots,
-		MaxAccountEnqueued: p.rawConfig.TxPool.MaxAccountEnqueued,
-		SecretsManager:     p.secretsConfig,
-		RestoreFile:        p.getRestoreFilePath(),
-		BlockTime:          p.rawConfig.BlockTime,
-		RPCNrAppName:       p.rawConfig.RpcNRAppName,
-		RPCNrLicenseKey:    p.rawConfig.RpcNRLicenseKey,
-		LogLevel:           hclog.LevelFromString(p.rawConfig.LogLevel),
-		LogFilePath:        p.logFileLocation,
+		DataDir:                         p.rawConfig.DataDir,
+		Seal:                            p.rawConfig.ShouldSeal,
+		PriceLimit:                      p.rawConfig.TxPool.PriceLimit,
+		MaxSlots:                        p.rawConfig.TxPool.MaxSlots,
+		MaxAccountEnqueued:              p.rawConfig.TxPool.MaxAccountEnqueued,
+		SecretsManager:                  p.secretsConfig,
+		RestoreFile:                     p.getRestoreFilePath(),
+		BlockTime:                       p.rawConfig.BlockTime,
+		RPCNrAppName:                    p.rawConfig.RPCNrAppName,
+		RPCNrLicenseKey:                 p.rawConfig.RPCNrLicenseKey,
+		GasPriceBlockUtilizationMinimum: p.rawConfig.GasPriceBlockUtilizationMinimum,
+		LogLevel:                        hclog.LevelFromString(p.rawConfig.LogLevel),
+		LogFilePath:                     p.logFileLocation,
 	}
 }

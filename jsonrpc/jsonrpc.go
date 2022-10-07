@@ -62,14 +62,15 @@ type RPCNrConfig struct {
 }
 
 type Config struct {
-	Store                    JSONRPCStore
-	Addr                     *net.TCPAddr
-	ChainID                  uint64
-	RPCNrConfig              *RPCNrConfig
-	AccessControlAllowOrigin []string
-	PriceLimit               uint64
-	BatchLengthLimit         uint64
-	BlockRangeLimit          uint64
+	Store                           JSONRPCStore
+	Addr                            *net.TCPAddr
+	ChainID                         uint64
+	RPCNrConfig                     *RPCNrConfig
+	AccessControlAllowOrigin        []string
+	PriceLimit                      uint64
+	BatchLengthLimit                uint64
+	BlockRangeLimit                 uint64
+	GasPriceBlockUtilizationMinimum float64
 }
 
 // NewJSONRPC returns the JSONRPC http server
@@ -78,7 +79,7 @@ func NewJSONRPC(logger hclog.Logger, config *Config) (*JSONRPC, error) {
 		logger: logger.Named("jsonrpc"),
 		config: config,
 		dispatcher: newDispatcher(logger, config.Store, config.ChainID, config.PriceLimit,
-			config.BatchLengthLimit, config.BlockRangeLimit),
+			config.BatchLengthLimit, config.BlockRangeLimit, config.GasPriceBlockUtilizationMinimum),
 	}
 
 	// start http server
@@ -105,6 +106,7 @@ func (j *JSONRPC) setupHTTP() error {
 			newrelic.ConfigLicense(j.config.RPCNrConfig.RPCNrLicenseKey),
 			func(cfg *newrelic.Config) {
 				cfg.ErrorCollector.RecordPanics = true
+				cfg.TransactionEvents.MaxSamplesStored = 600
 			},
 		)
 
@@ -338,6 +340,7 @@ func (j *JSONRPC) handle(w http.ResponseWriter, req *http.Request) {
 	data, err := ioutil.ReadAll(req.Body)
 
 	if err != nil {
+		txn.NoticeError(err)
 		_, _ = w.Write([]byte(err.Error()))
 
 		return
@@ -349,6 +352,7 @@ func (j *JSONRPC) handle(w http.ResponseWriter, req *http.Request) {
 	resp, err := j.dispatcher.Handle(data, txn)
 
 	if err != nil {
+		txn.NoticeError(err)
 		_, _ = w.Write([]byte(err.Error()))
 	} else {
 		_, _ = w.Write(resp)

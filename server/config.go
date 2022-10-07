@@ -32,8 +32,9 @@ type Config struct {
 	DataDir     string
 	RestoreFile *string
 
-	RPCNrAppName    string
-	RPCNrLicenseKey string
+	RPCNrAppName                    string
+	RPCNrLicenseKey                 string
+	GasPriceBlockUtilizationMinimum float64
 
 	Seal bool
 

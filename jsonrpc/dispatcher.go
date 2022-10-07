@@ -40,13 +40,14 @@ type endpoints struct {
 // Dispatcher handles all json rpc requests by delegating
 // the execution flow to the corresponding service
 type Dispatcher struct {
-	logger                  hclog.Logger
-	serviceMap              map[string]*serviceData
-	filterManager           *FilterManager
-	endpoints               endpoints
-	chainID                 uint64
-	priceLimit              uint64
-	jsonRPCBatchLengthLimit uint64
+	logger                          hclog.Logger
+	serviceMap                      map[string]*serviceData
+	filterManager                   *FilterManager
+	endpoints                       endpoints
+	chainID                         uint64
+	priceLimit                      uint64
+	jsonRPCBatchLengthLimit         uint64
+	gasPriceBlockUtilizationMinimum float64
 }
 
 func newDispatcher(
@@ -56,12 +57,14 @@ func newDispatcher(
 	priceLimit uint64,
 	jsonRPCBatchLengthLimit uint64,
 	blockRangeLimit uint64,
+	gasPriceBlockUtilizationMinimum float64,
 ) *Dispatcher {
 	d := &Dispatcher{
-		logger:                  logger.Named("dispatcher"),
-		chainID:                 chainID,
-		priceLimit:              priceLimit,
-		jsonRPCBatchLengthLimit: jsonRPCBatchLengthLimit,
+		logger:                          logger.Named("dispatcher"),
+		chainID:                         chainID,
+		priceLimit:                      priceLimit,
+		jsonRPCBatchLengthLimit:         jsonRPCBatchLengthLimit,
+		gasPriceBlockUtilizationMinimum: gasPriceBlockUtilizationMinimum,
 	}
 
 	if store != nil {
@@ -276,6 +279,11 @@ func (d *Dispatcher) Handle(reqBody []byte, txn *newrelic.Transaction) ([]byte, 
 		txn.NoticeError(invalidJSONError)
 
 		return NewRPCResponse(nil, "2.0", nil, invalidJSONError).Bytes()
+	}
+
+	// avoid handling long batch requests
+	if len(requests) > int(d.jsonRPCBatchLengthLimit) {
+		return NewRPCResponse(nil, "2.0", nil, NewInvalidRequestError("Batch request length too long")).Bytes()
 	}
 
 	// if not disabled, avoid handling long batch requests

@@ -14,25 +14,26 @@ import (
 
 // Config defines the server configuration params
 type Config struct {
-	GenesisPath              string     `json:"chain_config" yaml:"chain_config"`
-	SecretsConfigPath        string     `json:"secrets_config" yaml:"secrets_config"`
-	DataDir                  string     `json:"data_dir" yaml:"data_dir"`
-	BlockGasTarget           string     `json:"block_gas_target" yaml:"block_gas_target"`
-	GRPCAddr                 string     `json:"grpc_addr" yaml:"grpc_addr"`
-	JSONRPCAddr              string     `json:"jsonrpc_addr" yaml:"jsonrpc_addr"`
-	Telemetry                *Telemetry `json:"telemetry" yaml:"telemetry"`
-	Network                  *Network   `json:"network" yaml:"network"`
-	ShouldSeal               bool       `json:"seal" yaml:"seal"`
-	TxPool                   *TxPool    `json:"tx_pool" yaml:"tx_pool"`
-	LogLevel                 string     `json:"log_level" yaml:"log_level"`
-	RestoreFile              string     `json:"restore_file" yaml:"restore_file"`
-	BlockTime                uint64     `json:"block_time_s" yaml:"block_time_s"`
-	Headers                  *Headers   `json:"headers" yaml:"headers"`
-	LogFilePath              string     `json:"log_to" yaml:"log_to"`
-	JSONRPCBatchRequestLimit uint64     `json:"json_rpc_batch_request_limit" yaml:"json_rpc_batch_request_limit"`
-	JSONRPCBlockRangeLimit   uint64     `json:"json_rpc_block_range_limit" yaml:"json_rpc_block_range_limit"`
-	RpcNRAppName             string     `json:"rpc_nr_app_name" yaml:"rpc_nr_app_name"`
-	RpcNRLicenseKey          string     `json:"rpc_nr_license_key" yaml:"rpc_nr_license_key"`
+	GenesisPath                     string     `json:"chain_config" yaml:"chain_config"`
+	SecretsConfigPath               string     `json:"secrets_config" yaml:"secrets_config"`
+	DataDir                         string     `json:"data_dir" yaml:"data_dir"`
+	BlockGasTarget                  string     `json:"block_gas_target" yaml:"block_gas_target"`
+	GRPCAddr                        string     `json:"grpc_addr" yaml:"grpc_addr"`
+	JSONRPCAddr                     string     `json:"jsonrpc_addr" yaml:"jsonrpc_addr"`
+	Telemetry                       *Telemetry `json:"telemetry" yaml:"telemetry"`
+	Network                         *Network   `json:"network" yaml:"network"`
+	ShouldSeal                      bool       `json:"seal" yaml:"seal"`
+	TxPool                          *TxPool    `json:"tx_pool" yaml:"tx_pool"`
+	LogLevel                        string     `json:"log_level" yaml:"log_level"`
+	RestoreFile                     string     `json:"restore_file" yaml:"restore_file"`
+	BlockTime                       uint64     `json:"block_time_s" yaml:"block_time_s"`
+	Headers                         *Headers   `json:"headers" yaml:"headers"`
+	LogFilePath                     string     `json:"log_to" yaml:"log_to"`
+	JSONRPCBatchRequestLimit        uint64     `json:"json_rpc_batch_request_limit" yaml:"json_rpc_batch_request_limit"`
+	JSONRPCBlockRangeLimit          uint64     `json:"json_rpc_block_range_limit" yaml:"json_rpc_block_range_limit"`
+	RPCNrAppName                    string     `json:"rpc_nr_app_name" yaml:"rpc_nr_app_name"`
+	RPCNrLicenseKey                 string     `json:"rpc_nr_license_key" yaml:"rpc_nr_license_key"`
+	GasPriceBlockUtilizationMinimum float64    `json:"gasprice_block_utilization_threshold" yaml:"gasprice_block_utilization_threshold"`
 }
 
 // Telemetry holds the config details for metric services.
