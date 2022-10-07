@@ -132,10 +132,12 @@ func (b *Blockchain) updateGasPriceAvg(newValues []*big.Int) {
 }
 
 // setZeroGasPriceAvg set averageGasPrice to 0, useful when empty blocks or below min block utilization
+// we also reset the count to represent a single tx so that future averages are calculated correctly
 func (b *Blockchain) setZeroGasPriceAvg() {
 	b.gpAverage.Lock()
 	defer b.gpAverage.Unlock()
 	b.gpAverage.price = big.NewInt(0)
+	b.gpAverage.count = big.NewInt(1)
 }
 
 // calcArithmeticAverage calculates and sets the arithmetic average
