@@ -141,11 +141,6 @@ func Factory(params *consensus.Params) (consensus.Consensus, error) {
 	return p, nil
 }
 
-// IsIbftStateStale returns whether or not ibft node is stale
-func (i *backendIBFT) IsIbftStateStale() bool {
-	return false
-}
-
 // runHook runs a specified hook if it is present in the hook map
 func (i *backendIBFT) runHook(hookName HookType, height uint64, hookParam interface{}) error {
 	for _, mechanism := range i.mechanisms {

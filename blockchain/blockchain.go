@@ -973,7 +973,6 @@ func (b *Blockchain) updateGasPriceAvgWithBlock(block *types.Block) {
 		return
 	}
 
-
 	if float64(block.Header.GasUsed)/float64(block.Header.GasLimit) < b.gasPriceBlockUtilizationMinimum {
 		// We want to ignore blocks where the usage is less than that minimum
 		// Default is 0, so this is a no-op if it's not set.

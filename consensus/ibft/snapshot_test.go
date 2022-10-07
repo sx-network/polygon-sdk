@@ -102,7 +102,7 @@ func (ap *testerAccountPool) genesis() *chain.Genesis {
 	genesis := &types.Header{
 		MixHash: IstanbulDigest,
 	}
-	putIbftExtraSnapshotData(genesis, ap.ValidatorSet())
+	putIbftExtraSnapshotData(genesis, ap.ValidatorSet(), "")
 	genesis.ComputeHash()
 
 	c := &chain.Genesis{

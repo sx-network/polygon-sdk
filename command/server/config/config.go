@@ -33,7 +33,7 @@ type Config struct {
 	JSONRPCBlockRangeLimit          uint64     `json:"json_rpc_block_range_limit" yaml:"json_rpc_block_range_limit"`
 	RPCNrAppName                    string     `json:"rpc_nr_app_name" yaml:"rpc_nr_app_name"`
 	RPCNrLicenseKey                 string     `json:"rpc_nr_license_key" yaml:"rpc_nr_license_key"`
-	GasPriceBlockUtilizationMinimum float64    `json:"gasprice_block_utilization_threshold" yaml:"gasprice_block_utilization_threshold"`
+	GasPriceBlockUtilizationMinimum float64    `json:"gasprice_block_utilization_threshold" yaml:"gasprice_block_utilization_threshold"` //nolint:lll
 }
 
 // Telemetry holds the config details for metric services.
