@@ -192,7 +192,15 @@ func NewServer(config *Config) (*Server, error) {
 	signer := crypto.NewEIP155Signer(uint64(m.config.Chain.Params.ChainID))
 
 	// blockchain object
-	m.blockchain, err = blockchain.NewBlockchain(logger, m.config.DataDir, config.Chain, nil, m.executor, signer)
+	m.blockchain, err = blockchain.NewBlockchain(
+		logger,
+		m.config.DataDir,
+		config.Chain,
+		nil,
+		m.executor,
+		signer,
+		config.GasPriceBlockUtilizationMinimum,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -567,9 +575,10 @@ func (s *Server) setupJSONRPC() error {
 			RPCNrAppName:    s.config.RPCNrAppName,
 			RPCNrLicenseKey: s.config.RPCNrLicenseKey,
 		},
-		PriceLimit:       s.config.PriceLimit,
-		BatchLengthLimit: s.config.JSONRPC.BatchLengthLimit,
-		BlockRangeLimit:  s.config.JSONRPC.BlockRangeLimit,
+		PriceLimit:                      s.config.PriceLimit,
+		BatchLengthLimit:                s.config.JSONRPC.BatchLengthLimit,
+		BlockRangeLimit:                 s.config.JSONRPC.BlockRangeLimit,
+		GasPriceBlockUtilizationMinimum: s.config.GasPriceBlockUtilizationMinimum,
 	}
 
 	srv, err := jsonrpc.NewJSONRPC(s.logger, conf)

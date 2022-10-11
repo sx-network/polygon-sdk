@@ -62,14 +62,15 @@ type RPCNrConfig struct {
 }
 
 type Config struct {
-	Store                    JSONRPCStore
-	Addr                     *net.TCPAddr
-	ChainID                  uint64
-	RPCNrConfig              *RPCNrConfig
-	AccessControlAllowOrigin []string
-	PriceLimit               uint64
-	BatchLengthLimit         uint64
-	BlockRangeLimit          uint64
+	Store                           JSONRPCStore
+	Addr                            *net.TCPAddr
+	ChainID                         uint64
+	RPCNrConfig                     *RPCNrConfig
+	AccessControlAllowOrigin        []string
+	PriceLimit                      uint64
+	BatchLengthLimit                uint64
+	BlockRangeLimit                 uint64
+	GasPriceBlockUtilizationMinimum float64
 }
 
 // NewJSONRPC returns the JSONRPC http server
@@ -78,7 +79,7 @@ func NewJSONRPC(logger hclog.Logger, config *Config) (*JSONRPC, error) {
 		logger: logger.Named("jsonrpc"),
 		config: config,
 		dispatcher: newDispatcher(logger, config.Store, config.ChainID, config.PriceLimit,
-			config.BatchLengthLimit, config.BlockRangeLimit),
+			config.BatchLengthLimit, config.BlockRangeLimit, config.GasPriceBlockUtilizationMinimum),
 	}
 
 	// start http server
