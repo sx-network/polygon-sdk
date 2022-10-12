@@ -41,14 +41,15 @@ type IBFTFork struct {
 
 func (f *IBFTFork) UnmarshalJSON(data []byte) error {
 	raw := struct {
-		Type              IBFTType                  `json:"type"`
-		ValidatorType     *validators.ValidatorType `json:"validator_type,omitempty"`
-		Deployment        *common.JSONNumber        `json:"deployment,omitempty"`
-		From              common.JSONNumber         `json:"from"`
-		To                *common.JSONNumber        `json:"to,omitempty"`
-		Validators        interface{}               `json:"validators,omitempty"`
-		MaxValidatorCount *common.JSONNumber        `json:"maxValidatorCount,omitempty"`
-		MinValidatorCount *common.JSONNumber        `json:"minValidatorCount,omitempty"`
+		Type                  IBFTType                  `json:"type"`
+		ValidatorType         *validators.ValidatorType `json:"validator_type,omitempty"`
+		Deployment            *common.JSONNumber        `json:"deployment,omitempty"`
+		From                  common.JSONNumber         `json:"from"`
+		To                    *common.JSONNumber        `json:"to,omitempty"`
+		Validators            interface{}               `json:"validators,omitempty"`
+		CustomContractAddress string                    `json:"customContractAddress,omitempty"`
+		MaxValidatorCount     *common.JSONNumber        `json:"maxValidatorCount,omitempty"`
+		MinValidatorCount     *common.JSONNumber        `json:"minValidatorCount,omitempty"`
 	}{}
 
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -59,6 +60,7 @@ func (f *IBFTFork) UnmarshalJSON(data []byte) error {
 	f.Deployment = raw.Deployment
 	f.From = raw.From
 	f.To = raw.To
+	f.CustomContractAddress = types.StringToAddress(raw.CustomContractAddress)
 	f.MaxValidatorCount = raw.MaxValidatorCount
 	f.MinValidatorCount = raw.MinValidatorCount
 
