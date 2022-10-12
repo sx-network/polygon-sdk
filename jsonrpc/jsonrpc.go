@@ -2,7 +2,7 @@ package jsonrpc
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"sync"
@@ -290,7 +290,6 @@ func (j *JSONRPC) handleHealth(w http.ResponseWriter, req *http.Request) {
 
 	if req.Method != "GET" {
 		w.WriteHeader(http.StatusBadRequest)
-		//nolint
 		w.Write([]byte("method " + req.Method + " not allowed"))
 
 		return
@@ -298,14 +297,12 @@ func (j *JSONRPC) handleHealth(w http.ResponseWriter, req *http.Request) {
 
 	if j.config.Store.IsIbftStateStale() {
 		w.WriteHeader(http.StatusTooEarly)
-		//nolint
 		w.Write([]byte("IBFT node in stale state, try again shortly.."))
 
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	//nolint
 	w.Write(nil)
 }
 
@@ -336,7 +333,7 @@ func (j *JSONRPC) handle(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	data, err := ioutil.ReadAll(req.Body)
+	data, err := io.ReadAll(req.Body)
 
 	if err != nil {
 		txn.NoticeError(err)

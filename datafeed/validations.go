@@ -89,7 +89,6 @@ func (d *DataFeed) validateTimestamp(payload *proto.DataFeedReport) bool {
 func (d *DataFeed) validateSignatures(payload *proto.DataFeedReport) (bool, error) {
 	sigList := strings.Split(payload.Signatures, ",")
 	for _, sig := range sigList {
-
 		pub, err := d.signatureToAddress(payload, sig)
 
 		if err != nil {
@@ -101,13 +100,7 @@ func (d *DataFeed) validateSignatures(payload *proto.DataFeedReport) (bool, erro
 			return true, nil
 		} else {
 			// if we haven't signed it, see if a recognized validator from the current validator set signed it
-			otherValidatorSigned := false
-			for _, validator := range d.consensusInfo().Validators {
-				if validator == cryptoutils.PubKeyToAddress(pub) {
-					otherValidatorSigned = true
-				}
-			}
-			if !otherValidatorSigned {
+			if !d.consensusInfo().Validators.Includes(cryptoutils.PubKeyToAddress(pub)) {
 				return false, fmt.Errorf("unrecognized signature detected, got address: %s", cryptoutils.PubKeyToAddress(pub))
 			}
 		}

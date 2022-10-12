@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/hashicorp/go-hclog"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/umbracle/ethgo"
 	ethgoabi "github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/contract"
@@ -99,7 +99,8 @@ func NewDataFeedService(
 	}
 
 	if config.VerifyOutcomeURI == "" && config.MQConfig.AMQPURI == "" {
-		logger.Warn("DataFeed 'verify_outcome_api_url' is missing but required for reporting - we will avoid participating in reporting gossiping")
+		logger.Warn("DataFeed 'verify_outcome_api_url' is missing but required for reporting - we will avoid participating in reporting gossiping") //nolint:lll
+
 		return datafeedService, nil
 	}
 

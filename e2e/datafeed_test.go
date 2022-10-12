@@ -11,6 +11,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 	"github.com/0xPolygon/polygon-edge/helper/hex"
 	"github.com/0xPolygon/polygon-edge/types"
+	"github.com/0xPolygon/polygon-edge/validators"
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/hashicorp/go-hclog"
 	"github.com/umbracle/ethgo"
@@ -47,6 +48,7 @@ func TestReportOutcome(t *testing.T) {
 	t.Logf("sig1 %s", sig1)
 
 	t.Logf("hashedReport1: %s", hex.EncodeToHex(hashed1))
+
 	sig1Decoded[64] = sig1Decoded[64] - 27
 
 	pub, err := cryptoutils.SigToPub(hashed1, sig1Decoded)
@@ -57,7 +59,7 @@ func TestReportOutcome(t *testing.T) {
 	t.Logf("derived address for sig1: %s", cryptoutils.PubKeyToAddress(pub))
 
 	var functions = []string{
-		`function reportOutcome(bytes32 marketHash, int32 outcome, uint64 epoch, uint256 timestamp, bytes[] signatures)`, //nolint:lll
+		`function reportOutcome(bytes32 marketHash, int32 outcome, uint64 epoch, uint256 timestamp, bytes[] signatures)`,
 	}
 
 	abiContract, err := abi.NewABIFromList(functions)
@@ -134,7 +136,7 @@ func getSigAndHashedPayload(
 
 	getConsensusInfoImpl := func() *consensus.ConsensusInfo {
 		return &consensus.ConsensusInfo{
-			Validators:       []types.Address{types.ZeroAddress},
+			Validators:       validators.NewBLSValidatorSet(),
 			ValidatorKey:     getPrivateKey,
 			ValidatorAddress: cryptoutils.PubKeyToAddress(&getPrivateKey.PublicKey),
 			Epoch:            0,
