@@ -173,7 +173,7 @@ func (i *backendIBFT) runHook(hookName HookType, height uint64, hookParam interf
 	return nil
 }
 
-// getCustomContractAddressFromCurrentFork returns the customContractAddress from the current fork
+// getCurrentForkConfig returns the current forkConfig
 func (i *backendIBFT) getCurrentForkConfig(height uint64) forkConfig {
 	for _, mechanism := range i.mechanisms {
 		if !mechanism.isCurrent(height) {
@@ -588,7 +588,8 @@ func (i *backendIBFT) GetEpoch(number uint64) uint64 {
 
 // IsLastOfEpoch checks if the block number is the last of the epoch
 func (i *backendIBFT) IsLastOfEpoch(number uint64) bool {
-	return number > 0 && number%i.epochSize == 0
+	forkEpoch := i.getCurrentForkConfig(number).forkEpoch
+	return number > 0 && number%forkEpoch == 0
 }
 
 // Close closes the IBFT consensus mechanism, and does write back to disk
