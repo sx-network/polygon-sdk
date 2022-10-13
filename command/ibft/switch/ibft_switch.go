@@ -5,6 +5,7 @@ import (
 
 	"github.com/0xPolygon/polygon-edge/command"
 	"github.com/0xPolygon/polygon-edge/command/helper"
+	"github.com/0xPolygon/polygon-edge/consensus/ibft"
 	"github.com/spf13/cobra"
 )
 
@@ -71,6 +72,14 @@ func setFlags(cmd *cobra.Command) {
 		"",
 		"the custom contract address to use for SC interaction",
 	)
+
+	cmd.Flags().Uint64Var(
+		&params.forkEpochSizeRaw,
+		forkEpochSize,
+		ibft.DefaultEpochSize,
+		"Fork level epoch",
+	)
+
 }
 
 func runPreRun(_ *cobra.Command, _ []string) error {

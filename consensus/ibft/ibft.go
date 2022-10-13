@@ -33,6 +33,11 @@ var (
 	ErrInvalidHookParam = errors.New("invalid IBFT hook param passed in")
 )
 
+type forkConfig struct {
+	customContract types.Address
+	forkEpoch      uint64
+}
+
 type txPoolInterface interface {
 	Prepare()
 	Length() uint64
@@ -169,16 +174,15 @@ func (i *backendIBFT) runHook(hookName HookType, height uint64, hookParam interf
 }
 
 // getCustomContractAddressFromCurrentFork returns the customContractAddress from the current fork
-func (i *backendIBFT) getCustomContractAddressFromCurrentFork(height uint64) types.Address {
+func (i *backendIBFT) getCurrentForkConfig(height uint64) forkConfig {
 	for _, mechanism := range i.mechanisms {
 		if !mechanism.isCurrent(height) {
 			continue
 		}
-
-		return mechanism.getCustomContractAddress()
+		return forkConfig{customContract: mechanism.getCustomContractAddress(), forkEpoch: mechanism.getForkEpoch()}
 	}
 
-	return types.ZeroAddress
+	return forkConfig{customContract: types.ZeroAddress, forkEpoch: 0}
 }
 
 func (i *backendIBFT) Initialize() error {
@@ -628,7 +632,8 @@ func (i *backendIBFT) getConsensusInfoImpl() *consensus.ConsensusInfo {
 		ValidatorAddress:      i.validatorKeyAddr,
 		Epoch:                 i.GetEpoch(i.blockchain.Header().Number),
 		QuorumSize:            i.quorumSize(i.blockchain.Header().Number)(i.activeValidatorSet),
-		CustomContractAddress: i.getCustomContractAddressFromCurrentFork(i.blockchain.Header().Number),
+		CustomContractAddress: i.getCurrentForkConfig(i.blockchain.Header().Number).customContract,
+		ForkEpochSize:         i.getCurrentForkConfig(i.blockchain.Header().Number).forkEpoch,
 		Nonce:                 i.txpool.GetNonce(i.validatorKeyAddr),
 	}
 }

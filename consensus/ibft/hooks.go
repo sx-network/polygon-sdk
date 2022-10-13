@@ -98,6 +98,8 @@ type ConsensusMechanism interface {
 
 	// gets the custom contract address for the current mechanism
 	getCustomContractAddress() types.Address
+
+	getForkEpoch() uint64
 }
 
 type BaseConsensusMechanism struct {
@@ -116,6 +118,8 @@ type BaseConsensusMechanism struct {
 
 	// Custom contract address
 	CustomContractAddress types.Address
+
+	ForkEpochSize uint64
 }
 
 // initializeParams initializes mechanism parameters from chain config
@@ -142,6 +146,8 @@ func (base *BaseConsensusMechanism) initializeParams(params *IBFTFork) error {
 
 	base.CustomContractAddress = types.StringToAddress(params.CustomContractAddress)
 	// base.ibft.customContractAddress = types.StringToAddress(params.CustomContractAddress)
+
+	base.ForkEpochSize = params.ForkEpochSize
 
 	return nil
 }
@@ -180,6 +186,7 @@ type IBFTFork struct {
 	MaxValidatorCount     *common.JSONNumber `json:"maxValidatorCount,omitempty"`
 	MinValidatorCount     *common.JSONNumber `json:"minValidatorCount,omitempty"`
 	CustomContractAddress string             `json:"customContractAddress,omitempty"`
+	ForkEpochSize         uint64             `json:"forkEpochSize,omitempty"`
 }
 
 // ConsensusMechanismFactory is the factory function to create a consensus mechanism

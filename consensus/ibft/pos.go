@@ -63,6 +63,10 @@ func (pos *PoSMechanism) getCustomContractAddress() types.Address {
 	return pos.CustomContractAddress
 }
 
+func (pos *PoSMechanism) getForkEpoch() uint64 {
+	return pos.ForkEpochSize
+}
+
 // initializeParams initializes mechanism parameters from chain config
 func (pos *PoSMechanism) initializeParams(params *IBFTFork) error {
 	if err := pos.BaseConsensusMechanism.initializeParams(params); err != nil {

@@ -58,6 +58,7 @@ type ConsensusInfo struct {
 	Epoch                 uint64
 	QuorumSize            int
 	CustomContractAddress types.Address
+	ForkEpochSize         uint64
 	Nonce                 uint64
 }
 

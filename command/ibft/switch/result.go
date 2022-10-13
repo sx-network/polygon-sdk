@@ -17,6 +17,7 @@ type IBFTSwitchResult struct {
 	MaxValidatorCount     common.JSONNumber  `json:"maxValidatorCount"`
 	MinValidatorCount     common.JSONNumber  `json:"minValidatorCount"`
 	CustomContractAddress string             `json:"customContractAddress"`
+	ForkEpochSize         uint64             `json:"forkEpochSize"`
 }
 
 func (r *IBFTSwitchResult) GetOutput() string {
@@ -40,6 +41,7 @@ func (r *IBFTSwitchResult) GetOutput() string {
 		outputs = append(outputs, fmt.Sprint("CustomContractAddress|", r.CustomContractAddress))
 	}
 
+	outputs = append(outputs, fmt.Sprint("ForkEpochSize|", r.ForkEpochSize))
 	buffer.WriteString(helper.FormatKV(outputs))
 	buffer.WriteString("\n")
 

@@ -67,6 +67,10 @@ func (poa *PoAMechanism) getCustomContractAddress() types.Address {
 	return poa.CustomContractAddress
 }
 
+func (poa *PoAMechanism) getForkEpoch() uint64 {
+	return poa.ForkEpochSize
+}
+
 // verifyHeadersHook verifies that the header nonce conforms to the IBFT PoA proposal format
 func (poa *PoAMechanism) verifyHeadersHook(nonceParam interface{}) error {
 	// Cast the param to the nonce
