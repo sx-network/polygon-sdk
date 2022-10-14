@@ -235,12 +235,12 @@ func (poa *PoAMechanism) preStateCommitHook(rawParams interface{}) error {
 		return ErrInvalidHookParam
 	}
 
-	poa.ibft.logger.Debug("preStateCommitHook - calling setValidators here..")
-
 	validators, ibftExtraErr := poa.ibft.getIbftExtraValidators(params.header)
 	if ibftExtraErr != nil {
 		return ibftExtraErr
 	}
+
+	poa.ibft.logger.Debug("preStateCommitHook - calling setValidators here..", "validators", validators)
 
 	_, err := datafeed.SetValidators(params.txn, types.ZeroAddress, poa.CustomContractAddress, validators)
 	if err != nil {

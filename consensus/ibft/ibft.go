@@ -576,8 +576,6 @@ func (i *backendIBFT) PreStateCommit(header *types.Header, txn *state.Transition
 		txn:    txn,
 	}
 
-	i.logger.Debug("extraData", header.ExtraData)
-
 	if err := i.runHook(PreStateCommitHook, header.Number, params); err != nil {
 		return err
 	}

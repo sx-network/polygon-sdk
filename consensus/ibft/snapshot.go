@@ -233,16 +233,6 @@ func (i *backendIBFT) getSnapshot(num uint64) *Snapshot {
 	return snap
 }
 
-// getIbftExtraValidators returns the validator set from the header extraData at specified height
-func (i *backendIBFT) getIbftExtraValidators(header *types.Header) ([]types.Address, error) {
-	extra, err := getIbftExtra(header)
-	if err != nil {
-		return nil, err
-	}
-
-	return extra.Validators, nil
-}
-
 // Vote defines the vote structure
 type Vote struct {
 	Validator types.Address

@@ -74,6 +74,16 @@ func getIbftExtra(h *types.Header) (*IstanbulExtra, error) {
 	return extra, nil
 }
 
+// getIbftExtraValidators returns the validator set from the header extraData at specified height
+func (i *backendIBFT) getIbftExtraValidators(header *types.Header) ([]types.Address, error) {
+	extra, err := getIbftExtra(header)
+	if err != nil {
+		return nil, err
+	}
+
+	return extra.Validators, nil
+}
+
 // IstanbulExtra defines the structure of the extra field for Istanbul
 type IstanbulExtra struct {
 	Validators    []types.Address
