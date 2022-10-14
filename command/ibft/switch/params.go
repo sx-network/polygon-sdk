@@ -294,7 +294,9 @@ func appendIBFTForks(
 	}
 
 	lastFork := &ibftForks[len(ibftForks)-1]
-	if mechanismType == lastFork.Type && customContractAddress == lastFork.CustomContractAddress {
+	if mechanismType == lastFork.Type &&
+		customContractAddress == lastFork.CustomContractAddress &&
+		forkEpochSize == lastFork.ForkEpochSize {
 		return errors.New(`cannot specify same IBFT type to the last fork`)
 	}
 

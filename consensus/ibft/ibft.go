@@ -595,9 +595,7 @@ func (i *backendIBFT) GetEpoch(number uint64) uint64 {
 // IsLastOfEpoch checks if the block number is the last of the epoch
 func (i *backendIBFT) IsLastOfEpoch(number uint64) bool {
 	forkEpoch := i.getCurrentForkConfig(number).forkEpoch
-	i.logger.Debug("IsLastOfEpoch", "height", number, "forkEpoch", forkEpoch, "globalEpoch", i.epochSize)
 	if forkEpoch == 0 {
-		i.logger.Debug("IsLastOfEpoch - inside if")
 		return number > 0 && number%i.epochSize == 0
 	}
 	return number > 0 && number%forkEpoch == 0
