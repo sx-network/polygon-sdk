@@ -99,6 +99,7 @@ type ConsensusMechanism interface {
 	// gets the custom contract address for the current mechanism
 	getCustomContractAddress() types.Address
 
+	// fork-specific epochSize
 	getForkEpoch() uint64
 }
 
@@ -119,6 +120,7 @@ type BaseConsensusMechanism struct {
 	// Custom contract address
 	CustomContractAddress types.Address
 
+	// fork-specific epochSize
 	ForkEpochSize uint64
 }
 

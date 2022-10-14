@@ -179,10 +179,16 @@ func (i *backendIBFT) getCurrentForkConfig(height uint64) forkConfig {
 		if !mechanism.isCurrent(height) {
 			continue
 		}
-		return forkConfig{customContract: mechanism.getCustomContractAddress(), forkEpoch: mechanism.getForkEpoch()}
+		return forkConfig{
+			customContract: mechanism.getCustomContractAddress(),
+			forkEpoch:      mechanism.getForkEpoch(),
+		}
 	}
 
-	return forkConfig{customContract: types.ZeroAddress, forkEpoch: 0}
+	return forkConfig{
+		customContract: types.ZeroAddress,
+		forkEpoch:      0,
+	}
 }
 
 func (i *backendIBFT) Initialize() error {
@@ -637,7 +643,6 @@ func (i *backendIBFT) getConsensusInfoImpl() *consensus.ConsensusInfo {
 		Epoch:                 i.GetEpoch(i.blockchain.Header().Number),
 		QuorumSize:            i.quorumSize(i.blockchain.Header().Number)(i.activeValidatorSet),
 		CustomContractAddress: i.getCurrentForkConfig(i.blockchain.Header().Number).customContract,
-		ForkEpochSize:         i.getCurrentForkConfig(i.blockchain.Header().Number).forkEpoch,
 		Nonce:                 i.txpool.GetNonce(i.validatorKeyAddr),
 	}
 }

@@ -5,7 +5,6 @@ import (
 
 	"github.com/0xPolygon/polygon-edge/command"
 	"github.com/0xPolygon/polygon-edge/command/helper"
-	"github.com/0xPolygon/polygon-edge/consensus/ibft"
 	"github.com/spf13/cobra"
 )
 
@@ -76,8 +75,8 @@ func setFlags(cmd *cobra.Command) {
 	cmd.Flags().Uint64Var(
 		&params.forkEpochSizeRaw,
 		forkEpochSize,
-		ibft.DefaultEpochSize,
-		"Fork level epoch",
+		0,
+		"fork-level epoch, overrides ibft epochSize for hook-related logic",
 	)
 
 }
