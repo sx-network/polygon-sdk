@@ -33,6 +33,8 @@ type IBFTFork struct {
 
 	// Custom contract address
 	CustomContractAddress types.Address `json:"customContractAddress,omitempty"`
+	// Fork epoch
+	ForkEpoch uint64 `json:"forkEpochSize,omitempty"`
 
 	// PoS
 	MaxValidatorCount *common.JSONNumber `json:"maxValidatorCount,omitempty"`

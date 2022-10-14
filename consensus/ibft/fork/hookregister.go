@@ -2,6 +2,7 @@ package fork
 
 import (
 	"github.com/0xPolygon/polygon-edge/consensus/ibft/hook"
+	"github.com/0xPolygon/polygon-edge/consensus/ibft/signer"
 	"github.com/0xPolygon/polygon-edge/types"
 )
 
@@ -45,7 +46,7 @@ func NewPoAHookRegisterer(
 }
 
 // RegisterHooks registers hooks of PoA for voting and validators updating
-func (r *PoAHookRegister) RegisterHooks(hooks *hook.Hooks, height uint64) {
+func (r *PoAHookRegister) RegisterHooks(hooks *hook.Hooks, height uint64, signer signer.Signer) {
 	if currentFork := r.poaForks.getFork(height); currentFork != nil {
 		// in PoA mode currently
 		validatorStore := r.getValidatorsStore(currentFork)
@@ -67,14 +68,12 @@ func (r *PoAHookRegister) RegisterHooks(hooks *hook.Hooks, height uint64) {
 
 	// set customContractAddress
 	if customContractAddressFork, ok := r.customContractAddressForks[height+1]; ok {
-		validatorStore := r.getValidatorsStore(customContractAddressFork)
-
 		registerCustomContractAddressHooks(
 			hooks,
-			validatorStore,
 			r.epochSize,
 			customContractAddressFork.CustomContractAddress,
-			customContractAddressFork.From.Value,
+			customContractAddressFork.ForkEpoch,
+			signer,
 		)
 	}
 }
@@ -110,8 +109,8 @@ func NewPoSHookRegister(
 	}
 }
 
-// RegisterHooks registers hooks of PoA for additional block verification and contract deployment
-func (r *PoSHookRegister) RegisterHooks(hooks *hook.Hooks, height uint64) {
+// RegisterHooks registers hooks of PoS for additional block verification and contract deployment
+func (r *PoSHookRegister) RegisterHooks(hooks *hook.Hooks, height uint64, signer signer.Signer) {
 	if currentFork := r.posForks.getFork(height); currentFork != nil {
 		// in PoS mode currently
 		registerTxInclusionGuardHooks(hooks, r.epochSize)

@@ -88,6 +88,13 @@ func setFlags(cmd *cobra.Command) {
 			"the custom contract address to use for SC interaction",
 		)
 
+		cmd.Flags().Uint64Var(
+			&params.forkEpochSizeRaw,
+			forkEpochSize,
+			0,
+			"fork-level epoch, overrides ibft epochSize for hook-related logic",
+		)
+
 		cmd.MarkFlagsMutuallyExclusive(command.IBFTValidatorPrefixFlag, command.IBFTValidatorFlag)
 	}
 

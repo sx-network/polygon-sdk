@@ -22,6 +22,7 @@ const (
 	minValidatorCount     = "min-validator-count"
 	maxValidatorCount     = "max-validator-count"
 	customContractAddress = "custom-contract-address"
+	forkEpochSize         = "fork-epoch"
 )
 
 var (
@@ -55,6 +56,7 @@ type switchParams struct {
 	ibftValidatorsRaw        []string
 	ibftValidators           validators.Validators
 	customContractAddressRaw string
+	forkEpochSizeRaw         uint64
 
 	// PoS
 	maxValidatorCountRaw string
@@ -315,6 +317,7 @@ func (p *switchParams) updateGenesisConfig() error {
 		p.maxValidatorCount,
 		p.minValidatorCount,
 		types.StringToAddress(p.customContractAddressRaw),
+		p.forkEpochSizeRaw,
 	)
 }
 
@@ -342,6 +345,7 @@ func (p *switchParams) getResult() command.CommandResult {
 		ValidatorType:         p.ibftValidatorType,
 		From:                  common.JSONNumber{Value: p.from},
 		CustomContractAddress: p.customContractAddressRaw,
+		ForkEpochSize:         p.forkEpochSizeRaw,
 	}
 
 	if p.deployment != nil {
@@ -364,6 +368,8 @@ func (p *switchParams) getResult() command.CommandResult {
 		result.CustomContractAddress = p.customContractAddressRaw
 	}
 
+	result.ForkEpochSize = p.forkEpochSizeRaw
+
 	return result
 }
 
@@ -379,6 +385,7 @@ func appendIBFTForks(
 	maxValidatorCount *uint64,
 	minValidatorCount *uint64,
 	customContractAddress types.Address,
+	forkEpoch uint64,
 ) error {
 	ibftConfig, ok := cc.Params.Engine["ibft"].(map[string]interface{})
 	if !ok {
@@ -393,7 +400,9 @@ func appendIBFTForks(
 	lastFork := ibftForks[len(ibftForks)-1]
 
 	if (ibftType == lastFork.Type) &&
-		(validatorType == lastFork.ValidatorType) && customContractAddress == lastFork.CustomContractAddress {
+		(validatorType == lastFork.ValidatorType) &&
+		(customContractAddress == lastFork.CustomContractAddress) &&
+		(forkEpoch == lastFork.ForkEpoch) {
 		return ErrSameIBFTAndValidatorType
 	}
 
@@ -413,6 +422,7 @@ func appendIBFTForks(
 		ValidatorType:         validatorType,
 		From:                  common.JSONNumber{Value: from},
 		CustomContractAddress: customContractAddress,
+		ForkEpoch:             forkEpoch,
 	}
 
 	switch ibftType {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/0xPolygon/polygon-edge/consensus/ibft/hook"
+	"github.com/0xPolygon/polygon-edge/consensus/ibft/signer"
 	"github.com/0xPolygon/polygon-edge/contracts/datafeed"
 	"github.com/0xPolygon/polygon-edge/contracts/staking"
 	"github.com/0xPolygon/polygon-edge/helper/hex"
@@ -43,9 +44,6 @@ type Updatable interface {
 	// UpdateValidatorSet updates validators forcibly
 	// in order that new validators are available from the given height
 	UpdateValidatorSet(validators.Validators, uint64) error
-
-	// gets validators by height
-	GetValidatorsByHeight(uint64) (validators.Validators, error)
 }
 
 // registerUpdateValidatorsHooks registers hooks to update validators in the middle
@@ -71,38 +69,39 @@ func registerUpdateValidatorsHooks(
 // every set-validator-interval/epochSize
 func registerCustomContractAddressHooks(
 	hooks *hook.Hooks,
-	validatorStore store.ValidatorStore,
 	epochSize uint64,
 	customContractAddress types.Address,
-	fromHeight uint64,
+	forkEpoch uint64,
+	signer signer.Signer,
 ) {
 	isLastEpoch := func(height uint64) bool {
-		return height > 0 && height%epochSize == 0
+		if forkEpoch == 0 {
+			return height > 0 && height%epochSize == 0
+		}
+
+		return height > 0 && height%forkEpoch == 0
 	}
 
-	if validatorStore, ok := validatorStore.(Updatable); ok {
-		hooks.PreCommitStateFunc = func(h *types.Header, t *state.Transition) error {
-			//TODO: we can check for setValidatorInterval instead of epochSize in the future
-			// safe check
-			if fromHeight != h.Number+1 && !isLastEpoch(h.Number) {
-				return nil
-			}
-
-			// get snapshot validators and convert them into array for SetValidators() function
-			validatorSet, err := validatorStore.GetValidatorsByHeight(h.Number)
-			if err != nil {
-				return err
-			}
-
-			validatorAddresses := validators.ValidatorSetToAddressArray(validatorSet)
-
-			_, err = datafeed.SetValidators(t, types.ZeroAddress, customContractAddress, validatorAddresses)
-			if err != nil {
-				return fmt.Errorf("failed to call setValidators: " + err.Error())
-			}
-
+	hooks.PreCommitStateFunc = func(h *types.Header, t *state.Transition) error {
+		// safe check
+		if !isLastEpoch(h.Number) {
 			return nil
 		}
+
+		// get header validators and convert them into array for SetValidators() function
+		validatorSet, err := signer.GetValidators(h)
+		if err != nil {
+			return err
+		}
+
+		validatorAddresses := validators.ValidatorSetToAddressArray(validatorSet)
+
+		_, err = datafeed.SetValidators(t, types.ZeroAddress, customContractAddress, validatorAddresses)
+		if err != nil {
+			return fmt.Errorf("failed to call setValidators: " + err.Error())
+		}
+
+		return nil
 	}
 }
 

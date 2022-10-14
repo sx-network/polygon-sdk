@@ -38,7 +38,7 @@ type mockHooksRegister struct {
 	RegisterHooksFunc func(hooks *hook.Hooks, height uint64)
 }
 
-func (m *mockHooksRegister) RegisterHooks(hooks *hook.Hooks, height uint64) {
+func (m *mockHooksRegister) RegisterHooks(hooks *hook.Hooks, height uint64, signer signer.Signer) {
 	m.RegisterHooksFunc(hooks, height)
 }
 

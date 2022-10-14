@@ -39,7 +39,7 @@ type ValidatorStore interface {
 // HookRegister is an interface that ForkManager calls for hook registrations
 type HooksRegister interface {
 	// RegisterHooks register hooks for the given block height
-	RegisterHooks(hooks *hook.Hooks, height uint64)
+	RegisterHooks(hooks *hook.Hooks, height uint64, signer signer.Signer)
 }
 
 // HooksInterface is an interface of hooks to be called by IBFT
@@ -153,6 +153,12 @@ func (m *ForkManager) GetSigner(height uint64) (signer.Signer, error) {
 	), nil
 }
 
+type ForkManagerInfo struct {
+	Signer signer.Signer
+}
+
+type ForkManagerInfoFn func() *ForkManagerInfo
+
 // GetValidatorStore returns a proper validator set at specified height
 func (m *ForkManager) GetValidatorStore(height uint64) (ValidatorStore, error) {
 	fork := m.forks.getFork(height)
@@ -202,8 +208,8 @@ func (m *ForkManager) GetHooks(height uint64) HooksInterface {
 	hooks := &hook.Hooks{}
 
 	for _, r := range m.hooksRegisters {
-		//TODO: pass in validators here?
-		r.RegisterHooks(hooks, height)
+		signer, _ := m.GetSigner(height)
+		r.RegisterHooks(hooks, height, signer)
 	}
 
 	return hooks
