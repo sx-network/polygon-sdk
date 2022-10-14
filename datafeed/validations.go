@@ -89,7 +89,6 @@ func (d *DataFeed) validateTimestamp(payload *proto.DataFeedReport) bool {
 func (d *DataFeed) validateSignatures(payload *proto.DataFeedReport) (bool, error) {
 	sigList := strings.Split(payload.Signatures, ",")
 	for _, sig := range sigList {
-
 		pub, err := d.signatureToAddress(payload, sig)
 
 		if err != nil {

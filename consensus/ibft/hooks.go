@@ -201,7 +201,6 @@ var mechanismBackends = map[MechanismType]ConsensusMechanismFactory{
 
 // preStateCommitHookParams are the params passed into the preStateCommitHook
 type preStateCommitHookParams struct {
-	header       *types.Header
-	txn          *state.Transition
-	validatorSet ValidatorSet
+	header *types.Header
+	txn    *state.Transition
 }

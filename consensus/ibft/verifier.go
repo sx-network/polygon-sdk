@@ -56,7 +56,6 @@ func (i *backendIBFT) IsValidBlock(proposal []byte) bool {
 	}
 
 	if err := i.runHook(VerifyBlockHook, newBlock.Number(), newBlock); err != nil {
-		//nolint:govet
 		if errors.As(err, &errBlockVerificationFailed) {
 			i.logger.Error("block verification fail, block at the end of epoch has transactions")
 		} else {

@@ -179,6 +179,7 @@ func (i *backendIBFT) getCurrentForkConfig(height uint64) forkConfig {
 		if !mechanism.isCurrent(height) {
 			continue
 		}
+
 		return forkConfig{
 			customContract: mechanism.getCustomContractAddress(),
 			forkEpoch:      mechanism.getForkEpoch(),
@@ -571,10 +572,11 @@ func (i *backendIBFT) GetBlockCreator(header *types.Header) (types.Address, erro
 // PreStateCommit a hook to be called before finalizing state transition on inserting block
 func (i *backendIBFT) PreStateCommit(header *types.Header, txn *state.Transition) error {
 	params := &preStateCommitHookParams{
-		header:       header,
-		txn:          txn,
-		validatorSet: i.activeValidatorSet,
+		header: header,
+		txn:    txn,
 	}
+
+	i.logger.Debug("extraData", header.ExtraData)
 
 	if err := i.runHook(PreStateCommitHook, header.Number, params); err != nil {
 		return err
@@ -598,6 +600,7 @@ func (i *backendIBFT) IsLastOfEpoch(number uint64) bool {
 	if forkEpoch == 0 {
 		return number > 0 && number%i.epochSize == 0
 	}
+
 	return number > 0 && number%forkEpoch == 0
 }
 

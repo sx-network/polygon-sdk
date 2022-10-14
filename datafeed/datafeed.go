@@ -99,10 +99,10 @@ func NewDataFeedService(
 	}
 
 	if config.VerifyOutcomeURI == "" && config.MQConfig.AMQPURI == "" {
-		logger.Warn("DataFeed 'verify_outcome_api_url' is missing but required for reporting - we will avoid participating in reporting gossiping")
+		logger.Warn("DataFeed 'verify_outcome_api_url' is missing but required for reporting - we will avoid participating in reporting gossiping") //nolint:lll
+
 		return datafeedService, nil
 	}
-
 	// configure libp2p
 	if network == nil {
 		return nil, fmt.Errorf("network must be non-nil to start gossip protocol")

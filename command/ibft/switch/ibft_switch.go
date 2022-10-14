@@ -78,7 +78,6 @@ func setFlags(cmd *cobra.Command) {
 		0,
 		"fork-level epoch, overrides ibft epochSize for hook-related logic",
 	)
-
 }
 
 func runPreRun(_ *cobra.Command, _ []string) error {

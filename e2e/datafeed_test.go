@@ -47,6 +47,7 @@ func TestReportOutcome(t *testing.T) {
 	t.Logf("sig1 %s", sig1)
 
 	t.Logf("hashedReport1: %s", hex.EncodeToHex(hashed1))
+
 	sig1Decoded[64] = sig1Decoded[64] - 27
 
 	pub, err := cryptoutils.SigToPub(hashed1, sig1Decoded)
