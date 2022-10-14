@@ -67,7 +67,7 @@ func (r *PoAHookRegister) RegisterHooks(hooks *hook.Hooks, height uint64, signer
 	}
 
 	// set customContractAddress
-	if customContractAddressFork, ok := r.customContractAddressForks[height+1]; ok {
+	if customContractAddressFork, ok := r.customContractAddressForks[height]; ok {
 		registerCustomContractAddressHooks(
 			hooks,
 			r.epochSize,
