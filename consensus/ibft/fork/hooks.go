@@ -74,15 +74,16 @@ func registerCustomContractAddressHooks(
 	forkEpoch uint64,
 	signer signer.Signer,
 ) {
-	isLastEpoch := func(height uint64) bool {
-		if forkEpoch == 0 {
-			return height > 0 && height%epochSize == 0
-		}
-
-		return height > 0 && height%forkEpoch == 0
-	}
 
 	hooks.PreCommitStateFunc = func(h *types.Header, t *state.Transition) error {
+		isLastEpoch := func(height uint64) bool {
+			if forkEpoch == 0 {
+				return height > 0 && height%epochSize == 0
+			}
+
+			return height > 0 && height%forkEpoch == 0
+		}
+
 		// safe check
 		if !isLastEpoch(h.Number) {
 			return nil
