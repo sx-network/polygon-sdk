@@ -3,7 +3,6 @@ package fork
 import (
 	"github.com/0xPolygon/polygon-edge/consensus/ibft/hook"
 	"github.com/0xPolygon/polygon-edge/consensus/ibft/signer"
-	"github.com/0xPolygon/polygon-edge/types"
 )
 
 // PoAHookRegisterer that registers hooks for PoA mode
@@ -12,7 +11,7 @@ type PoAHookRegister struct {
 	poaForks                   IBFTForks
 	epochSize                  uint64
 	updateValidatorsForks      map[uint64]*IBFTFork
-	customContractAddressForks map[uint64]*IBFTFork
+	customContractAddressForks IBFTForks
 }
 
 // NewPoAHookRegisterer is a constructor of PoAHookRegister
@@ -24,15 +23,13 @@ func NewPoAHookRegisterer(
 	poaForks := forks.filterByType(PoA)
 
 	updateValidatorsForks := make(map[uint64]*IBFTFork)
-	customContractAddressForks := make(map[uint64]*IBFTFork)
+	//customContractAddressForks := make(map[uint64]*IBFTFork)
+
+	customContractAddressForks := forks.filterByHasCustomContractAddress()
 
 	for _, fork := range poaForks {
 		if fork.Validators != nil {
 			updateValidatorsForks[fork.From.Value] = fork
-		}
-
-		if fork.CustomContractAddress != types.ZeroAddress {
-			customContractAddressForks[fork.From.Value] = fork
 		}
 	}
 
@@ -52,6 +49,18 @@ func (r *PoAHookRegister) RegisterHooks(hooks *hook.Hooks, height uint64, signer
 		validatorStore := r.getValidatorsStore(currentFork)
 
 		registerHeaderModifierHooks(hooks, validatorStore)
+
+		// register customContractAddress hooks (preCommitState) when in PoA and
+		// current fork has non-zeroAddress customContractAddress
+		if currentFork = r.customContractAddressForks.getFork(height); currentFork != nil {
+			registerCustomContractAddressHooks(
+				hooks,
+				r.epochSize,
+				currentFork.CustomContractAddress,
+				currentFork.ForkEpoch,
+				signer,
+			)
+		}
 	}
 
 	// update validators in the end of the last block
@@ -63,17 +72,6 @@ func (r *PoAHookRegister) RegisterHooks(hooks *hook.Hooks, height uint64, signer
 			validatorStore,
 			updateValidatorsFork.Validators,
 			updateValidatorsFork.From.Value,
-		)
-	}
-
-	// set customContractAddress
-	if customContractAddressFork, ok := r.customContractAddressForks[height]; ok {
-		registerCustomContractAddressHooks(
-			hooks,
-			r.epochSize,
-			customContractAddressFork.CustomContractAddress,
-			customContractAddressFork.ForkEpoch,
-			signer,
 		)
 	}
 }

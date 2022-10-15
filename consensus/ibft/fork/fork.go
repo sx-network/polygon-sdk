@@ -165,3 +165,16 @@ func (fs *IBFTForks) filterByType(ibftType IBFTType) IBFTForks {
 
 	return filteredForks
 }
+
+// filterByHasCustomContractAddress returns new list of IBFTFork who have non-zeroAddress customContractAddress values
+func (fs *IBFTForks) filterByHasCustomContractAddress() IBFTForks {
+	filteredForks := make(IBFTForks, 0)
+
+	for _, fork := range *fs {
+		if fork.CustomContractAddress != types.ZeroAddress {
+			filteredForks = append(filteredForks, fork)
+		}
+	}
+
+	return filteredForks
+}
