@@ -50,6 +50,7 @@ func (f *IBFTFork) UnmarshalJSON(data []byte) error {
 		To                    *common.JSONNumber        `json:"to,omitempty"`
 		Validators            interface{}               `json:"validators,omitempty"`
 		CustomContractAddress string                    `json:"customContractAddress,omitempty"`
+		ForkEpoch             uint64                    `json:"forkEpochSize,omitempty"`
 		MaxValidatorCount     *common.JSONNumber        `json:"maxValidatorCount,omitempty"`
 		MinValidatorCount     *common.JSONNumber        `json:"minValidatorCount,omitempty"`
 	}{}
@@ -63,6 +64,7 @@ func (f *IBFTFork) UnmarshalJSON(data []byte) error {
 	f.From = raw.From
 	f.To = raw.To
 	f.CustomContractAddress = types.StringToAddress(raw.CustomContractAddress)
+	f.ForkEpoch = raw.ForkEpoch
 	f.MaxValidatorCount = raw.MaxValidatorCount
 	f.MinValidatorCount = raw.MinValidatorCount
 
