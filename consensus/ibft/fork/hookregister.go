@@ -3,10 +3,16 @@ package fork
 import (
 	"github.com/0xPolygon/polygon-edge/consensus/ibft/hook"
 	"github.com/0xPolygon/polygon-edge/consensus/ibft/signer"
+	"github.com/hashicorp/go-hclog"
+)
+
+const (
+	hookRegisterLoggerName = "hook_register"
 )
 
 // PoAHookRegisterer that registers hooks for PoA mode
 type PoAHookRegister struct {
+	logger                     hclog.Logger
 	getValidatorsStore         func(*IBFTFork) ValidatorStore
 	poaForks                   IBFTForks
 	epochSize                  uint64
@@ -16,6 +22,7 @@ type PoAHookRegister struct {
 
 // NewPoAHookRegisterer is a constructor of PoAHookRegister
 func NewPoAHookRegisterer(
+	logger hclog.Logger,
 	getValidatorsStore func(*IBFTFork) ValidatorStore,
 	forks IBFTForks,
 	epochSize uint64,
@@ -34,6 +41,7 @@ func NewPoAHookRegisterer(
 	}
 
 	return &PoAHookRegister{
+		logger:                     logger.Named(hookRegisterLoggerName),
 		getValidatorsStore:         getValidatorsStore,
 		poaForks:                   poaForks,
 		epochSize:                  epochSize,
@@ -59,6 +67,7 @@ func (r *PoAHookRegister) RegisterHooks(hooks *hook.Hooks, height uint64, signer
 				currentFork.CustomContractAddress,
 				currentFork.ForkEpoch,
 				signer,
+				r.logger,
 			)
 		}
 	}

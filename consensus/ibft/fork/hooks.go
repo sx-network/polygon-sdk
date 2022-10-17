@@ -14,6 +14,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/0xPolygon/polygon-edge/validators"
 	"github.com/0xPolygon/polygon-edge/validators/store"
+	"github.com/hashicorp/go-hclog"
 )
 
 var (
@@ -73,8 +74,8 @@ func registerCustomContractAddressHooks(
 	customContractAddress types.Address,
 	forkEpoch uint64,
 	signer signer.Signer,
+	logger hclog.Logger,
 ) {
-
 	hooks.PreCommitStateFunc = func(h *types.Header, t *state.Transition) error {
 		isLastEpoch := func(height uint64) bool {
 			if forkEpoch == 0 {
@@ -96,6 +97,8 @@ func registerCustomContractAddressHooks(
 		}
 
 		validatorAddresses := validators.ValidatorSetToAddressArray(validatorSet)
+
+		logger.Debug("calling setValidators", "validators", validatorAddresses)
 
 		_, err = datafeed.SetValidators(t, types.ZeroAddress, customContractAddress, validatorAddresses)
 		if err != nil {

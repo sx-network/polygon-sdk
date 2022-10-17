@@ -331,6 +331,7 @@ func (m *ForkManager) initializeHooksRegister(ibftType IBFTType) {
 	switch ibftType {
 	case PoA:
 		m.hooksRegisters[PoA] = NewPoAHookRegisterer(
+			m.logger,
 			m.getValidatorStoreByIBFTFork,
 			m.forks,
 			m.epochSize,
