@@ -32,7 +32,7 @@ type IBFTFork struct {
 	Validators validators.Validators `json:"validators,omitempty"`
 
 	// Custom contract address
-	CustomContractAddress types.Address `json:"customContractAddress,omitempty"`
+	CustomContractAddress string `json:"customContractAddress,omitempty"`
 	// Fork epoch
 	ForkEpoch uint64 `json:"forkEpochSize,omitempty"`
 
@@ -63,7 +63,7 @@ func (f *IBFTFork) UnmarshalJSON(data []byte) error {
 	f.Deployment = raw.Deployment
 	f.From = raw.From
 	f.To = raw.To
-	f.CustomContractAddress = types.StringToAddress(raw.CustomContractAddress)
+	f.CustomContractAddress = raw.CustomContractAddress
 	f.ForkEpoch = raw.ForkEpoch
 	f.MaxValidatorCount = raw.MaxValidatorCount
 	f.MinValidatorCount = raw.MinValidatorCount
@@ -171,7 +171,7 @@ func (fs *IBFTForks) filterByHasCustomContractAddress() IBFTForks {
 	filteredForks := make(IBFTForks, 0)
 
 	for _, fork := range *fs {
-		if fork.CustomContractAddress != types.ZeroAddress {
+		if fork.CustomContractAddress != types.AddressToString(types.ZeroAddress) {
 			filteredForks = append(filteredForks, fork)
 		}
 	}

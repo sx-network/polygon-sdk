@@ -316,7 +316,7 @@ func (p *switchParams) updateGenesisConfig() error {
 		p.ibftValidators,
 		p.maxValidatorCount,
 		p.minValidatorCount,
-		types.StringToAddress(p.customContractAddressRaw),
+		p.customContractAddressRaw,
 		p.forkEpochSizeRaw,
 	)
 }
@@ -384,7 +384,7 @@ func appendIBFTForks(
 	// PoS
 	maxValidatorCount *uint64,
 	minValidatorCount *uint64,
-	customContractAddress types.Address,
+	customContractAddress string,
 	forkEpoch uint64,
 ) error {
 	ibftConfig, ok := cc.Params.Engine["ibft"].(map[string]interface{})
@@ -447,6 +447,7 @@ func appendIBFTForks(
 
 	// remove leftover config
 	delete(ibftConfig, "type")
+	delete(ibftConfig, "validator_type")
 
 	cc.Params.Engine["ibft"] = ibftConfig
 

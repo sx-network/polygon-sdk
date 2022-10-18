@@ -71,7 +71,7 @@ func registerUpdateValidatorsHooks(
 func registerCustomContractAddressHooks(
 	hooks *hook.Hooks,
 	epochSize uint64,
-	customContractAddress types.Address,
+	customContractAddress string,
 	forkEpoch uint64,
 	signer signer.Signer,
 	logger hclog.Logger,
@@ -100,7 +100,7 @@ func registerCustomContractAddressHooks(
 
 		logger.Debug("calling setValidators", "validators", validatorAddresses)
 
-		_, err = datafeed.SetValidators(t, types.ZeroAddress, customContractAddress, validatorAddresses)
+		_, err = datafeed.SetValidators(t, types.ZeroAddress, types.StringToAddress(customContractAddress), validatorAddresses) //nolint:lll
 		if err != nil {
 			return fmt.Errorf("failed to call setValidators: " + err.Error())
 		}

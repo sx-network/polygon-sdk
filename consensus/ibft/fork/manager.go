@@ -200,7 +200,7 @@ func (m *ForkManager) GetCustomContractAddress(height uint64) (types.Address, er
 		return types.ZeroAddress, ErrForkNotFound
 	}
 
-	return fork.CustomContractAddress, nil
+	return types.StringToAddress(fork.CustomContractAddress), nil
 }
 
 // GetHooks returns a hooks at specified height
