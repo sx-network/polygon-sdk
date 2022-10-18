@@ -50,7 +50,9 @@ func (r *IBFTSwitchResult) GetOutput() string {
 		outputs = append(outputs, fmt.Sprint("CustomContractAddress|", r.CustomContractAddress))
 	}
 
-	outputs = append(outputs, fmt.Sprint("ForkEpochSize|", r.ForkEpochSize))
+	if r.ForkEpochSize != 0 {
+		outputs = append(outputs, fmt.Sprint("ForkEpochSize|", r.ForkEpochSize))
+	}
 
 	buffer.WriteString(helper.FormatKV(outputs))
 	buffer.WriteString("\n")
