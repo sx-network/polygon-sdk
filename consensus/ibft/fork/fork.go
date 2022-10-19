@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/0xPolygon/polygon-edge/helper/common"
-	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/0xPolygon/polygon-edge/validators"
 )
 
@@ -171,7 +170,7 @@ func (fs *IBFTForks) filterByHasCustomContractAddress() IBFTForks {
 	filteredForks := make(IBFTForks, 0)
 
 	for _, fork := range *fs {
-		if fork.CustomContractAddress != types.AddressToString(types.ZeroAddress) {
+		if fork.CustomContractAddress != "" {
 			filteredForks = append(filteredForks, fork)
 		}
 	}
