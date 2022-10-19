@@ -30,9 +30,8 @@ func NewPoAHookRegisterer(
 	poaForks := forks.filterByType(PoA)
 
 	updateValidatorsForks := make(map[uint64]*IBFTFork)
-	//customContractAddressForks := make(map[uint64]*IBFTFork)
 
-	customContractAddressForks := forks.filterByHasCustomContractAddress()
+	customContractAddressForks := poaForks.filterByHasCustomContractAddress()
 
 	for _, fork := range poaForks {
 		if fork.Validators != nil {
