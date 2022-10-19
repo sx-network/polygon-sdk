@@ -491,7 +491,7 @@ func (d *DataFeed) reportOutcomeToSC(payload *proto.DataFeedReport) {
 		}
 
 		if receipt == nil {
-			d.logger.Error(
+			d.logger.Warn(
 				"failed to get txn receipt via ethgo, retry with same nonce and more gas",
 				"try #", txTry,
 				"nonce", currNonce,
