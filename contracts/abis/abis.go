@@ -4,6 +4,13 @@ import (
 	"github.com/umbracle/ethgo/abi"
 )
 
-var StakingABI = abi.MustNewABI(StakingJSONABI)
-var StressTestABI = abi.MustNewABI(StressTestJSONABI)
-var CustomABI = abi.MustNewABI(CustomJSONABI)
+var (
+	// ABI for Staking Contract
+	StakingABI = abi.MustNewABI(StakingJSONABI)
+
+	// ABI for Contract used in e2e stress test
+	StressTestABI = abi.MustNewABI(StressTestJSONABI)
+
+	// ABI for upgradeable SXNode contract to interface with various features
+	SXNodeABI = abi.MustNewABI(SXNodeJSONABI)
+)

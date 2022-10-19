@@ -209,9 +209,8 @@ func TestQueryValidators(t *testing.T) {
 					tt.mockArgs.addr: tt.mockReturns.nonce,
 				},
 			}
-			contract := types.ZeroAddress
 
-			res, err := QueryValidators(mock, contract, tt.from)
+			res, err := QueryValidators(mock, tt.from)
 			if tt.succeed {
 				assert.NoError(t, err)
 			} else {

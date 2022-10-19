@@ -228,6 +228,14 @@ func (p *serverParams) initAddresses() error {
 		return err
 	}
 
+	if err := p.initDataFeedParams(); err != nil {
+		return err
+	}
+
+	// if err := p.initCustomContractAddress(); err != nil {
+	// 	return err
+	// }
+
 	return p.initGRPCAddress()
 }
 
@@ -300,6 +308,18 @@ func (p *serverParams) initJSONRPCAddress() error {
 	); parseErr != nil {
 		return parseErr
 	}
+
+	p.jsonRPCBatchLengthLimit = p.rawConfig.JSONRPCBatchRequestLimit
+	p.jsonRPCBlockRangeLimit = p.rawConfig.JSONRPCBlockRangeLimit
+
+	return nil
+}
+
+func (p *serverParams) initDataFeedParams() error {
+	p.dataFeedAMQPURI = p.rawConfig.DataFeed.AMQPURI
+	p.dataFeedAMQPExchangeName = p.rawConfig.DataFeed.AMQPExchangeName
+	p.dataFeedAMQPQueueName = p.rawConfig.DataFeed.AMQPQueueName
+	p.verifyOutcomeAPIURL = p.rawConfig.DataFeed.VerifyOutcomeAPIURL
 
 	return nil
 }

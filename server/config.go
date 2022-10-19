@@ -36,6 +36,8 @@ type Config struct {
 	RPCNrLicenseKey                 string
 	GasPriceBlockUtilizationMinimum float64
 
+	DataFeed *DataFeed
+
 	Seal bool
 
 	SecretsManager *secrets.SecretsManagerConfig
@@ -56,4 +58,12 @@ type JSONRPC struct {
 	AccessControlAllowOrigin []string
 	BatchLengthLimit         uint64
 	BlockRangeLimit          uint64
+}
+
+// DataFeed holds the config details for the DataFeedService
+type DataFeed struct {
+	DataFeedAMQPURI          string
+	DataFeedAMQPExchangeName string
+	DataFeedAMQPQueueName    string
+	VerifyOutcomeURI         string
 }

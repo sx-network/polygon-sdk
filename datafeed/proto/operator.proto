@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package v1;
+
+option go_package = "/datafeed/proto";
+
+service DataFeedOperator {
+  // AddProposal adds a datafeed proposal
+  rpc ReportOutcome(ReportOutcomeReq) returns (ReportOutcomeResp);
+}
+
+message ReportOutcomeReq {
+  string market = 1;
+  int32 outcome = 2;
+}
+
+message ReportOutcomeResp {
+  string marketHash = 1;
+}

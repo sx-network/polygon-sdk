@@ -89,7 +89,7 @@ type Verifier interface {
 	VerifyHeader(header *types.Header) error
 	ProcessHeaders(headers []*types.Header) error
 	GetBlockCreator(header *types.Header) (types.Address, error)
-	PreStateCommit(header *types.Header, txn *state.Transition) error
+	PreCommitState(header *types.Header, txn *state.Transition) error
 }
 
 type Executor interface {
@@ -870,7 +870,7 @@ func (b *Blockchain) executeBlockTransactions(block *types.Block) (*BlockResult,
 		return nil, err
 	}
 
-	if err := b.consensus.PreStateCommit(header, txn); err != nil {
+	if err := b.consensus.PreCommitState(header, txn); err != nil {
 		return nil, err
 	}
 
@@ -981,6 +981,7 @@ func (b *Blockchain) updateGasPriceAvgWithBlock(block *types.Block) {
 		// so no gas price average to update
 		// reset gasPriceAvg data to 0 so that eth_gasPrice will return configured price-limit
 		b.resetGasPriceAvg()
+
 		return
 	}
 
@@ -989,6 +990,7 @@ func (b *Blockchain) updateGasPriceAvgWithBlock(block *types.Block) {
 		// Default is 0, so this is a no-op if it's not set.
 		// reset gasPriceAvg data to 0 so that eth_gasPrice will return configured price-limit
 		b.resetGasPriceAvg()
+
 		return
 	}
 

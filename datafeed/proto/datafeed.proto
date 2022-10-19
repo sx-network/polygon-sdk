@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package v1;
+
+option go_package = "/datafeed/proto";
+
+message DataFeedReport {
+    // marketHash is the market hash of the repot
+    string marketHash = 1;
+
+    // outcome is the outcome of the report
+    int32 outcome = 2;
+ 
+    // signatures is the concatenated list of validator signatures 
+    string signatures = 3;
+ 
+    // epoch is the epoch at which the message was initially gossiped at
+    uint64 epoch = 4;
+ 
+    // timestamp is the initial signature's server clock
+    int64 timestamp = 5;
+}

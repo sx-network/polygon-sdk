@@ -16,6 +16,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/chain"
 	"github.com/0xPolygon/polygon-edge/consensus"
 	"github.com/0xPolygon/polygon-edge/crypto"
+	"github.com/0xPolygon/polygon-edge/datafeed"
 	"github.com/0xPolygon/polygon-edge/helper/common"
 	configHelper "github.com/0xPolygon/polygon-edge/helper/config"
 	"github.com/0xPolygon/polygon-edge/helper/keccak"
@@ -55,6 +56,9 @@ type Server struct {
 
 	// jsonrpc stack
 	jsonrpcServer *jsonrpc.JSONRPC
+
+	// datafeedService
+	datafeedService *datafeed.DataFeed
 
 	// system grpc server
 	grpcServer *grpc.Server
@@ -257,6 +261,11 @@ func NewServer(config *Config) (*Server, error) {
 
 	// initialize data in consensus layer
 	if err := m.consensus.Initialize(); err != nil {
+		return nil, err
+	}
+
+	// setup and start datafeed consumer
+	if err := m.setupDataFeedService(); err != nil {
 		return nil, err
 	}
 
@@ -587,6 +596,35 @@ func (s *Server) setupJSONRPC() error {
 	}
 
 	s.jsonrpcServer = srv
+
+	return nil
+}
+
+// setupDataFeedService set up and start datafeed service
+func (s *Server) setupDataFeedService() error {
+	conf := &datafeed.Config{
+		MQConfig: &datafeed.MQConfig{
+			AMQPURI:      s.config.DataFeed.DataFeedAMQPURI,
+			ExchangeName: s.config.DataFeed.DataFeedAMQPExchangeName,
+			QueueConfig: &datafeed.QueueConfig{
+				QueueName: s.config.DataFeed.DataFeedAMQPQueueName,
+			},
+		},
+		VerifyOutcomeURI: s.config.DataFeed.VerifyOutcomeURI,
+	}
+
+	datafeedService, err := datafeed.NewDataFeedService(
+		s.logger,
+		conf,
+		s.grpcServer,
+		s.network,
+		s.consensus.GetConsensusInfo(),
+	)
+	if err != nil {
+		return err
+	}
+
+	s.datafeedService = datafeedService
 
 	return nil
 }

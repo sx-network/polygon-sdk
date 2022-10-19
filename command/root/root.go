@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/0xPolygon/polygon-edge/command/backup"
+	"github.com/0xPolygon/polygon-edge/command/datafeed"
 	"github.com/0xPolygon/polygon-edge/command/genesis"
 	"github.com/0xPolygon/polygon-edge/command/helper"
 	"github.com/0xPolygon/polygon-edge/command/ibft"
@@ -54,6 +55,7 @@ func (rc *RootCommand) registerSubCommands() {
 		server.GetCommand(),
 		whitelist.GetCommand(),
 		license.GetCommand(),
+		datafeed.GetCommand(),
 	)
 }
 
