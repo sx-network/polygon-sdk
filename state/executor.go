@@ -371,6 +371,12 @@ func (t *Transition) subGasLimitPrice(msg *types.Transaction) error {
 }
 
 func (t *Transition) nonceCheck(msg *types.Transaction) error {
+
+	if msg.From == types.ZeroAddress {
+		// don't do nonce checks for txs with From = 0x0
+		return nil
+	}
+
 	nonce := t.state.GetNonce(msg.From)
 
 	if nonce != msg.Nonce {
