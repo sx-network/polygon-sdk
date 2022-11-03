@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	_ "net/http/pprof"
 
 	"github.com/0xPolygon/polygon-edge/command/root"
 	"github.com/0xPolygon/polygon-edge/licenses"
