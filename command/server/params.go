@@ -4,9 +4,8 @@ import (
 	"errors"
 	"net"
 
-	"github.com/0xPolygon/polygon-edge/command/server/config"
-
 	"github.com/0xPolygon/polygon-edge/chain"
+	"github.com/0xPolygon/polygon-edge/command/server/config"
 	"github.com/0xPolygon/polygon-edge/network"
 	"github.com/0xPolygon/polygon-edge/secrets"
 	"github.com/0xPolygon/polygon-edge/server"
@@ -30,8 +29,8 @@ const (
 	jsonRPCBatchRequestLimitFlag        = "json-rpc-batch-request-limit"
 	jsonRPCBlockRangeLimitFlag          = "json-rpc-block-range-limit"
 	rpcNRAppNameFlag                    = "rpc-nr-app-name"
-	gasPriceBlockUtilizationMinimumFlag = "gas-price-block-utilization-minimum"
 	rpcNRLicenseKeyFlag                 = "rpc-nr-license-key"
+	gasPriceBlockUtilizationMinimumFlag = "gas-price-block-utilization-minimum"
 	maxSlotsFlag                        = "max-slots"
 	maxEnqueuedFlag                     = "max-enqueued"
 	blockGasTargetFlag                  = "block-gas-target"
@@ -42,6 +41,10 @@ const (
 	devFlag                             = "dev"
 	corsOriginFlag                      = "access-control-allow-origins"
 	logFileLocationFlag                 = "log-to"
+	dataFeedAMQPURIFlag                 = "data-feed-amqp-uri"
+	dataFeedAMQPExchangeNameFlag        = "data-feed-amqp-exchange-name"
+	dataFeedAMQPQueueNameFlag           = "data-feed-amqp-queue-name"
+	verifyOutcomeAPIURLFlag             = "verify-outcome-api-url"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -60,6 +63,7 @@ var (
 			Telemetry: &config.Telemetry{},
 			Network:   &config.Network{},
 			TxPool:    &config.TxPool{},
+			DataFeed:  &config.DataFeed{},
 		},
 	}
 )
@@ -83,7 +87,16 @@ type serverParams struct {
 	devInterval    uint64
 	isDevMode      bool
 
-	corsAllowedOrigins []string
+	corsAllowedOrigins      []string
+	rpcNRAppName            string
+	rpcNRLicenseKey         string
+	jsonRPCBatchLengthLimit uint64
+	jsonRPCBlockRangeLimit  uint64
+
+	dataFeedAMQPURI          string
+	dataFeedAMQPExchangeName string
+	dataFeedAMQPQueueName    string
+	verifyOutcomeAPIURL      string
 
 	ibftBaseTimeoutLegacy uint64
 
@@ -168,6 +181,12 @@ func (p *serverParams) generateConfig() *server.Config {
 			MaxOutboundPeers: p.rawConfig.Network.MaxOutboundPeers,
 			Chain:            p.genesisConfig,
 		},
+		DataFeed: &server.DataFeed{
+			DataFeedAMQPURI:          p.dataFeedAMQPURI,
+			DataFeedAMQPExchangeName: p.dataFeedAMQPExchangeName,
+			DataFeedAMQPQueueName:    p.dataFeedAMQPQueueName,
+			VerifyOutcomeURI:         p.verifyOutcomeAPIURL,
+		},
 		DataDir:                         p.rawConfig.DataDir,
 		Seal:                            p.rawConfig.ShouldSeal,
 		PriceLimit:                      p.rawConfig.TxPool.PriceLimit,
@@ -176,8 +195,8 @@ func (p *serverParams) generateConfig() *server.Config {
 		SecretsManager:                  p.secretsConfig,
 		RestoreFile:                     p.getRestoreFilePath(),
 		BlockTime:                       p.rawConfig.BlockTime,
-		RPCNrAppName:                    p.rawConfig.RPCNrAppName,
-		RPCNrLicenseKey:                 p.rawConfig.RPCNrLicenseKey,
+		RPCNrAppName:                    p.rpcNRAppName,
+		RPCNrLicenseKey:                 p.rpcNRLicenseKey,
 		GasPriceBlockUtilizationMinimum: p.rawConfig.GasPriceBlockUtilizationMinimum,
 		LogLevel:                        hclog.LevelFromString(p.rawConfig.LogLevel),
 		LogFilePath:                     p.logFileLocation,

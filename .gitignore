@@ -1,3 +1,5 @@
+vendor/
+
 peers.json
 genesis.json
 secretsManagerConfig.json
@@ -24,3 +26,5 @@ artifacts
 
 # Log files
 *.log
+
+vendor/

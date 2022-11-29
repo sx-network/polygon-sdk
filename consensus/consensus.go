@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"log"
 
 	"github.com/0xPolygon/polygon-edge/blockchain"
@@ -12,6 +13,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/state"
 	"github.com/0xPolygon/polygon-edge/txpool"
 	"github.com/0xPolygon/polygon-edge/types"
+	"github.com/0xPolygon/polygon-edge/validators"
 	"github.com/hashicorp/go-hclog"
 	"google.golang.org/grpc"
 )
@@ -28,8 +30,8 @@ type Consensus interface {
 	// GetBlockCreator retrieves the block creator (or signer) given the block header
 	GetBlockCreator(header *types.Header) (types.Address, error)
 
-	// PreStateCommit a hook to be called before finalizing state transition on inserting block
-	PreStateCommit(header *types.Header, txn *state.Transition) error
+	// PreCommitState a hook to be called before finalizing state transition on inserting block
+	PreCommitState(header *types.Header, txn *state.Transition) error
 
 	// GetSyncProgression retrieves the current sync progression, if any
 	GetSyncProgression() *progress.Progression
@@ -45,7 +47,22 @@ type Consensus interface {
 
 	// Returns whether or not ibft node is stale
 	IsIbftStateStale() bool
+
+	// Returns validator info to be used outside consensus layer
+	GetConsensusInfo() ConsensusInfoFn
 }
+
+type ConsensusInfo struct {
+	Validators            validators.Validators
+	ValidatorKey          *ecdsa.PrivateKey
+	ValidatorAddress      types.Address
+	Epoch                 uint64
+	QuorumSize            int
+	CustomContractAddress types.Address
+	Nonce                 uint64
+}
+
+type ConsensusInfoFn func() *ConsensusInfo
 
 // Config is the configuration for the consensus
 type Config struct {

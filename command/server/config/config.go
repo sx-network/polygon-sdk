@@ -3,13 +3,12 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/0xPolygon/polygon-edge/network"
-	"gopkg.in/yaml.v3"
-
 	"github.com/hashicorp/hcl"
+	"gopkg.in/yaml.v3"
 )
 
 // Config defines the server configuration params
@@ -22,6 +21,7 @@ type Config struct {
 	JSONRPCAddr                     string     `json:"jsonrpc_addr" yaml:"jsonrpc_addr"`
 	Telemetry                       *Telemetry `json:"telemetry" yaml:"telemetry"`
 	Network                         *Network   `json:"network" yaml:"network"`
+	DataFeed                        *DataFeed  `json:"data_feed" yaml:"data_feed"`
 	ShouldSeal                      bool       `json:"seal" yaml:"seal"`
 	TxPool                          *TxPool    `json:"tx_pool" yaml:"tx_pool"`
 	LogLevel                        string     `json:"log_level" yaml:"log_level"`
@@ -51,6 +51,14 @@ type Network struct {
 	MaxPeers         int64  `json:"max_peers,omitempty" yaml:"max_peers,omitempty"`
 	MaxOutboundPeers int64  `json:"max_outbound_peers,omitempty" yaml:"max_outbound_peers,omitempty"`
 	MaxInboundPeers  int64  `json:"max_inbound_peers,omitempty" yaml:"max_inbound_peers,omitempty"`
+}
+
+// DataFeed defines the DataFeed configuration params
+type DataFeed struct {
+	AMQPURI             string `json:"amqp_uri" yaml:"amqp_uri"`
+	AMQPExchangeName    string `json:"amqp_exchange_name" yaml:"amqp_exchange_name"`
+	AMQPQueueName       string `json:"amqp_queue_name" yaml:"amqp_queue_name"`
+	VerifyOutcomeAPIURL string `json:"verify_outcome_api_url" yaml:"verify_outcome_api_url"`
 }
 
 // TxPool defines the TxPool configuration params
@@ -106,6 +114,12 @@ func DefaultConfig() *Config {
 			MaxSlots:           4096,
 			MaxAccountEnqueued: 128,
 		},
+		DataFeed: &DataFeed{
+			AMQPURI:             "",
+			AMQPExchangeName:    "",
+			AMQPQueueName:       "",
+			VerifyOutcomeAPIURL: "",
+		},
 		LogLevel:    "INFO",
 		RestoreFile: "",
 		BlockTime:   DefaultBlockTime,
@@ -123,7 +137,7 @@ func DefaultConfig() *Config {
 //
 // Supported file types: .json, .hcl, .yaml, .yml
 func ReadConfigFile(path string) (*Config, error) {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

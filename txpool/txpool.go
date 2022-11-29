@@ -8,7 +8,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/hashicorp/go-hclog"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"go.uber.org/atomic"
 	"google.golang.org/grpc"
 
@@ -632,7 +632,10 @@ func (p *TxPool) validateTx(tx *types.Transaction) error {
 	stateRoot := p.store.Header().StateRoot
 
 	// Check nonce ordering
-	if p.store.GetNonce(stateRoot, tx.From) > tx.Nonce {
+	currNonce := p.store.GetNonce(stateRoot, tx.From)
+	if currNonce > tx.Nonce {
+		p.logger.Debug("nonce too low for tx", "txNonce", tx.Nonce, "expectedNonce", currNonce, "from", tx.From)
+
 		return ErrNonceTooLow
 	}
 
@@ -643,6 +646,8 @@ func (p *TxPool) validateTx(tx *types.Transaction) error {
 
 	// Check if the sender has enough funds to execute the transaction
 	if accountBalance.Cmp(tx.Cost()) < 0 {
+		p.logger.Debug("insufficient funds for tx", "accountBalance", accountBalance, "from", tx.From, "txCost", tx.Cost())
+
 		return ErrInsufficientFunds
 	}
 
@@ -761,6 +766,7 @@ func (p *TxPool) handleEnqueueRequest(req enqueueRequest) {
 
 	// enqueue tx
 	if err := account.enqueue(tx); err != nil {
+		p.logger.Debug("nonce too low for tx", "txNonce", tx.Nonce, "expectedNonce", account.getNonce(), "from", tx.From)
 		p.logger.Error("enqueue request", "err", err)
 
 		p.index.remove(tx)

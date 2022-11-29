@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/hashicorp/go-hclog"
+	"github.com/umbracle/fastrlp"
+
 	"github.com/0xPolygon/polygon-edge/chain"
 	"github.com/0xPolygon/polygon-edge/helper/common"
 	"github.com/0xPolygon/polygon-edge/helper/hex"
@@ -12,8 +15,6 @@ import (
 	"github.com/0xPolygon/polygon-edge/state"
 	"github.com/0xPolygon/polygon-edge/state/runtime"
 	"github.com/0xPolygon/polygon-edge/types"
-	"github.com/hashicorp/go-hclog"
-	"github.com/umbracle/fastrlp"
 )
 
 type ethTxPoolStore interface {
@@ -87,7 +88,8 @@ var (
 )
 
 // ChainId returns the chain id of the client
-//nolint:stylecheck, gofmt
+//
+//nolint:stylecheck
 func (e *Eth) ChainId() (interface{}, error) {
 	return argUintPtr(e.chainID), nil
 }
@@ -407,7 +409,6 @@ func (e *Eth) GetStorageAt(
 	// Get the storage for the passed in location
 	result, err := e.store.GetStorage(header.StateRoot, address, index)
 	if err != nil {
-		//nolint:govet
 		if errors.As(err, &ErrStateNotFound) {
 			return argBytesPtr(types.ZeroHash[:]), nil
 		}
@@ -540,7 +541,6 @@ func (e *Eth) EstimateGas(arg *txnArgs, rawNum *BlockNumber) (interface{}, error
 		accountBalance := big.NewInt(0)
 		acc, err := e.store.GetAccount(header.StateRoot, transaction.From)
 
-		//nolint:govet
 		if err != nil && !errors.As(err, &ErrStateNotFound) {
 			// An unrelated error occurred, return it
 			return nil, err
@@ -584,7 +584,6 @@ func (e *Eth) EstimateGas(arg *txnArgs, rawNum *BlockNumber) (interface{}, error
 	// Checks if executor level valid gas errors occurred
 	isGasApplyError := func(err error) bool {
 		// Not linting this as the underlying error is actually wrapped
-		//nolint:govet
 		return errors.As(err, &state.ErrNotEnoughIntrinsicGas)
 	}
 
@@ -711,7 +710,7 @@ func (e *Eth) GetBalance(address types.Address, filter BlockNumberOrHash) (inter
 
 	// Extract the account balance
 	acc, err := e.store.GetAccount(header.StateRoot, address)
-	//nolint:govet
+
 	if errors.As(err, &ErrStateNotFound) {
 		// Account not found, return an empty account
 		return argUintPtr(0), nil
@@ -778,7 +777,6 @@ func (e *Eth) GetCode(address types.Address, filter BlockNumberOrHash) (interfac
 	emptySlice := []byte{}
 	acc, err := e.store.GetAccount(header.StateRoot, address)
 
-	//nolint:govet
 	if errors.As(err, &ErrStateNotFound) {
 		// If the account doesn't exist / is not initialized yet,
 		// return the default value
@@ -869,7 +867,6 @@ func (e *Eth) getNextNonce(address types.Address, number BlockNumber) (uint64, e
 
 	acc, err := e.store.GetAccount(header.StateRoot, address)
 
-	//nolint:govet
 	if errors.As(err, &ErrStateNotFound) {
 		// If the account doesn't exist / isn't initialized,
 		// return a nonce value of 0

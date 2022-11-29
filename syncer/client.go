@@ -14,7 +14,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/syncer/proto"
 	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/hashicorp/go-hclog"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -220,7 +220,7 @@ func (m *syncPeerClient) startNewBlockProcess() {
 
 // startPeerEventProcess starts subscribing peer connection change events and process them
 func (m *syncPeerClient) startPeerEventProcess() {
-	peerEventCh, err := m.network.SubscribeCh()
+	peerEventCh, err := m.network.SubscribeCh(context.Background())
 	if err != nil {
 		m.logger.Error("failed to subscribe", "err", err)
 

@@ -9,7 +9,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/network/event"
 	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/hashicorp/go-hclog"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 const (
@@ -26,6 +26,7 @@ var (
 type syncer struct {
 	logger          hclog.Logger
 	blockchain      Blockchain
+	network         Network
 	syncProgression Progression
 
 	peerMap         *PeerMap
@@ -48,6 +49,7 @@ func NewSyncer(
 	return &syncer{
 		logger:          logger.Named(syncerName),
 		blockchain:      blockchain,
+		network:         network,
 		syncProgression: progress.NewProgressionWrapper(progress.ChainSyncBulk),
 		syncPeerService: NewSyncPeerService(network, blockchain),
 		syncPeerClient:  NewSyncPeerClient(logger, network, blockchain),
@@ -158,10 +160,24 @@ func (s *syncer) HasSyncPeer() bool {
 	return bestPeer != nil && bestPeer.Number > header.Number
 }
 
+// makeSkipList initializes list of peers to skip
+func (s *syncer) makeSkipList() map[peer.ID]bool {
+	skipList := make(map[peer.ID]bool)
+
+	s.peerMap.Range(func(key, value interface{}) bool {
+		peer, _ := value.(*NoForkPeer)
+		skipList[peer.ID] = s.network.ShouldIgnoreSyncToPeer(peer.ID)
+
+		return true
+	})
+
+	return skipList
+}
+
 // Sync syncs block with the best peer until callback returns true
 func (s *syncer) Sync(callback func(*types.Block) bool) error {
 	localLatest := s.blockchain.Header().Number
-	skipList := make(map[peer.ID]bool)
+	skipList := s.makeSkipList()
 
 	for {
 		// Wait for a new event to arrive
@@ -176,7 +192,7 @@ func (s *syncer) Sync(callback func(*types.Block) bool) error {
 		bestPeer := s.peerMap.BestPeer(skipList)
 		if bestPeer == nil {
 			// Empty skipList map if there are no best peers
-			skipList = make(map[peer.ID]bool)
+			skipList = s.makeSkipList()
 
 			continue
 		}

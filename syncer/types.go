@@ -1,6 +1,7 @@
 package syncer
 
 import (
+	"context"
 	"math/big"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/network"
 	"github.com/0xPolygon/polygon-edge/network/event"
 	"github.com/0xPolygon/polygon-edge/types"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -36,7 +37,7 @@ type Network interface {
 	// Peers returns current connected peers
 	Peers() []*network.PeerConnInfo
 	// SubscribeCh returns a channel of peer event
-	SubscribeCh() (<-chan *event.PeerEvent, error)
+	SubscribeCh(context.Context) (<-chan *event.PeerEvent, error)
 	// GetPeerDistance returns the distance between the node and given peer
 	GetPeerDistance(peer.ID) *big.Int
 	// NewProtoConnection opens up a new stream on the set protocol to the peer,
@@ -46,6 +47,8 @@ type Network interface {
 	NewTopic(protoID string, obj proto.Message) (*network.Topic, error)
 	// IsConnected returns the node is connecting to the peer associated with the given ID
 	IsConnected(peerID peer.ID) bool
+	// ShouldIgnoreSyncToPeer Check if client should ignore this peer when determining best peer to sync to
+	ShouldIgnoreSyncToPeer(peerID peer.ID) bool
 	// SaveProtocolStream saves stream
 	SaveProtocolStream(protocol string, stream *rawGrpc.ClientConn, peerID peer.ID)
 	// CloseProtocolStream closes stream

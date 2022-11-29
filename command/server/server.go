@@ -4,12 +4,11 @@ import (
 	"fmt"
 
 	"github.com/0xPolygon/polygon-edge/command"
+	"github.com/0xPolygon/polygon-edge/command/helper"
 	"github.com/0xPolygon/polygon-edge/command/server/config"
 	"github.com/0xPolygon/polygon-edge/command/server/export"
-	"github.com/spf13/cobra"
-
-	"github.com/0xPolygon/polygon-edge/command/helper"
 	"github.com/0xPolygon/polygon-edge/server"
+	"github.com/spf13/cobra"
 )
 
 func GetCommand() *cobra.Command {
@@ -251,7 +250,36 @@ func setFlags(cmd *cobra.Command) {
 		"write all logs to the file at specified location instead of writing them to console",
 	)
 
+	cmd.Flags().StringVar(
+		&params.rawConfig.DataFeed.AMQPURI,
+		dataFeedAMQPURIFlag,
+		"",
+		"the AMQP URI used by the DataFeedService's MQConsumer",
+	)
+
+	cmd.Flags().StringVar(
+		&params.rawConfig.DataFeed.AMQPExchangeName,
+		dataFeedAMQPExchangeNameFlag,
+		"",
+		"the AMQ exchange that the DataFeedService's MQConsumer consumes from",
+	)
+
+	cmd.Flags().StringVar(
+		&params.rawConfig.DataFeed.AMQPQueueName,
+		dataFeedAMQPQueueNameFlag,
+		"",
+		"the AMQ queue that the DataFeedService's MQConsumer consumes from",
+	)
+
+	cmd.Flags().StringVar(
+		&params.rawConfig.DataFeed.VerifyOutcomeAPIURL,
+		verifyOutcomeAPIURLFlag,
+		defaultConfig.DataFeed.VerifyOutcomeAPIURL,
+		"API to verify market outcome payload",
+	)
+
 	setLegacyFlags(cmd)
+
 	setDevFlags(cmd)
 }
 
