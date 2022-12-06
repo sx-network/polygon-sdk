@@ -160,24 +160,10 @@ func (s *syncer) HasSyncPeer() bool {
 	return bestPeer != nil && bestPeer.Number > header.Number
 }
 
-// makeSkipList initializes list of peers to skip
-func (s *syncer) makeSkipList() map[peer.ID]bool {
-	skipList := make(map[peer.ID]bool)
-
-	s.peerMap.Range(func(key, value interface{}) bool {
-		peer, _ := value.(*NoForkPeer)
-		skipList[peer.ID] = s.network.ShouldIgnoreSyncToPeer(peer.ID)
-
-		return true
-	})
-
-	return skipList
-}
-
 // Sync syncs block with the best peer until callback returns true
 func (s *syncer) Sync(callback func(*types.Block) bool) error {
 	localLatest := s.blockchain.Header().Number
-	skipList := s.makeSkipList()
+	skipList := make(map[peer.ID]bool)
 
 	for {
 		// Wait for a new event to arrive
@@ -188,12 +174,24 @@ func (s *syncer) Sync(callback func(*types.Block) bool) error {
 			localLatest = header.Number
 		}
 
+		// update skip list
+		s.peerMap.Range(func(key, value interface{}) bool {
+			peer, _ := value.(*NoForkPeer)
+			skipList[peer.ID] = s.network.ShouldIgnoreSyncToPeer(peer.ID)
+			return true
+		})
+
 		// pick one best peer
 		bestPeer := s.peerMap.BestPeer(skipList)
 		if bestPeer == nil {
 			// Empty skipList map if there are no best peers
-			skipList = s.makeSkipList()
+			skipList = make(map[peer.ID]bool)
 
+			continue
+		}
+
+		// do not use this peer
+		if s.network.ShouldIgnoreSyncToPeer(bestPeer.ID) {
 			continue
 		}
 

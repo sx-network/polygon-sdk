@@ -1,0 +1,15 @@
+chain_config: ./test-chain/genesis.json
+data_dir: ./test-chain
+grpc_addr: localhost:10000
+jsonrpc_addr: localhost:10002
+json_rpc_block_range_limit: 100000
+network:
+    libp2p_addr: localhost:10001
+#data_feed:
+    #   amqp_uri: amqps://validator:DnITLRuIfPizgjFl7PCsob7g@b-4568ae57-af6c-4702-8355-0f263ee5a79e.mq.ca-central-1.amazonaws.com:5671/
+    #    amqp_exchange_name: main-exchange
+    #    amqp_queue_name: MainQueue
+txpool:
+        price_limit: 1000000000
+seal: true
+log_level: DEBUG
