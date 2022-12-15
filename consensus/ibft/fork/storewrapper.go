@@ -1,6 +1,7 @@
 package fork
 
 import (
+	"log"
 	"path/filepath"
 
 	"github.com/0xPolygon/polygon-edge/consensus/ibft/signer"
@@ -26,9 +27,13 @@ func (w *SnapshotValidatorStoreWrapper) Close() error {
 		snapshots = w.GetSnapshots()
 	)
 
+	log.Printf("closing, saving metadata with lastblock %d", metadata.LastBlock)
+
 	if err := writeDataStore(filepath.Join(w.dirPath, snapshotMetadataFilename), metadata); err != nil {
 		return err
 	}
+
+	log.Printf("closing, wrote metadata")
 
 	if err := writeDataStore(filepath.Join(w.dirPath, snapshotSnapshotsFilename), snapshots); err != nil {
 		return err
@@ -51,14 +56,16 @@ func NewSnapshotValidatorStoreWrapper(
 	dirPath string,
 	epochSize uint64,
 ) (*SnapshotValidatorStoreWrapper, error) {
-	snapshotMeta, err := loadSnapshotMetadata(filepath.Join(dirPath, snapshotMetadataFilename))
-	if err != nil {
-		return nil, err
-	}
 
 	snapshots, err := loadSnapshots(filepath.Join(dirPath, snapshotSnapshotsFilename))
 	if err != nil {
 		return nil, err
+	}
+
+	snapshotMeta, err := loadSnapshotMetadata(filepath.Join(dirPath, snapshotMetadataFilename))
+	if err != nil {
+		logger.Error("got error loading snapshot metadata", "err", err, "using latest snapshot for LastBlock...", "LastBlock", snapshots[len(snapshots)-1].Number)
+		snapshotMeta = &snapshot.SnapshotMetadata{LastBlock: snapshots[len(snapshots)-1].Number}
 	}
 
 	snapshotStore, err := snapshot.NewSnapshotValidatorStore(
