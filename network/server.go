@@ -533,9 +533,6 @@ func (s *Server) updateBootnodeConnCount(peerID peer.ID, delta int64) {
 func (s *Server) ShouldIgnoreSyncToPeer(peerID peer.ID) bool {
 	// If the peer is not a bootnode and the client has BootnodeOnlySync enabled
 	ignoreSync := s.config.BootnodeOnlySync && !s.bootnodes.isBootnode(peerID)
-	if ignoreSync {
-		s.logger.Debug("avoid syncing to non-bootnode peer", "id", peerID.String())
-	}
 
 	return ignoreSync
 }
