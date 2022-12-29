@@ -379,9 +379,6 @@ type GetResponse struct {
 }
 
 func (j *JSONRPC) handleGetRequest(writer io.Writer) {
-
-	_, _ = writer.Write([]byte("SX Network JSON-RPC"))
-
 	data := &GetResponse{
 		Name:    j.config.ChainName,
 		ChainID: j.config.ChainID,
