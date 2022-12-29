@@ -44,6 +44,8 @@ type Config struct {
 
 	LogLevel hclog.Level
 
+	JSONLogFormat bool
+
 	LogFilePath string
 }
 

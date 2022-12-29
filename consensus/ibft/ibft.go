@@ -17,6 +17,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/syncer"
 	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/0xPolygon/polygon-edge/validators"
+	"github.com/armon/go-metrics"
 	"github.com/hashicorp/go-hclog"
 	"google.golang.org/grpc"
 )
@@ -75,7 +76,6 @@ type backendIBFT struct {
 	Grpc           *grpc.Server           // Reference to the gRPC manager
 	operator       *operator              // Reference to the gRPC service of IBFT
 	transport      transport              // Reference to the transport protocol
-	metrics        *consensus.Metrics     // Reference to the metrics service
 
 	// Dynamic References
 	forkManager       forkManagerInterface  // Manager to hold IBFT Forks
@@ -152,7 +152,6 @@ func Factory(params *consensus.Params) (consensus.Consensus, error) {
 		),
 		secretsManager: params.SecretsManager,
 		Grpc:           params.Grpc,
-		metrics:        params.Metrics,
 		forkManager:    forkManager,
 
 		// Configurations
@@ -309,7 +308,7 @@ func (i *backendIBFT) startConsensus() {
 		}
 
 		// Update the No.of validator metric
-		i.metrics.Validators.Set(float64(i.currentValidators.Len()))
+		metrics.SetGauge([]string{"validators"}, float32(i.currentValidators.Len()))
 
 		isValidator = i.isActiveValidator()
 
@@ -351,13 +350,11 @@ func (i *backendIBFT) updateMetrics(block *types.Block) {
 
 	// Update the block interval metric
 	if block.Number() > 1 {
-		i.metrics.BlockInterval.Set(
-			headerTime.Sub(parentTime).Seconds(),
-		)
+		metrics.SetGauge([]string{"block_interval"}, float32(headerTime.Sub(parentTime).Seconds()))
 	}
 
 	// Update the Number of transactions in the block metric
-	i.metrics.NumTxs.Set(float64(len(block.Body().Transactions)))
+	metrics.SetGauge([]string{"num_txs"}, float32(len(block.Body().Transactions)))
 }
 
 // verifyHeaderImpl verifies fields including Extra
@@ -647,6 +644,22 @@ func verifyProposerSeal(
 // IsIbftStateStale returns whether or not ibft node is stale
 func (i *backendIBFT) IsIbftStateStale() bool {
 	return false
+}
+
+// ValidateExtraDataFormat Verifies that extra data can be unmarshaled
+func (i *backendIBFT) ValidateExtraDataFormat(header *types.Header) error {
+	blockSigner, _, _, err := getModulesFromForkManager(
+		i.forkManager,
+		header.Number,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = blockSigner.GetIBFTExtra(header)
+
+	return err
 }
 
 // getValidatorInfoFunc returns a callback that returns ValidaotrInfo when executed

@@ -56,7 +56,6 @@ func NewSnapshotValidatorStoreWrapper(
 	dirPath string,
 	epochSize uint64,
 ) (*SnapshotValidatorStoreWrapper, error) {
-
 	snapshots, err := loadSnapshots(filepath.Join(dirPath, snapshotSnapshotsFilename))
 	if err != nil {
 		return nil, err
@@ -65,6 +64,7 @@ func NewSnapshotValidatorStoreWrapper(
 	snapshotMeta, err := loadSnapshotMetadata(filepath.Join(dirPath, snapshotMetadataFilename))
 	if err != nil {
 		logger.Error("got error loading snapshot metadata", "err", err, "using latest snapshot for LastBlock...", "LastBlock", snapshots[len(snapshots)-1].Number)
+
 		snapshotMeta = &snapshot.SnapshotMetadata{LastBlock: snapshots[len(snapshots)-1].Number}
 	}
 

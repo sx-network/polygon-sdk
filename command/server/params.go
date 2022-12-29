@@ -155,6 +155,10 @@ func (p *serverParams) setRawJSONRPCAddress(jsonRPCAddress string) {
 	p.rawConfig.JSONRPCAddr = jsonRPCAddress
 }
 
+func (p *serverParams) setJSONLogFormat(jsonLogFormat bool) {
+	p.rawConfig.JSONLogFormat = jsonLogFormat
+}
+
 func (p *serverParams) generateConfig() *server.Config {
 	return &server.Config{
 		Chain: p.genesisConfig,
@@ -187,18 +191,16 @@ func (p *serverParams) generateConfig() *server.Config {
 			DataFeedAMQPQueueName:    p.dataFeedAMQPQueueName,
 			VerifyOutcomeURI:         p.verifyOutcomeAPIURL,
 		},
-		DataDir:                         p.rawConfig.DataDir,
-		Seal:                            p.rawConfig.ShouldSeal,
-		PriceLimit:                      p.rawConfig.TxPool.PriceLimit,
-		MaxSlots:                        p.rawConfig.TxPool.MaxSlots,
-		MaxAccountEnqueued:              p.rawConfig.TxPool.MaxAccountEnqueued,
-		SecretsManager:                  p.secretsConfig,
-		RestoreFile:                     p.getRestoreFilePath(),
-		BlockTime:                       p.rawConfig.BlockTime,
-		RPCNrAppName:                    p.rpcNRAppName,
-		RPCNrLicenseKey:                 p.rpcNRLicenseKey,
-		GasPriceBlockUtilizationMinimum: p.rawConfig.GasPriceBlockUtilizationMinimum,
-		LogLevel:                        hclog.LevelFromString(p.rawConfig.LogLevel),
-		LogFilePath:                     p.logFileLocation,
+		DataDir:            p.rawConfig.DataDir,
+		Seal:               p.rawConfig.ShouldSeal,
+		PriceLimit:         p.rawConfig.TxPool.PriceLimit,
+		MaxSlots:           p.rawConfig.TxPool.MaxSlots,
+		MaxAccountEnqueued: p.rawConfig.TxPool.MaxAccountEnqueued,
+		SecretsManager:     p.secretsConfig,
+		RestoreFile:        p.getRestoreFilePath(),
+		BlockTime:          p.rawConfig.BlockTime,
+		LogLevel:           hclog.LevelFromString(p.rawConfig.LogLevel),
+		JSONLogFormat:      p.rawConfig.JSONLogFormat,
+		LogFilePath:        p.logFileLocation,
 	}
 }
