@@ -725,7 +725,6 @@ func (s *Server) setupDataFeedService() error {
 		s.logger,
 		conf,
 		s.grpcServer,
-		s.network,
 		s.consensus.GetConsensusInfo(),
 	)
 	if err != nil {

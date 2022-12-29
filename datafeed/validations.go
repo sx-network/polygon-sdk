@@ -5,10 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
-	"time"
 
-	cryptoutils "github.com/0xPolygon/polygon-edge/crypto"
 	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 )
 
@@ -76,35 +73,4 @@ func (d *DataFeed) verifyMarketOutcome(payload *proto.DataFeedReport, verifyAPIH
 	}
 
 	return nil
-}
-
-// validateTimestamp  checks if payload too old
-func (d *DataFeed) validateTimestamp(payload *proto.DataFeedReport) bool {
-	d.logger.Debug("time", "time", time.Since(time.Unix(payload.Timestamp, 0)).Seconds())
-
-	return time.Since(time.Unix(payload.Timestamp, 0)).Seconds() > maxGossipTimestampDriftSeconds
-}
-
-// validateSignatures checks if the current validator has already signed the payload
-func (d *DataFeed) validateSignatures(payload *proto.DataFeedReport) (bool, error) {
-	sigList := strings.Split(payload.Signatures, ",")
-	for _, sig := range sigList {
-		pub, err := d.signatureToAddress(payload, sig)
-
-		if err != nil {
-			return false, err
-		}
-
-		// see if we signed it
-		if d.consensusInfo().ValidatorAddress == cryptoutils.PubKeyToAddress(pub) {
-			return true, nil
-		} else {
-			// if we haven't signed it, see if a recognized validator from the current validator set signed it
-			if !d.consensusInfo().Validators.Includes(cryptoutils.PubKeyToAddress(pub)) {
-				return false, fmt.Errorf("unrecognized signature detected, got address: %s", cryptoutils.PubKeyToAddress(pub))
-			}
-		}
-	}
-
-	return false, nil
 }

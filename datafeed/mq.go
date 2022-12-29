@@ -75,7 +75,7 @@ func (mq *MQService) startConsumeLoop() {
 	for {
 		select {
 		case report := <-reports:
-			mq.datafeedService.addNewReport(report)
+			mq.datafeedService.proposeOutcome(report)
 		case err = <-errors:
 			mq.logger.Error("error while consuming from message queue", "err", err)
 		case <-common.GetTerminationSignalCh():

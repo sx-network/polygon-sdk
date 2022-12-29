@@ -160,7 +160,6 @@ func getSigAndHashedPayload(
 			},
 		},
 		nil,
-		nil,
 		getConsensusInfo(),
 	)
 
