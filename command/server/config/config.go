@@ -56,10 +56,12 @@ type Network struct {
 
 // DataFeed defines the DataFeed configuration params
 type DataFeed struct {
-	AMQPURI             string `json:"amqp_uri" yaml:"amqp_uri"`
-	AMQPExchangeName    string `json:"amqp_exchange_name" yaml:"amqp_exchange_name"`
-	AMQPQueueName       string `json:"amqp_queue_name" yaml:"amqp_queue_name"`
-	VerifyOutcomeAPIURL string `json:"verify_outcome_api_url" yaml:"verify_outcome_api_url"`
+	AMQPURI                    string `json:"amqp_uri" yaml:"amqp_uri"`
+	AMQPExchangeName           string `json:"amqp_exchange_name" yaml:"amqp_exchange_name"`
+	AMQPQueueName              string `json:"amqp_queue_name" yaml:"amqp_queue_name"`
+	VerifyOutcomeAPIURL        string `json:"verify_outcome_api_url" yaml:"verify_outcome_api_url"`
+	OutcomeVotingPeriodSeconds uint64 `json:"outcome_voting_period_seconds" yaml:"outcome_voting_period_seconds"`
+	OutcomeReporterAddress     string `json:"outcome_reporter_address" yaml:"outcome_reporter_address"`
 }
 
 // TxPool defines the TxPool configuration params
@@ -116,10 +118,12 @@ func DefaultConfig() *Config {
 			MaxAccountEnqueued: 128,
 		},
 		DataFeed: &DataFeed{
-			AMQPURI:             "",
-			AMQPExchangeName:    "",
-			AMQPQueueName:       "",
-			VerifyOutcomeAPIURL: "",
+			AMQPURI:                    "",
+			AMQPExchangeName:           "",
+			AMQPQueueName:              "",
+			VerifyOutcomeAPIURL:        "",
+			OutcomeVotingPeriodSeconds: 30,
+			OutcomeReporterAddress:     "",
 		},
 		LogLevel:    "INFO",
 		RestoreFile: "",

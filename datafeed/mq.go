@@ -69,6 +69,7 @@ func (mq *MQService) startConsumeLoop() {
 	reports, errors, err := mq.startConsumer(ctx, mqConsumerConcurrency)
 
 	if err != nil {
+		mq.logger.Error("error while starting mq consumer", "err", err)
 		panic(err)
 	}
 

@@ -718,7 +718,9 @@ func (s *Server) setupDataFeedService() error {
 				QueueName: s.config.DataFeed.DataFeedAMQPQueueName,
 			},
 		},
-		VerifyOutcomeURI: s.config.DataFeed.VerifyOutcomeURI,
+		VerifyOutcomeURI:           s.config.DataFeed.VerifyOutcomeURI,
+		OutcomeVotingPeriodSeconds: s.config.DataFeed.OutcomeVotingPeriodSeconds,
+		OutcomeReporterAddress:     s.config.DataFeed.OutcomeReporterAddress,
 	}
 
 	datafeedService, err := datafeed.NewDataFeedService(

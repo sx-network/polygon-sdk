@@ -166,8 +166,6 @@ func getSigAndHashedPayload(
 	payload := &proto.DataFeedReport{
 		MarketHash: marketHash,
 		Outcome:    outcome,
-		Epoch:      epoch,
-		Timestamp:  timestamp,
 	}
 
 	signedDataGeth, _ := gethcrypto.Sign(dataFeedService.AbiEncode(payload), getConsensusInfoImpl().ValidatorKey)

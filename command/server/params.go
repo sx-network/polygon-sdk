@@ -45,6 +45,8 @@ const (
 	dataFeedAMQPExchangeNameFlag        = "data-feed-amqp-exchange-name"
 	dataFeedAMQPQueueNameFlag           = "data-feed-amqp-queue-name"
 	verifyOutcomeAPIURLFlag             = "verify-outcome-api-url"
+	outcomeVotingPeriodSecondsFlag      = "outcome-voting-period-seconds"
+	outcomeReporterAddressFlag          = "outcome-reporter-address"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -93,10 +95,12 @@ type serverParams struct {
 	jsonRPCBatchLengthLimit uint64
 	jsonRPCBlockRangeLimit  uint64
 
-	dataFeedAMQPURI          string
-	dataFeedAMQPExchangeName string
-	dataFeedAMQPQueueName    string
-	verifyOutcomeAPIURL      string
+	dataFeedAMQPURI                    string
+	dataFeedAMQPExchangeName           string
+	dataFeedAMQPQueueName              string
+	verifyOutcomeAPIURL                string
+	dataFeedOutcomeVotingPeriodSeconds uint64
+	dataFeedOutcomeReporterAddress     string
 
 	ibftBaseTimeoutLegacy uint64
 
@@ -186,10 +190,12 @@ func (p *serverParams) generateConfig() *server.Config {
 			Chain:            p.genesisConfig,
 		},
 		DataFeed: &server.DataFeed{
-			DataFeedAMQPURI:          p.dataFeedAMQPURI,
-			DataFeedAMQPExchangeName: p.dataFeedAMQPExchangeName,
-			DataFeedAMQPQueueName:    p.dataFeedAMQPQueueName,
-			VerifyOutcomeURI:         p.verifyOutcomeAPIURL,
+			DataFeedAMQPURI:            p.dataFeedAMQPURI,
+			DataFeedAMQPExchangeName:   p.dataFeedAMQPExchangeName,
+			DataFeedAMQPQueueName:      p.dataFeedAMQPQueueName,
+			VerifyOutcomeURI:           p.verifyOutcomeAPIURL,
+			OutcomeVotingPeriodSeconds: p.dataFeedOutcomeVotingPeriodSeconds,
+			OutcomeReporterAddress:     p.dataFeedOutcomeReporterAddress,
 		},
 		DataDir:            p.rawConfig.DataDir,
 		Seal:               p.rawConfig.ShouldSeal,
