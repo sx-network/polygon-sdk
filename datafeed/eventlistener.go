@@ -31,7 +31,7 @@ func newEventListener(logger hclog.Logger, datafeedService *DataFeed) (*EventLis
 }
 
 func (e EventListener) startListeningLoop() {
-	client, err := ethclient.Dial("wss://localhost:10002/ws")
+	client, err := ethclient.Dial("ws://localhost:10002/ws")
 	if err != nil {
 		e.logger.Error("error while starting event listener", "err", err)
 
