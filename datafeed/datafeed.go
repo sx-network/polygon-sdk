@@ -98,6 +98,11 @@ func (d *DataFeed) proposeOutcome(payload *proto.DataFeedReport) {
 
 // voteOutcome adds vote for a previously proposed report outcome
 func (d *DataFeed) voteOutcome(marketHash string, outcome int32) {
+	err := d.verifyMarketOutcome(marketHash, outcome)
+	if err != nil {
+		d.logger.Error("Verify mismatch, skipping vote tx", "err", err)
+		return
+	}
 	d.sendTxWithRetry(VoteOutcome, marketHash, outcome)
 }
 

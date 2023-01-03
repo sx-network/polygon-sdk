@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 )
 
 type verifyAPIResponse struct {
@@ -14,11 +12,12 @@ type verifyAPIResponse struct {
 	Timestamp int64
 }
 
-// verifyMarketOutcome compares the payload's proposed market outcome with the verify outcome api outcome,
+// TODO: should we refactor verify API to just return the actual outcome instead of success/failure?
+
+// verifyMarketOutcome compares the proposed market outcome with the verify api outcome,
 // returning error if outcome does not match
-func (d *DataFeed) verifyMarketOutcome(payload *proto.DataFeedReport, verifyAPIHost string) error {
-	marketHash := payload.MarketHash
-	requestURL := fmt.Sprintf("%s/%s", verifyAPIHost, marketHash)
+func (d *DataFeed) verifyMarketOutcome(marketHash string, outcome int32) error {
+	requestURL := fmt.Sprintf("%s/%s", d.config.VerifyOutcomeURI, marketHash)
 	response, err := http.Get(requestURL) //nolint:gosec
 
 	if err != nil {
@@ -39,8 +38,8 @@ func (d *DataFeed) verifyMarketOutcome(payload *proto.DataFeedReport, verifyAPIH
 	if response.StatusCode != 200 {
 		d.logger.Error(
 			"[MARKET-VERIFICATION] Got non-200 response from verify outcome",
-			"market", payload.MarketHash,
-			"outcome", payload.Outcome,
+			"market", marketHash,
+			"outcome", outcome,
 			"parsedBody", body,
 			"statusCode", response.StatusCode,
 		)
@@ -61,11 +60,11 @@ func (d *DataFeed) verifyMarketOutcome(payload *proto.DataFeedReport, verifyAPIH
 		return marshalErr
 	}
 
-	if data.Outcome != payload.Outcome {
+	if data.Outcome != outcome {
 		errorMsg := fmt.Sprintf(
 			"failed to verify market %s, expected outcome %d got %d",
 			marketHash,
-			payload.Outcome,
+			outcome,
 			data.Outcome,
 		)
 

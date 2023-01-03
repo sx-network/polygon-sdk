@@ -100,7 +100,6 @@ func (e EventListener) startListeningLoop() {
 		case err := <-outcomeReportedSub.Err():
 			e.logger.Error("error listening to OutocmeReported events", "err", err)
 		case vLog := <-proposeOutcomeLogs:
-			//TODO: how do we know the event is for ProposeOutcome?
 			results, err := contractAbi.Unpack("ProposeOutcome", vLog.Data)
 
 			if err != nil {
@@ -124,10 +123,10 @@ func (e EventListener) startListeningLoop() {
 			//TODO: get blockTimestamp (vLog.BlockNumber?), outome, marketHash of ProposeOutcome event
 			//TODO: add to queue
 			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHash, "outcome", outcome)
+
 			e.datafeedService.voteOutcome(hex.EncodeToString(marketHash[:]), outcome)
 			e.datafeedService.addToQueue(hex.EncodeToString(marketHash[:]))
 		case vLog := <-outcomeReportedLogs:
-			//TODO: how do we know the event is for ProposeOutcome?
 			results, err := contractAbi.Unpack("OutcomeReported", vLog.Data)
 
 			if err != nil {
@@ -151,6 +150,7 @@ func (e EventListener) startListeningLoop() {
 			//TODO: get blockTimestamp (vLog.BlockNumber?), outome, marketHash of ProposeOutcome event
 			//TODO: remove from queue
 			e.logger.Debug("received OutcomeReported event", "marketHash", marketHash, "outcome", outcome)
+
 			e.datafeedService.removeFromQueue(hex.EncodeToString(marketHash[:]))
 		}
 	}
