@@ -90,6 +90,8 @@ func (e EventListener) startListeningLoop() {
 		return
 	}
 
+	e.logger.Info("DataFeed EventListener running")
+
 	for {
 		select {
 		case err := <-proposeOutcomeSub.Err():
