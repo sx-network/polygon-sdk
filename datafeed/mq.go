@@ -55,8 +55,6 @@ func newMQService(logger hclog.Logger, config *MQConfig, datafeedService *DataFe
 		datafeedService: datafeedService,
 	}
 
-	logger.Info("DataFeed MQService running", "exchange", config.ExchangeName)
-
 	go mq.startConsumeLoop()
 
 	return mq, nil

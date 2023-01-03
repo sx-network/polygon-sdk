@@ -90,7 +90,7 @@ func (e EventListener) startListeningLoop() {
 		return
 	}
 
-	e.logger.Info("DataFeed EventListener running")
+	e.logger.Debug("Listening for events...")
 
 	for {
 		select {
