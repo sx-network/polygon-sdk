@@ -265,11 +265,6 @@ func NewServer(config *Config) (*Server, error) {
 		return nil, err
 	}
 
-	// setup and start datafeed consumer
-	if err := m.setupDataFeedService(); err != nil {
-		return nil, err
-	}
-
 	// setup and start grpc server
 	if err := m.setupGRPC(); err != nil {
 		return nil, err
@@ -281,6 +276,11 @@ func NewServer(config *Config) (*Server, error) {
 
 	// setup and start jsonrpc server
 	if err := m.setupJSONRPC(); err != nil {
+		return nil, err
+	}
+
+	// setup and start datafeed consumer
+	if err := m.setupDataFeedService(); err != nil {
 		return nil, err
 	}
 
