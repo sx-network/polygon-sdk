@@ -110,9 +110,9 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("unexpected empty results for ProposeOutcome event")
 			}
 
-			marketHash, ok := results[0].(string)
+			marketHash, ok := results[0].([32]byte)
 			if !ok { // type assertion failed
-				e.logger.Error("type assertion failed for string", "marketHash", results[0])
+				e.logger.Error("type assertion failed for [32]byte", "marketHash", results[0])
 			}
 
 			outcome, ok := results[1].(int32)
@@ -123,8 +123,8 @@ func (e EventListener) startListeningLoop() {
 			//TODO: get blockTimestamp (vLog.BlockNumber?), outome, marketHash of ProposeOutcome event
 			//TODO: add to queue
 			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHash, "outcome", outcome)
-			e.datafeedService.voteOutcome(marketHash, outcome)
-			e.datafeedService.addToQueue(marketHash)
+			e.datafeedService.voteOutcome(string(marketHash[:]), outcome)
+			e.datafeedService.addToQueue(string(marketHash[:]))
 		case vLog := <-outcomeReportedLogs:
 			//TODO: how do we know the event is for ProposeOutcome?
 			results, err := contractAbi.Unpack("OutcomeReported", vLog.Data)
@@ -137,9 +137,9 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("unexpected empty results for OutcomeReported event")
 			}
 
-			marketHash, ok := results[0].(string)
+			marketHash, ok := results[0].([32]byte)
 			if !ok { // type assertion failed
-				e.logger.Error("type assertion failed for string", "marketHash", results[0])
+				e.logger.Error("type assertion failed for [32]byte", "marketHash", results[0])
 			}
 
 			outcome, ok := results[1].(int32)
@@ -150,7 +150,7 @@ func (e EventListener) startListeningLoop() {
 			//TODO: get blockTimestamp (vLog.BlockNumber?), outome, marketHash of ProposeOutcome event
 			//TODO: remove from queue
 			e.logger.Debug("received OutcomeReported event", "marketHash", marketHash, "outcome", outcome)
-			e.datafeedService.removeFromQueue(marketHash)
+			e.datafeedService.removeFromQueue(string(marketHash[:]))
 		}
 	}
 }
