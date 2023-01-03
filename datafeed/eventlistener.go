@@ -110,19 +110,21 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("unexpected empty results for ProposeOutcome event")
 			}
 
-			marketHash, ok := results[0].([32]byte)
+			marketHash, ok := results[0].(string)
 			if !ok { // type assertion failed
-
+				e.logger.Error("type assertion failed for string", "marketHash", results[0])
 			}
 
 			outcome, ok := results[1].(int32)
 			if !ok { // type assertion failed
-
+				e.logger.Error("type assertion failed for int32", "outcome", results[1])
 			}
 
 			//TODO: get blockTimestamp (vLog.BlockNumber?), outome, marketHash of ProposeOutcome event
 			//TODO: add to queue
 			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHash, "outcome", outcome)
+			e.datafeedService.voteOutcome(marketHash, outcome)
+			e.datafeedService.addToQueue(marketHash)
 		case vLog := <-outcomeReportedLogs:
 			//TODO: how do we know the event is for ProposeOutcome?
 			results, err := contractAbi.Unpack("OutcomeReported", vLog.Data)
@@ -135,19 +137,20 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("unexpected empty results for OutcomeReported event")
 			}
 
-			marketHash, ok := results[0].([32]byte)
+			marketHash, ok := results[0].(string)
 			if !ok { // type assertion failed
-
+				e.logger.Error("type assertion failed for string", "marketHash", results[0])
 			}
 
 			outcome, ok := results[1].(int32)
 			if !ok { // type assertion failed
-
+				e.logger.Error("type assertion failed for string", "marketHash", results[0])
 			}
 
 			//TODO: get blockTimestamp (vLog.BlockNumber?), outome, marketHash of ProposeOutcome event
 			//TODO: remove from queue
 			e.logger.Debug("received OutcomeReported event", "marketHash", marketHash, "outcome", outcome)
+			e.datafeedService.removeFromQueue(marketHash)
 		}
 	}
 }
