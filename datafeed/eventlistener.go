@@ -110,9 +110,9 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("unexpected empty results for ProposeOutcome event")
 			}
 
-			marketHash, ok := results[0].([32]byte)
+			marketHash, ok := results[0].([]byte)
 			if !ok { // type assertion failed
-				e.logger.Error("type assertion failed for [32]byte", "marketHash", results[0])
+				e.logger.Error("type assertion failed for []byte", "marketHash", results[0])
 			}
 
 			outcome, ok := results[1].(int32)
@@ -137,9 +137,9 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("unexpected empty results for OutcomeReported event")
 			}
 
-			marketHash, ok := results[0].([32]byte)
+			marketHash, ok := results[0].([]byte)
 			if !ok { // type assertion failed
-				e.logger.Error("type assertion failed for [32]byte", "marketHash", results[0])
+				e.logger.Error("type assertion failed for []byte", "marketHash", results[0])
 			}
 
 			outcome, ok := results[1].(int32)
