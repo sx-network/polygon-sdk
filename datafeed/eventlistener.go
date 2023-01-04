@@ -3,6 +3,7 @@ package datafeed
 import (
 	"context"
 	"encoding/hex"
+	"math/big"
 	"strings"
 
 	"github.com/0xPolygon/polygon-edge/contracts/abis"
@@ -14,16 +15,29 @@ import (
 	"github.com/hashicorp/go-hclog"
 )
 
+const (
+	JSONRPCWsHost = "ws://localhost:10002/ws"
+)
+
 // EventListener
 type EventListener struct {
 	logger          hclog.Logger
 	datafeedService *DataFeed
+	client          *ethclient.Client
 }
 
 func newEventListener(logger hclog.Logger, datafeedService *DataFeed) (*EventListener, error) {
+
+	client, err := ethclient.Dial(JSONRPCWsHost)
+	if err != nil {
+		logger.Error("error while starting event listener", "err", err)
+		return nil, err
+	}
+
 	eventListener := &EventListener{
 		logger:          logger.Named("eventListener"),
 		datafeedService: datafeedService,
+		client:          client,
 	}
 
 	go eventListener.startListeningLoop()
@@ -32,12 +46,6 @@ func newEventListener(logger hclog.Logger, datafeedService *DataFeed) (*EventLis
 }
 
 func (e EventListener) startListeningLoop() {
-	client, err := ethclient.Dial("ws://localhost:10002/ws")
-	if err != nil {
-		e.logger.Error("error while starting event listener", "err", err)
-
-		return
-	}
 
 	contractAbi, err := abi.JSON(strings.NewReader(abis.OutcomeReporterJSONABI))
 	if err != nil {
@@ -63,7 +71,7 @@ func (e EventListener) startListeningLoop() {
 
 	proposeOutcomeLogs := make(chan types.Log)
 	//TODO: might have to just use FilterLogs instead of ws SubscribeFilterLogs
-	proposeOutcomeSub, err := client.SubscribeFilterLogs(context.Background(), proposeOutcomeQuery, proposeOutcomeLogs)
+	proposeOutcomeSub, err := e.client.SubscribeFilterLogs(context.Background(), proposeOutcomeQuery, proposeOutcomeLogs)
 	if err != nil {
 		e.logger.Error("error while subscribing to ProposeOutcome logs", "err", err)
 
@@ -84,7 +92,7 @@ func (e EventListener) startListeningLoop() {
 
 	outcomeReportedLogs := make(chan types.Log)
 	//TODO: might have to just use FilterLogs instead of ws SubscribeFilterLogs
-	outcomeReportedSub, err := client.SubscribeFilterLogs(context.Background(), outcomeReportedQuery, outcomeReportedLogs)
+	outcomeReportedSub, err := e.client.SubscribeFilterLogs(context.Background(), outcomeReportedQuery, outcomeReportedLogs)
 	if err != nil {
 		e.logger.Error("error while subscribing to ProposeOutcome logs", "err", err)
 
@@ -120,12 +128,22 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("type assertion failed for int32", "outcome", results[1])
 			}
 
-			//TODO: get blockTimestamp (vLog.BlockNumber?), outome, marketHash of ProposeOutcome event
-			//TODO: add to queue
-			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHash, "outcome", outcome)
+			blockTimestamp, ok := results[2].(big.Int)
+			if !ok { // type assertion failed
+				e.logger.Error("type assertion failed for big.Int", "timestamp", results[2])
+			}
+
+			// derive blockTimestamp from event's block
+			// block, err := e.client.BlockByHash(context.Background(), vLog.BlockHash)
+			// if err != nil {
+			// 	e.logger.Error("could not get block by hash", "blockHash", vLog.BlockHash)
+			// }
+			// blockTimestamp := block.Time()
+
+			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHash, "outcome", outcome, "blockTime", blockTimestamp.Int64())
 
 			e.datafeedService.voteOutcome(hex.EncodeToString(marketHash[:]), outcome)
-			e.datafeedService.addToQueue(hex.EncodeToString(marketHash[:]))
+			e.datafeedService.addToQueue(hex.EncodeToString(marketHash[:]), uint64(blockTimestamp.Int64()))
 		case vLog := <-outcomeReportedLogs:
 			results, err := contractAbi.Unpack("OutcomeReported", vLog.Data)
 

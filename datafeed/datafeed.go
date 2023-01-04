@@ -18,6 +18,9 @@ type DataFeed struct {
 	// consumes amqp messages
 	mqService *MQService
 
+	// sends json-rpc txs
+	txService *TxService
+
 	// listens for ProposeOutcome and OutcomeReported events on OutcomeReporter
 	eventListener *EventListener
 
@@ -80,7 +83,14 @@ func NewDataFeedService(
 		return datafeedService, nil
 	}
 
-	//TODO: if they aren't participating in voting, validators cannot report outcomes
+	// start jsonRpcTxService
+	txService, err := newTxService(datafeedService.logger)
+	if err != nil {
+		return nil, err
+	}
+	datafeedService.txService = txService
+
+	// start eventListener
 	eventListener, err := newEventListener(datafeedService.logger, datafeedService)
 	if err != nil {
 		return nil, err

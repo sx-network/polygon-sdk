@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/0xPolygon/polygon-edge/types"
+	"github.com/hashicorp/go-hclog"
 	"github.com/umbracle/ethgo"
 	ethgoabi "github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/contract"
@@ -24,6 +25,29 @@ const (
 	VoteOutcome           = "voteOutcome"
 	ReportOutcome         = "reportOutcome"
 )
+
+// TxService
+type TxService struct {
+	logger hclog.Logger
+	client *jsonrpc.Client
+}
+
+func newTxService(logger hclog.Logger) (*TxService, error) {
+
+	client, err := jsonrpc.NewClient(JSONRPCHost)
+	if err != nil {
+		logger.Error("failed to initialize new ethgo client")
+
+		return nil, err
+	}
+
+	txService := &TxService{
+		logger: logger.Named("tx"),
+		client: client,
+	}
+
+	return txService, nil
+}
 
 // sendTxWithRetry send tx with retry to SC specified by customContractAddress
 func (d *DataFeed) sendTxWithRetry(
@@ -77,22 +101,11 @@ func (d *DataFeed) sendTxWithRetry(
 		return
 	}
 
-	client, err := jsonrpc.NewClient(JSONRPCHost)
-	if err != nil {
-		d.logger.Error(
-			"failed to initialize new ethgo client",
-			"function", functionName,
-			"err", err,
-		)
-
-		return
-	}
-
 	c := contract.NewContract(
 		ethgo.Address(d.consensusInfo().CustomContractAddress),
 		abiContract,
 		contract.WithSender(wallet.NewKey(d.consensusInfo().ValidatorKey)),
-		contract.WithJsonRPC(client.Eth()),
+		contract.WithJsonRPC(d.txService.client.Eth()),
 	)
 
 	txn, err := c.Txn(
@@ -176,7 +189,7 @@ func (d *DataFeed) sendTxWithRetry(
 		for receiptTry < maxTxReceiptTries {
 			time.Sleep(txReceiptWaitMs * time.Millisecond)
 
-			err := client.Call("eth_getTransactionReceipt", &receipt, txn.Hash())
+			err := d.txService.client.Call("eth_getTransactionReceipt", &receipt, txn.Hash())
 
 			if receipt != nil {
 				break
