@@ -27,6 +27,9 @@ type DataFeed struct {
 	// consensus info function
 	consensusInfo consensus.ConsensusInfoFn
 
+	// holds markets to be reported on after voting period
+	marketStore *MarketItemStore
+
 	// indicates which DataFeed operator commands should be implemented
 	proto.UnimplementedDataFeedOperatorServer
 
