@@ -3,7 +3,6 @@ package datafeed
 import (
 	"context"
 	"encoding/hex"
-	"math/big"
 	"strings"
 
 	"github.com/0xPolygon/polygon-edge/contracts/abis"
@@ -126,9 +125,9 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("type assertion failed for int32", "outcome", results[1])
 			}
 
-			blockTimestamp, ok := results[2].(big.Int)
+			blockTimestamp, ok := results[2].(int32)
 			if !ok { // type assertion failed
-				e.logger.Error("type assertion failed for big.Int", "timestamp", results[2])
+				e.logger.Error("type assertion failed for int32", "timestamp", results[2])
 			}
 
 			// derive blockTimestamp from event's block
@@ -138,10 +137,10 @@ func (e EventListener) startListeningLoop() {
 			// }
 			// blockTimestamp := block.Time()
 
-			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHash, "outcome", outcome, "blockTime", blockTimestamp.Int64())
+			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHash, "outcome", outcome, "blockTime", blockTimestamp)
 
 			e.datafeedService.voteOutcome(hex.EncodeToString(marketHash[:]), outcome)
-			e.datafeedService.addToQueue(hex.EncodeToString(marketHash[:]), uint64(blockTimestamp.Int64()))
+			e.datafeedService.addToQueue(hex.EncodeToString(marketHash[:]), uint64(blockTimestamp))
 		case vLog := <-outcomeReportedLogs:
 			results, err := contractAbi.Unpack("OutcomeReported", vLog.Data)
 
