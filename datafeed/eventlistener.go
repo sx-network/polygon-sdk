@@ -3,6 +3,7 @@ package datafeed
 import (
 	"context"
 	"encoding/hex"
+	"math/big"
 	"reflect"
 	"strings"
 
@@ -121,12 +122,12 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("type assertion failed for [32]byte", "marketHash", results[0], "got type", reflect.TypeOf(results[0]).String())
 			}
 
-			outcome, ok := results[1].(int)
+			outcome, ok := results[1].(uint8)
 			if !ok { // type assertion failed
 				e.logger.Error("type assertion failed for int", "outcome", results[1], "got type", reflect.TypeOf(results[1]).String())
 			}
 
-			blockTimestamp, ok := results[2].(int)
+			blockTimestamp, ok := results[2].(*big.Int)
 			if !ok { // type assertion failed
 				e.logger.Error("type assertion failed for int", "timestamp", results[2], "got type", reflect.TypeOf(results[2]).String())
 			}
@@ -141,7 +142,7 @@ func (e EventListener) startListeningLoop() {
 			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHash, "outcome", outcome, "blockTime", blockTimestamp)
 
 			e.datafeedService.voteOutcome(hex.EncodeToString(marketHash[:]), int32(outcome))
-			e.datafeedService.addToQueue(hex.EncodeToString(marketHash[:]), uint64(blockTimestamp))
+			e.datafeedService.addToQueue(hex.EncodeToString(marketHash[:]), uint64(blockTimestamp.Int64()))
 		case vLog := <-outcomeReportedLogs:
 			results, err := contractAbi.Unpack("OutcomeReported", vLog.Data)
 
@@ -158,7 +159,7 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("type assertion failed for [32]byte", "marketHash", results[0], "got type", reflect.TypeOf(results[0]).String())
 			}
 
-			outcome, ok := results[1].(int)
+			outcome, ok := results[1].(uint8)
 			if !ok { // type assertion failed
 				e.logger.Error("type assertion failed for int", "outcome", results[1], "got type", reflect.TypeOf(results[1]).String())
 			}
