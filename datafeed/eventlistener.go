@@ -23,21 +23,13 @@ const (
 type EventListener struct {
 	logger          hclog.Logger
 	datafeedService *DataFeed
-	client          *ethclient.Client
 }
 
 func newEventListener(logger hclog.Logger, datafeedService *DataFeed) (*EventListener, error) {
 
-	client, err := ethclient.Dial(JSONRPCWsHost)
-	if err != nil {
-		logger.Error("error while starting event listener", "err", err)
-		return nil, err
-	}
-
 	eventListener := &EventListener{
 		logger:          logger.Named("eventListener"),
 		datafeedService: datafeedService,
-		client:          client,
 	}
 
 	go eventListener.startListeningLoop()
@@ -46,6 +38,12 @@ func newEventListener(logger hclog.Logger, datafeedService *DataFeed) (*EventLis
 }
 
 func (e EventListener) startListeningLoop() {
+
+	client, err := ethclient.Dial(JSONRPCWsHost)
+	if err != nil {
+		e.logger.Error("error while starting event listener", "err", err)
+		return
+	}
 
 	contractAbi, err := abi.JSON(strings.NewReader(abis.OutcomeReporterJSONABI))
 	if err != nil {
@@ -71,7 +69,7 @@ func (e EventListener) startListeningLoop() {
 
 	proposeOutcomeLogs := make(chan types.Log)
 	//TODO: might have to just use FilterLogs instead of ws SubscribeFilterLogs
-	proposeOutcomeSub, err := e.client.SubscribeFilterLogs(context.Background(), proposeOutcomeQuery, proposeOutcomeLogs)
+	proposeOutcomeSub, err := client.SubscribeFilterLogs(context.Background(), proposeOutcomeQuery, proposeOutcomeLogs)
 	if err != nil {
 		e.logger.Error("error while subscribing to ProposeOutcome logs", "err", err)
 
@@ -92,7 +90,7 @@ func (e EventListener) startListeningLoop() {
 
 	outcomeReportedLogs := make(chan types.Log)
 	//TODO: might have to just use FilterLogs instead of ws SubscribeFilterLogs
-	outcomeReportedSub, err := e.client.SubscribeFilterLogs(context.Background(), outcomeReportedQuery, outcomeReportedLogs)
+	outcomeReportedSub, err := client.SubscribeFilterLogs(context.Background(), outcomeReportedQuery, outcomeReportedLogs)
 	if err != nil {
 		e.logger.Error("error while subscribing to ProposeOutcome logs", "err", err)
 
