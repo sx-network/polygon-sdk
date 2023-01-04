@@ -120,14 +120,14 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("type assertion failed for [32]byte", "marketHash", results[0])
 			}
 
-			outcome, ok := results[1].(int32)
+			outcome, ok := results[1].(int)
 			if !ok { // type assertion failed
-				e.logger.Error("type assertion failed for int32", "outcome", results[1])
+				e.logger.Error("type assertion failed for int", "outcome", results[1])
 			}
 
-			blockTimestamp, ok := results[2].(int32)
+			blockTimestamp, ok := results[2].(int)
 			if !ok { // type assertion failed
-				e.logger.Error("type assertion failed for int32", "timestamp", results[2])
+				e.logger.Error("type assertion failed for int", "timestamp", results[2])
 			}
 
 			// derive blockTimestamp from event's block
@@ -139,7 +139,7 @@ func (e EventListener) startListeningLoop() {
 
 			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHash, "outcome", outcome, "blockTime", blockTimestamp)
 
-			e.datafeedService.voteOutcome(hex.EncodeToString(marketHash[:]), outcome)
+			e.datafeedService.voteOutcome(hex.EncodeToString(marketHash[:]), int32(outcome))
 			e.datafeedService.addToQueue(hex.EncodeToString(marketHash[:]), uint64(blockTimestamp))
 		case vLog := <-outcomeReportedLogs:
 			results, err := contractAbi.Unpack("OutcomeReported", vLog.Data)
@@ -157,9 +157,9 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("type assertion failed for [32]byte", "marketHash", results[0])
 			}
 
-			outcome, ok := results[1].(int32)
+			outcome, ok := results[1].(int)
 			if !ok { // type assertion failed
-				e.logger.Error("type assertion failed for string", "outcome", results[1])
+				e.logger.Error("type assertion failed for int", "outcome", results[1])
 			}
 
 			//TODO: get blockTimestamp (vLog.BlockNumber?), outome, marketHash of ProposeOutcome event
