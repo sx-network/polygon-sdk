@@ -3,6 +3,7 @@ package datafeed
 import (
 	"context"
 	"encoding/hex"
+	"reflect"
 	"strings"
 
 	"github.com/0xPolygon/polygon-edge/contracts/abis"
@@ -117,17 +118,17 @@ func (e EventListener) startListeningLoop() {
 
 			marketHash, ok := results[0].([32]byte)
 			if !ok { // type assertion failed
-				e.logger.Error("type assertion failed for [32]byte", "marketHash", results[0])
+				e.logger.Error("type assertion failed for [32]byte", "marketHash", results[0], "got type", reflect.TypeOf(results[0]).String())
 			}
 
 			outcome, ok := results[1].(int)
 			if !ok { // type assertion failed
-				e.logger.Error("type assertion failed for int", "outcome", results[1])
+				e.logger.Error("type assertion failed for int", "outcome", results[1], "got type", reflect.TypeOf(results[1]).String())
 			}
 
 			blockTimestamp, ok := results[2].(int)
 			if !ok { // type assertion failed
-				e.logger.Error("type assertion failed for int", "timestamp", results[2])
+				e.logger.Error("type assertion failed for int", "timestamp", results[2], "got type", reflect.TypeOf(results[2]).String())
 			}
 
 			// derive blockTimestamp from event's block
@@ -154,12 +155,12 @@ func (e EventListener) startListeningLoop() {
 
 			marketHash, ok := results[0].([32]byte)
 			if !ok { // type assertion failed
-				e.logger.Error("type assertion failed for [32]byte", "marketHash", results[0])
+				e.logger.Error("type assertion failed for [32]byte", "marketHash", results[0], "got type", reflect.TypeOf(results[0]).String())
 			}
 
 			outcome, ok := results[1].(int)
 			if !ok { // type assertion failed
-				e.logger.Error("type assertion failed for int", "outcome", results[1])
+				e.logger.Error("type assertion failed for int", "outcome", results[1], "got type", reflect.TypeOf(results[1]).String())
 			}
 
 			//TODO: get blockTimestamp (vLog.BlockNumber?), outome, marketHash of ProposeOutcome event
