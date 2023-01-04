@@ -27,8 +27,8 @@ type DataFeed struct {
 	// consensus info function
 	consensusInfo consensus.ConsensusInfoFn
 
-	// holds markets to be reported on after voting period
-	marketStore *MarketItemStore
+	// processes marketItems once they are ready to be reported
+	storeProcessor *StoreProcessor
 
 	// indicates which DataFeed operator commands should be implemented
 	proto.UnimplementedDataFeedOperatorServer
@@ -98,8 +98,13 @@ func NewDataFeedService(
 	if err != nil {
 		return nil, err
 	}
-
 	datafeedService.eventListener = eventListener
+
+	storeProcessor, err := newStoreProcessor(datafeedService.logger, datafeedService)
+	if err != nil {
+		return nil, err
+	}
+	datafeedService.storeProcessor = storeProcessor
 
 	return datafeedService, nil
 }
