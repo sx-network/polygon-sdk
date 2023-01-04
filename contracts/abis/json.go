@@ -451,6 +451,12 @@ const OutcomeReporterJSONABI = `[
 				"internalType": "enum LibOutcome.Outcome",
 				"name": "outcome",
 				"type": "uint8"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "blockTime",
+				"type": "uint256"
 			}
 		],
 		"name": "ProposeOutcome",
