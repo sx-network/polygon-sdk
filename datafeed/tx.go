@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/hashicorp/go-hclog"
 	"github.com/umbracle/ethgo"
@@ -52,8 +53,7 @@ func newTxService(logger hclog.Logger) (*TxService, error) {
 // sendTxWithRetry send tx with retry to SC specified by customContractAddress
 func (d *DataFeed) sendTxWithRetry(
 	functionType string,
-	marketHash string,
-	outcome int32,
+	report *proto.DataFeedReport,
 ) {
 	const (
 		maxTxTries        = 4
@@ -77,17 +77,17 @@ func (d *DataFeed) sendTxWithRetry(
 		functionSig = proposeOutcomeSCFunction
 		functionName = ProposeOutcome
 
-		functionArgs = append(functionArgs, types.StringToHash(marketHash), outcome)
+		functionArgs = append(functionArgs, types.StringToHash(report.MarketHash), report.Outcome)
 	case VoteOutcome:
 		functionSig = voteOutcomeSCFunction
 		functionName = VoteOutcome
 
-		functionArgs = append(functionArgs, types.StringToHash(marketHash), outcome)
+		functionArgs = append(functionArgs, types.StringToHash(report.MarketHash), report.Outcome)
 	case ReportOutcome:
 		functionSig = reportOutcomeSCFunction
 		functionName = ReportOutcome
 
-		functionArgs = append(functionArgs, types.StringToHash(marketHash))
+		functionArgs = append(functionArgs, types.StringToHash(report.MarketHash))
 	}
 
 	abiContract, err := ethgoabi.NewABIFromList([]string{functionSig})
@@ -152,7 +152,7 @@ func (d *DataFeed) sendTxWithRetry(
 					"function", functionName,
 					"try #", txTry,
 					"nonce", currNonce,
-					"marketHash", marketHash,
+					"marketHash", report.MarketHash,
 				)
 				currNonce++
 				txTry++
@@ -166,7 +166,7 @@ func (d *DataFeed) sendTxWithRetry(
 					"err", err,
 					"try #", txTry,
 					"nonce", currNonce,
-					"marketHash", marketHash,
+					"marketHash", report.MarketHash,
 				)
 
 				return
@@ -179,8 +179,8 @@ func (d *DataFeed) sendTxWithRetry(
 			"hash", txn.Hash(),
 			"from", ethgo.Address(d.consensusInfo().ValidatorAddress),
 			"nonce", currNonce,
-			"market", marketHash,
-			"outcome", outcome,
+			"market", report.MarketHash,
+			"outcome", report.Outcome,
 		)
 
 		var receipt *ethgo.Receipt
@@ -214,7 +214,7 @@ func (d *DataFeed) sendTxWithRetry(
 				"try #", txTry,
 				"nonce", currNonce,
 				"txHash", txn.Hash(),
-				"marketHash", marketHash,
+				"marketHash", report.MarketHash,
 			)
 			txTry++
 
@@ -227,7 +227,7 @@ func (d *DataFeed) sendTxWithRetry(
 				"function", functionName,
 				"nonce", currNonce,
 				"txHash", txn.Hash(),
-				"marketHash", marketHash,
+				"marketHash", report.MarketHash,
 			)
 
 			return
@@ -239,7 +239,7 @@ func (d *DataFeed) sendTxWithRetry(
 				"try #", txTry,
 				"nonce", currNonce,
 				"txHash", txn.Hash(),
-				"marketHash", marketHash,
+				"marketHash", report.MarketHash,
 			)
 			txTry++
 		}
@@ -249,5 +249,5 @@ func (d *DataFeed) sendTxWithRetry(
 		"try #", txTry,
 		"nonce", currNonce,
 		"txHash", txn.Hash(),
-		"marketHash", marketHash)
+		"marketHash", report.MarketHash)
 }

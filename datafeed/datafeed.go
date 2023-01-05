@@ -110,21 +110,28 @@ func NewDataFeedService(
 }
 
 // proposeOutcome proposes new report outcome (from a datafeed source like MQ or GRPC)
-func (d *DataFeed) proposeOutcome(payload *proto.DataFeedReport) {
-	d.sendTxWithRetry(ProposeOutcome, payload.MarketHash, payload.Outcome)
+func (d *DataFeed) proposeOutcome(report *proto.DataFeedReport) {
+	d.sendTxWithRetry(ProposeOutcome, report)
 }
 
 // voteOutcome adds vote for a previously proposed report outcome
 func (d *DataFeed) voteOutcome(marketHash string, outcome int32) {
+	report := &proto.DataFeedReport{
+		MarketHash: marketHash,
+		Outcome:    outcome,
+	}
 	err := d.verifyMarketOutcome(marketHash, outcome)
 	if err != nil {
 		d.logger.Error("Verify mismatch, skipping vote tx", "err", err)
 		return
 	}
-	d.sendTxWithRetry(VoteOutcome, marketHash, outcome)
+	d.sendTxWithRetry(VoteOutcome, report)
 }
 
 // publishOutcome calls the reportOutcome function to publish the outcome once the voting period has ended
-func (d *DataFeed) publishOutcome(marketHash string, outcome int32) {
-	d.sendTxWithRetry(ReportOutcome, marketHash, outcome)
+func (d *DataFeed) publishOutcome(marketHash string) {
+	report := &proto.DataFeedReport{
+		MarketHash: marketHash,
+	}
+	d.sendTxWithRetry(ReportOutcome, report)
 }

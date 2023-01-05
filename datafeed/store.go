@@ -2,6 +2,7 @@ package datafeed
 
 import (
 	"sync"
+	"time"
 
 	"github.com/hashicorp/go-hclog"
 )
@@ -41,9 +42,26 @@ func newStoreProcessor(logger hclog.Logger, datafeedService *DataFeed) (*StorePr
 func (s *StoreProcessor) startProcessingLoop() {
 
 	for {
+		time.Sleep(5 * time.Second)
 		for marketHash, timestamp := range s.store.marketItems {
-			s.logger.Debug("processing market item", "market", marketHash, "timestamp", timestamp)
-			s.store.remove(marketHash)
+			if timestamp+s.datafeedService.config.OutcomeVotingPeriodSeconds >= uint64(time.Now().Unix()) {
+				s.logger.Debug(
+					"processing market item",
+					"market", marketHash,
+					"block ts", timestamp,
+					"current ts", time.Now().Unix())
+				s.datafeedService.publishOutcome(marketHash)
+				s.store.remove(marketHash)
+			} else {
+				s.logger.Debug(
+					"market item not yet ready for processing",
+					"market", marketHash,
+					"block ts", timestamp,
+					"current ts", time.Now().Unix(),
+					"remaining %d s", timestamp+s.datafeedService.config.OutcomeVotingPeriodSeconds-uint64(time.Now().Unix()))
+				continue
+			}
+
 		}
 	}
 }
