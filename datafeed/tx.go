@@ -70,24 +70,24 @@ func (d *DataFeed) sendTxWithRetry(
 
 	var functionName string
 
-	var functionArgs []interface{}
+	var functionArgs interface{}
 
 	switch functionType {
 	case ProposeOutcome:
 		functionSig = proposeOutcomeSCFunction
 		functionName = ProposeOutcome
 
-		functionArgs = append(functionArgs, types.StringToHash(report.MarketHash), report.Outcome)
+		functionArgs = append(make([]interface{}, 0), types.StringToHash(report.MarketHash), report.Outcome)
 	case VoteOutcome:
 		functionSig = voteOutcomeSCFunction
 		functionName = VoteOutcome
 
-		functionArgs = append(functionArgs, types.StringToHash(report.MarketHash), report.Outcome)
+		functionArgs = append(make([]interface{}, 0), types.StringToHash(report.MarketHash), report.Outcome)
 	case ReportOutcome:
 		functionSig = reportOutcomeSCFunction
 		functionName = ReportOutcome
 
-		functionArgs = append(functionArgs, types.StringToHash(report.MarketHash))
+		functionArgs = types.StringToHash(report.MarketHash)
 	}
 
 	abiContract, err := ethgoabi.NewABIFromList([]string{functionSig})
