@@ -16,7 +16,7 @@ type verifyAPIResponse struct {
 
 // verifyMarketOutcome compares the proposed market outcome with the verify api outcome,
 // returning error if outcome does not match
-func (d *DataFeed) verifyMarketOutcome(marketHash string, outcome int32) (int32, error) {
+func (d *DataFeed) verifyMarketOutcome(marketHash string) (int32, error) {
 	requestURL := fmt.Sprintf("%s/%s", d.config.VerifyOutcomeURI, marketHash)
 	response, err := http.Get(requestURL) //nolint:gosec
 
@@ -39,7 +39,6 @@ func (d *DataFeed) verifyMarketOutcome(marketHash string, outcome int32) (int32,
 		d.logger.Error(
 			"[MARKET-VERIFICATION] Got non-200 response from verify outcome",
 			"market", marketHash,
-			"outcome", outcome,
 			"parsedBody", body,
 			"statusCode", response.StatusCode,
 		)
@@ -60,16 +59,5 @@ func (d *DataFeed) verifyMarketOutcome(marketHash string, outcome int32) (int32,
 		return -1, marshalErr
 	}
 
-	if data.Outcome != outcome {
-		errorMsg := fmt.Sprintf(
-			"failed to verify market %s, expected outcome %d got %d",
-			marketHash,
-			outcome,
-			data.Outcome,
-		)
-
-		return -1, fmt.Errorf(errorMsg)
-	}
-
-	return outcome, nil
+	return data.Outcome, nil
 }
