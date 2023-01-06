@@ -57,45 +57,16 @@ func (e EventListener) startListeningLoop() {
 
 	outcomeReporterAddress := common.HexToAddress(e.datafeedService.config.OutcomeReporterAddress)
 
-	proposeOutcomeEvent := contractAbi.Events["ProposeOutcome"].ID
-
-	var proposeOutcomeEventTopics [][]common.Hash
-
-	proposeOutcomeEventTopics = append(proposeOutcomeEventTopics, []common.Hash{proposeOutcomeEvent})
-
-	proposeOutcomeQuery := ethereum.FilterQuery{
-		Addresses: []common.Address{outcomeReporterAddress},
-		//TODO: figure out how to listen for specific events here if using topics?
-		// https://sourcegraph.com/github.com/obscuronet/go-obscuro/-/blob/integration/simulation/validate_chain.go?L225:20
-		Topics: proposeOutcomeEventTopics,
-	}
-
-	proposeOutcomeLogs := make(chan types.Log)
-	//TODO: might have to just use FilterLogs instead of ws SubscribeFilterLogs
-	proposeOutcomeSub, err := e.client.SubscribeFilterLogs(context.Background(), proposeOutcomeQuery, proposeOutcomeLogs)
+	proposeOutcomeSub, proposeOutcomeLogs, err := e.subscribeToProposeOutcome(contractAbi, outcomeReporterAddress)
 	if err != nil {
 		e.logger.Error("error while subscribing to ProposeOutcome logs", "err", err)
 
 		return
 	}
 
-	outcomeReportedEvent := contractAbi.Events["OutcomeReported"].ID
-
-	var outcomeReportedEventTopics [][]common.Hash
-	outcomeReportedEventTopics = append(outcomeReportedEventTopics, []common.Hash{outcomeReportedEvent})
-
-	outcomeReportedQuery := ethereum.FilterQuery{
-		Addresses: []common.Address{outcomeReporterAddress},
-		//TODO: figure out how to listen for specific events here if using topics?
-		// https://sourcegraph.com/github.com/obscuronet/go-obscuro/-/blob/integration/simulation/validate_chain.go?L225:20
-		Topics: outcomeReportedEventTopics,
-	}
-
-	outcomeReportedLogs := make(chan types.Log)
-	//TODO: might have to just use FilterLogs instead of ws SubscribeFilterLogs
-	outcomeReportedSub, err := e.client.SubscribeFilterLogs(context.Background(), outcomeReportedQuery, outcomeReportedLogs)
+	outcomeReportedSub, outcomeReportedLogs, err := e.subscribeToOutcomeReported(contractAbi, outcomeReporterAddress)
 	if err != nil {
-		e.logger.Error("error while subscribing to ProposeOutcome logs", "err", err)
+		e.logger.Error("error while subscribing to OutcomeReported logs", "err", err)
 
 		return
 	}
@@ -107,7 +78,7 @@ func (e EventListener) startListeningLoop() {
 		case err := <-proposeOutcomeSub.Err():
 			e.logger.Error("error listening to ProposeOutcome events", "err", err)
 		case err := <-outcomeReportedSub.Err():
-			e.logger.Error("error listening to OutocmeReported events", "err", err)
+			e.logger.Error("error listening to OutcomeReported events", "err", err)
 		case vLog := <-proposeOutcomeLogs:
 			results, err := contractAbi.Unpack("ProposeOutcome", vLog.Data)
 
@@ -134,13 +105,6 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("type assertion failed for int", "timestamp", results[2], "got type", reflect.TypeOf(results[2]).String())
 			}
 
-			// derive blockTimestamp from event's block
-			// block, err := e.client.BlockByHash(context.Background(), vLog.BlockHash)
-			// if err != nil {
-			// 	e.logger.Error("could not get block by hash", "blockHash", vLog.BlockHash)
-			// }
-			// blockTimestamp := block.Time()
-
 			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHash, "outcome", outcome, "blockTime", blockTimestamp)
 
 			e.datafeedService.voteOutcome(hex.EncodeToString(marketHash[:]), int32(outcome))
@@ -166,11 +130,54 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("type assertion failed for int", "outcome", results[1], "got type", reflect.TypeOf(results[1]).String())
 			}
 
-			//TODO: get blockTimestamp (vLog.BlockNumber?), outome, marketHash of ProposeOutcome event
-			//TODO: remove from queue
 			e.logger.Debug("received OutcomeReported event", "marketHash", marketHash, "outcome", outcome)
 
 			e.datafeedService.removeFromStore(hex.EncodeToString(marketHash[:]))
 		}
 	}
+}
+
+func (e EventListener) subscribeToProposeOutcome(contractAbi abi.ABI, outcomeReporterAddress common.Address) (ethereum.Subscription, <-chan types.Log, error) {
+	proposeOutcomeEvent := contractAbi.Events["ProposeOutcome"].ID
+
+	var proposeOutcomeEventTopics [][]common.Hash
+
+	proposeOutcomeEventTopics = append(proposeOutcomeEventTopics, []common.Hash{proposeOutcomeEvent})
+
+	proposeOutcomeQuery := ethereum.FilterQuery{
+		Addresses: []common.Address{outcomeReporterAddress},
+		Topics:    proposeOutcomeEventTopics,
+	}
+
+	proposeOutcomeLogs := make(chan types.Log)
+	proposeOutcomeSub, err := e.client.SubscribeFilterLogs(context.Background(), proposeOutcomeQuery, proposeOutcomeLogs)
+	if err != nil {
+		e.logger.Error("error in SubscribeFilterLogs call", "err", err)
+
+		return nil, nil, err
+	}
+
+	return proposeOutcomeSub, proposeOutcomeLogs, nil
+}
+
+func (e EventListener) subscribeToOutcomeReported(contractAbi abi.ABI, outcomeReporterAddress common.Address) (ethereum.Subscription, <-chan types.Log, error) {
+	outcomeReportedEvent := contractAbi.Events["OutcomeReported"].ID
+
+	var outcomeReportedEventTopics [][]common.Hash
+	outcomeReportedEventTopics = append(outcomeReportedEventTopics, []common.Hash{outcomeReportedEvent})
+
+	outcomeReportedQuery := ethereum.FilterQuery{
+		Addresses: []common.Address{outcomeReporterAddress},
+		Topics:    outcomeReportedEventTopics,
+	}
+
+	outcomeReportedLogs := make(chan types.Log)
+	outcomeReportedSub, err := e.client.SubscribeFilterLogs(context.Background(), outcomeReportedQuery, outcomeReportedLogs)
+	if err != nil {
+		e.logger.Error("error in SubscribeFilterLogs call", "err", err)
+
+		return nil, nil, err
+	}
+
+	return outcomeReportedSub, outcomeReportedLogs, nil
 }

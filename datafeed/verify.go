@@ -16,14 +16,14 @@ type verifyAPIResponse struct {
 
 // verifyMarketOutcome compares the proposed market outcome with the verify api outcome,
 // returning error if outcome does not match
-func (d *DataFeed) verifyMarketOutcome(marketHash string, outcome int32) error {
+func (d *DataFeed) verifyMarketOutcome(marketHash string, outcome int32) (int32, error) {
 	requestURL := fmt.Sprintf("%s/%s", d.config.VerifyOutcomeURI, marketHash)
 	response, err := http.Get(requestURL) //nolint:gosec
 
 	if err != nil {
 		d.logger.Error("[MARKET-VERIFICATION] Failed to verify market outcome with server error", "error", err)
 
-		return err
+		return -1, err
 	}
 
 	defer response.Body.Close()
@@ -32,7 +32,7 @@ func (d *DataFeed) verifyMarketOutcome(marketHash string, outcome int32) error {
 	if parseErr != nil {
 		d.logger.Error("[MARKET-VERIFICATION] Failed to parse response", "parseError", parseErr)
 
-		return parseErr
+		return -1, parseErr
 	}
 
 	if response.StatusCode != 200 {
@@ -44,7 +44,7 @@ func (d *DataFeed) verifyMarketOutcome(marketHash string, outcome int32) error {
 			"statusCode", response.StatusCode,
 		)
 
-		return fmt.Errorf("got non-200 response from Verify Outcome API response")
+		return -1, fmt.Errorf("got non-200 response from Verify Outcome API response")
 	}
 
 	var data verifyAPIResponse
@@ -57,7 +57,7 @@ func (d *DataFeed) verifyMarketOutcome(marketHash string, outcome int32) error {
 			"parseError", marshalErr,
 		)
 
-		return marshalErr
+		return -1, marshalErr
 	}
 
 	if data.Outcome != outcome {
@@ -68,8 +68,8 @@ func (d *DataFeed) verifyMarketOutcome(marketHash string, outcome int32) error {
 			data.Outcome,
 		)
 
-		return fmt.Errorf(errorMsg)
+		return -1, fmt.Errorf(errorMsg)
 	}
 
-	return nil
+	return outcome, nil
 }

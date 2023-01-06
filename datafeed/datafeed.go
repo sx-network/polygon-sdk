@@ -116,20 +116,21 @@ func (d *DataFeed) proposeOutcome(report *proto.DataFeedReport) {
 
 // voteOutcome adds vote for a previously proposed report outcome
 func (d *DataFeed) voteOutcome(marketHash string, outcome int32) {
-	report := &proto.DataFeedReport{
-		MarketHash: marketHash,
-		Outcome:    outcome,
-	}
-	err := d.verifyMarketOutcome(marketHash, outcome)
+
+	outcome, err := d.verifyMarketOutcome(marketHash, outcome)
 	if err != nil {
 		d.logger.Error("Verify mismatch, skipping vote tx", "err", err)
 		return
 	}
+	report := &proto.DataFeedReport{
+		MarketHash: marketHash,
+		Outcome:    outcome,
+	}
 	d.sendTxWithRetry(VoteOutcome, report)
 }
 
-// publishOutcome calls the reportOutcome function to publish the outcome once the voting period has ended
-func (d *DataFeed) publishOutcome(marketHash string) {
+// reportOutcome calls the reportOutcome function to publish the outcome once the voting period has ended
+func (d *DataFeed) reportOutcome(marketHash string) {
 	report := &proto.DataFeedReport{
 		MarketHash: marketHash,
 	}
