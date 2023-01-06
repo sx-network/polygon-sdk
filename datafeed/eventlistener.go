@@ -107,7 +107,7 @@ func (e EventListener) startListeningLoop() {
 
 			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHash, "outcome", outcome, "blockTime", blockTimestamp)
 
-			e.datafeedService.voteOutcome(hex.EncodeToString(marketHash[:]), int32(outcome))
+			e.datafeedService.voteOutcome(hex.EncodeToString(marketHash[:]))
 			e.datafeedService.addToStore(hex.EncodeToString(marketHash[:]), uint64(blockTimestamp.Int64()))
 		case vLog := <-outcomeReportedLogs:
 			results, err := contractAbi.Unpack("OutcomeReported", vLog.Data)
