@@ -12,16 +12,13 @@ type verifyAPIResponse struct {
 	Timestamp int64
 }
 
-// TODO: should we refactor verify API to just return the actual outcome instead of success/failure?
-
-// verifyMarketOutcome compares the proposed market outcome with the verify api outcome,
-// returning error if outcome does not match
-func (d *DataFeed) verifyMarketOutcome(marketHash string) (int32, error) {
+// verifyMarket uses the verify market API to derive an outcome for the specified marketHash to vote on
+func (d *DataFeed) verifyMarket(marketHash string) (int32, error) {
 	requestURL := fmt.Sprintf("%s/%s", d.config.VerifyOutcomeURI, marketHash)
 	response, err := http.Get(requestURL) //nolint:gosec
 
 	if err != nil {
-		d.logger.Error("[MARKET-VERIFICATION] Failed to verify market outcome with server error", "error", err)
+		d.logger.Error("failed to verify market with server error", "error", err)
 
 		return -1, err
 	}
@@ -30,20 +27,20 @@ func (d *DataFeed) verifyMarketOutcome(marketHash string) (int32, error) {
 	body, parseErr := ioutil.ReadAll(response.Body)
 
 	if parseErr != nil {
-		d.logger.Error("[MARKET-VERIFICATION] Failed to parse response", "parseError", parseErr)
+		d.logger.Error("failed to parse response for verify market call", "parseError", parseErr)
 
 		return -1, parseErr
 	}
 
 	if response.StatusCode != 200 {
 		d.logger.Error(
-			"[MARKET-VERIFICATION] Got non-200 response from verify outcome",
+			"got non-200 response for verify market call",
 			"market", marketHash,
 			"parsedBody", body,
 			"statusCode", response.StatusCode,
 		)
 
-		return -1, fmt.Errorf("got non-200 response from Verify Outcome API response")
+		return -1, fmt.Errorf("got non-200 response from verify market response with statusCode %d", response.StatusCode)
 	}
 
 	var data verifyAPIResponse
@@ -51,7 +48,7 @@ func (d *DataFeed) verifyMarketOutcome(marketHash string) (int32, error) {
 	marshalErr := json.Unmarshal(body, &data)
 	if marshalErr != nil {
 		d.logger.Error(
-			"[MARKET-VERIFICATION] Failed to unmarshal outcome",
+			"failed to unmarshal outcome for verify market response",
 			"body", body,
 			"parseError", marshalErr,
 		)
