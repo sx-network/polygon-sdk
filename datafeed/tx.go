@@ -117,6 +117,8 @@ func (d *DataFeed) sendTxWithRetry(
 		d.logger.Error(
 			"failed to create txn via ethgo",
 			"function", functionName,
+			"functionArgs", functionArgs,
+			"functionSig", abiContract,
 			"err", err,
 		)
 
