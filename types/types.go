@@ -11,6 +11,7 @@ import (
 
 var ZeroAddress = Address{}
 var ZeroHash = Hash{}
+var DeadAddress = StringToAddress("0x000000000000000000000000000000000000dEaD")
 
 const (
 	HashLength    = 32
