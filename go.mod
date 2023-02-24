@@ -60,7 +60,7 @@ require (
 )
 
 require (
-	github.com/0xPolygon/go-ibft v0.0.0-20220810095021-e43142f8d267
+	github.com/0xPolygon/go-ibft v0.3.0
 	go.uber.org/atomic v1.10.0
 )
 
