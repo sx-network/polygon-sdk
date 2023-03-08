@@ -27,7 +27,8 @@ import (
 	"github.com/0xPolygon/polygon-edge/state"
 	itrie "github.com/0xPolygon/polygon-edge/state/immutable-trie"
 	"github.com/0xPolygon/polygon-edge/state/runtime"
-	"github.com/0xPolygon/polygon-edge/state/runtime/tracer"
+
+	// "github.com/0xPolygon/polygon-edge/state/runtime/tracer"
 	"github.com/0xPolygon/polygon-edge/txpool"
 	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/hashicorp/go-hclog"
@@ -530,128 +531,65 @@ func (j *jsonRPCHub) ApplyTxn(
 	return
 }
 
-func (j *jsonRPCHub) IsIbftStateStale() bool {
-	return j.Consensus.IsIbftStateStale()
-}
-
-// TraceBlock traces all transactions in the given block and returns all results
-func (j *jsonRPCHub) TraceBlock(
+func (j *jsonRPCHub) ApplyBlockTxn(
+	parentHeader *types.Header,
 	block *types.Block,
-	tracer tracer.Tracer,
-) ([]interface{}, error) {
-	if block.Number() == 0 {
-		return nil, errors.New("genesis block can't have transaction")
-	}
-
-	parentHeader, ok := j.GetHeaderByHash(block.ParentHash())
-	if !ok {
-		return nil, errors.New("parent header not found")
-	}
-
+	hash types.Hash,
+	tracerConfig runtime.TraceConfig,
+) (result *runtime.ExecutionResult, err error) {
+	// dexiang: 执行区块中之前的交易操作
 	blockCreator, err := j.GetConsensus().GetBlockCreator(block.Header)
 	if err != nil {
 		return nil, err
 	}
-
 	transition, err := j.BeginTxn(parentHeader.StateRoot, block.Header, blockCreator)
 	if err != nil {
-		return nil, err
+		return
 	}
+	transition.SetBlock(block)
 
-	transition.SetTracer(tracer)
-
-	results := make([]interface{}, len(block.Transactions))
-
-	for idx, tx := range block.Transactions {
-		tracer.Clear()
-
-		if _, err := transition.Apply(tx); err != nil {
-			return nil, err
-		}
-
-		if results[idx], err = tracer.GetResult(); err != nil {
-			return nil, err
-		}
-	}
-
-	return results, nil
-}
-
-// TraceTxn traces a transaction in the block, associated with the given hash
-func (j *jsonRPCHub) TraceTxn(
-	block *types.Block,
-	targetTxHash types.Hash,
-	tracer tracer.Tracer,
-) (interface{}, error) {
-	if block.Number() == 0 {
-		return nil, errors.New("genesis block can't have transaction")
-	}
-
-	parentHeader, ok := j.GetHeaderByHash(block.ParentHash())
-	if !ok {
-		return nil, errors.New("parent header not found")
-	}
-
-	blockCreator, err := j.GetConsensus().GetBlockCreator(block.Header)
-	if err != nil {
-		return nil, err
-	}
-
-	transition, err := j.BeginTxn(parentHeader.StateRoot, block.Header, blockCreator)
-	if err != nil {
-		return nil, err
-	}
-
-	var targetTx *types.Transaction
-
-	for _, tx := range block.Transactions {
-		if tx.Hash == targetTxHash {
-			targetTx = tx
-
+	var txn *types.Transaction
+	for _, txn = range block.Transactions {
+		if txn.Hash == hash {
 			break
 		}
-
-		// Execute transactions without tracer until reaching the target transaction
-		if _, err := transition.Apply(tx); err != nil {
-			return nil, err
-		}
+		transition.Write(txn)
 	}
 
-	if targetTx == nil {
-		return nil, errors.New("target tx not found")
-	}
+	// 设置config
+	transition.SetTracerConfig(tracerConfig)
+	msg := txn.Copy()
+	msg.Gas = txn.Gas
+	result, err = transition.Apply(msg)
 
-	transition.SetTracer(tracer)
-
-	if _, err := transition.Apply(targetTx); err != nil {
-		return nil, err
-	}
-
-	return tracer.GetResult()
+	return
 }
 
-func (j *jsonRPCHub) TraceCall(
-	tx *types.Transaction,
+func (j *jsonRPCHub) ApplyMessage(
 	parentHeader *types.Header,
-	tracer tracer.Tracer,
-) (interface{}, error) {
-	blockCreator, err := j.GetConsensus().GetBlockCreator(parentHeader)
+	header *types.Header,
+	txn *types.Transaction,
+	tracerConfig runtime.TraceConfig,
+) (result *runtime.ExecutionResult, err error) {
+	blockCreator, err := j.GetConsensus().GetBlockCreator(header)
 	if err != nil {
 		return nil, err
 	}
 
-	transition, err := j.BeginTxn(parentHeader.StateRoot, parentHeader, blockCreator)
+	// using tracerConfig to capture log
+	transition, err := j.BeginTxnTracer(parentHeader.StateRoot, header, blockCreator, tracerConfig)
+
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	transition.SetTracer(tracer)
+	result, err = transition.Apply(txn)
 
-	if _, err := transition.Apply(tx); err != nil {
-		return nil, err
-	}
+	return
+}
 
-	return tracer.GetResult()
+func (j *jsonRPCHub) IsIbftStateStale() bool {
+	return j.Consensus.IsIbftStateStale()
 }
 
 func (j *jsonRPCHub) GetSyncProgression() *progress.Progression {

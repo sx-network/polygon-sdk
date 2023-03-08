@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"time"
 
 	"github.com/0xPolygon/polygon-edge/chain"
 	"github.com/0xPolygon/polygon-edge/crypto"
@@ -32,10 +33,11 @@ type GetHashByNumberHelper = func(*types.Header) GetHashByNumber
 
 // Executor is the main entity
 type Executor struct {
-	logger  hclog.Logger
-	config  *chain.Params
-	state   State
-	GetHash GetHashByNumberHelper
+	logger   hclog.Logger
+	config   *chain.Params
+	runtimes []runtime.Runtime
+	state    State
+	GetHash  GetHashByNumberHelper
 
 	PostHook func(txn *Transition)
 }
@@ -151,6 +153,7 @@ func (e *Executor) BeginTxn(
 
 	txn := &Transition{
 		logger:   e.logger,
+		r:        e,
 		ctx:      txCtx,
 		state:    newTxn,
 		snap:     auxSnap2,
@@ -170,12 +173,55 @@ func (e *Executor) BeginTxn(
 	return txn, nil
 }
 
+func (e *Executor) BeginTxnTracer(
+	parentRoot types.Hash,
+	header *types.Header,
+	coinbaseReceiver types.Address,
+	tracerConfig runtime.TraceConfig,
+) (*Transition, error) {
+	forkConfig := e.config.Forks.At(header.Number)
+	// fmt.Printf("parentRoot", parentRoot)
+	auxSnap2, err := e.state.NewSnapshotAt(parentRoot)
+	if err != nil {
+		return nil, err
+	}
+	newTxn := NewTxn(auxSnap2)
+	// fork chainID change
+	ChainID := e.config.ChainID
+
+	txCtx := runtime.TxContext{
+		Coinbase:   coinbaseReceiver,
+		Timestamp:  int64(header.Timestamp),
+		Number:     int64(header.Number),
+		Difficulty: types.BytesToHash(new(big.Int).SetUint64(header.Difficulty).Bytes()),
+		GasLimit:   int64(header.GasLimit),
+		ChainID:    int64(ChainID),
+	}
+	txn := &Transition{
+		logger:      e.logger,
+		r:           e,
+		ctx:         txCtx,
+		state:       newTxn,
+		getHash:     e.GetHash(header),
+		auxState:    e.state,
+		config:      forkConfig,
+		gasPool:     uint64(txCtx.GasLimit),
+		receipts:    []*types.Receipt{},
+		totalGas:    0,
+		traceConfig: tracerConfig, // 由调用者传入新的tracerConfig...
+	}
+	return txn, nil
+}
+
 type Transition struct {
 	logger hclog.Logger
 
 	// dummy
 	auxState State
 	snap     Snapshot
+
+	block *types.Block
+	r     *Executor
 
 	config  chain.ForksInTime
 	state   *Txn
@@ -187,6 +233,11 @@ type Transition struct {
 	receipts []*types.Receipt
 	totalGas uint64
 
+	// trace
+	gas         uint64
+	initialGas  uint64
+	traceConfig runtime.TraceConfig
+
 	PostHook func(t *Transition)
 
 	// runtimes
@@ -195,12 +246,19 @@ type Transition struct {
 }
 
 func NewTransition(config chain.ForksInTime, snap Snapshot, radix *Txn) *Transition {
+	new_evm := evm.NewEVM()
+
 	return &Transition{
 		config:      config,
 		state:       radix,
 		snap:        snap,
-		evm:         evm.NewEVM(),
+		evm:         new_evm,
 		precompiles: precompiled.NewPrecompiled(),
+		r: &Executor{
+			runtimes: []runtime.Runtime{
+				new_evm,
+			},
+		},
 	}
 }
 
@@ -323,8 +381,22 @@ func (t *Transition) addGasPool(amount uint64) {
 	t.gasPool += amount
 }
 
+func (t *Transition) SetTxn(txn *Txn) {
+	t.state = txn
+}
+
 func (t *Transition) Txn() *Txn {
 	return t.state
+}
+
+func (t *Transition) GetTxnHash() types.Hash {
+	return t.block.Hash()
+}
+func (t *Transition) Block() *types.Block {
+	return t.block
+}
+func (t *Transition) SetBlock(block *types.Block) {
+	t.block = block
 }
 
 // Apply applies a new transaction
@@ -447,8 +519,13 @@ func (t *Transition) apply(msg *types.Transaction) (*runtime.ExecutionResult, er
 		return nil, NewGasLimitReachedTransitionApplicationError(err)
 	}
 
-	if t.ctx.Tracer != nil {
-		t.ctx.Tracer.TxStart(msg.Gas)
+	// start tracing
+	var result *runtime.ExecutionResult
+	if t.traceConfig.Debug {
+		t.traceConfig.Tracer.CaptureTxStart(msg.Gas)
+		defer func() {
+			t.traceConfig.Tracer.CaptureTxEnd(result.GasLeft)
+		}()
 	}
 
 	// 4. there is no overflow when calculating intrinsic gas
@@ -476,7 +553,6 @@ func (t *Transition) apply(msg *types.Transaction) (*runtime.ExecutionResult, er
 	t.ctx.GasPrice = types.BytesToHash(gasPrice.Bytes())
 	t.ctx.Origin = msg.From
 
-	var result *runtime.ExecutionResult
 	if msg.IsContractCreation() {
 		result = t.Create2(msg.From, msg.Input, value, gasLeft)
 	} else {
@@ -514,7 +590,8 @@ func (t *Transition) Create2(
 	address := crypto.CreateAddress(caller, t.state.GetNonce(caller))
 	contract := runtime.NewContractCreation(1, caller, caller, address, value, gas, code)
 
-	return t.applyCreate(contract, t)
+	return t.applyCreate(contract, t, evm.CREATE2)
+
 }
 
 func (t *Transition) Call2(
@@ -562,6 +639,16 @@ func (t *Transition) transfer(from, to types.Address, amount *big.Int) error {
 	return nil
 }
 
+func (t *Transition) GetTxn() *Txn {
+	return t.state
+}
+func (t *Transition) GetTracerConfig() runtime.TraceConfig {
+	return t.traceConfig
+}
+func (t *Transition) SetTracerConfig(tracerConfig runtime.TraceConfig) {
+	t.traceConfig = tracerConfig
+}
+
 func (t *Transition) applyCall(
 	c *runtime.Contract,
 	callType runtime.CallType,
@@ -589,7 +676,37 @@ func (t *Transition) applyCall(
 
 	var result *runtime.ExecutionResult
 
-	t.captureCallStart(c, callType)
+	if t.traceConfig.Debug {
+		if c.Depth == 1 {
+			t.traceConfig.Tracer.CaptureStart(t, c.Caller, c.Address, false, c.Input, c.Gas, c.Value)
+			defer func(startTime time.Time) {
+				t.traceConfig.Tracer.CaptureEnd(result.ReturnValue, c.Gas-result.GasLeft, time.Since(startTime), result.Err)
+			}(time.Now())
+		} else {
+			// Change to OpCode according to callType
+			var opCallType evm.OpCode
+			switch callType {
+			case runtime.Call:
+				opCallType = evm.CALL
+			case runtime.StaticCall:
+				opCallType = evm.STATICCALL
+			case runtime.DelegateCall:
+				opCallType = evm.DELEGATECALL
+			case runtime.CallCode:
+				opCallType = evm.CALLCODE
+			case runtime.Create:
+				opCallType = evm.CREATE
+			case runtime.Create2:
+				opCallType = evm.CREATE2
+			default:
+				panic("not expected")
+			}
+			t.traceConfig.Tracer.CaptureEnter(int(opCallType), c.Caller, c.Address, c.Input, c.Gas, c.Value)
+			defer func() {
+				t.traceConfig.Tracer.CaptureExit(result.ReturnValue, c.Gas-result.GasLeft, result.Err)
+			}()
+		}
+	}
 
 	result = t.run(c, host)
 	if result.Failed() {
@@ -618,7 +735,7 @@ func (t *Transition) hasCodeOrNonce(addr types.Address) bool {
 	return false
 }
 
-func (t *Transition) applyCreate(c *runtime.Contract, host runtime.Host) *runtime.ExecutionResult {
+func (t *Transition) applyCreate(c *runtime.Contract, host runtime.Host, op evm.OpCode) *runtime.ExecutionResult {
 	gasLimit := c.Gas
 
 	if c.Depth > int(1024)+1 {
@@ -658,12 +775,25 @@ func (t *Transition) applyCreate(c *runtime.Contract, host runtime.Host) *runtim
 
 	var result *runtime.ExecutionResult
 
-	t.captureCallStart(c, evm.CREATE)
-
-	defer func() {
-		// pass result to be set later
-		t.captureCallEnd(c, result)
-	}()
+	start := time.Now()
+	var gasCost uint64
+	if t.traceConfig.Debug {
+		// var output []byte
+		// copy(output, result.ReturnValue)
+		if c.Depth == 1 {
+			t.traceConfig.Tracer.CaptureStart(t, c.Caller, c.Address, true, c.Code, c.Gas, c.Value)
+			defer func(gas uint64) {
+				t.traceConfig.Tracer.CaptureEnd(result.ReturnValue, gas, time.Since(start), result.Err)
+			}(gasCost)
+		} else {
+			t.traceConfig.Tracer.CaptureEnter(int(op), c.Caller, c.Address, c.Code, c.Gas, c.Value)
+			defer func(gas uint64) {
+				t.traceConfig.Tracer.CaptureExit(result.ReturnValue, gas, result.Err)
+			}(gasCost)
+		}
+	}
+	result = t.run(c, host)
+	gasCost = uint64(len(result.ReturnValue)) * 200
 
 	result = t.run(c, host)
 	if result.Failed() {
@@ -681,8 +811,6 @@ func (t *Transition) applyCreate(c *runtime.Contract, host runtime.Host) *runtim
 			Err:     runtime.ErrMaxCodeSizeExceeded,
 		}
 	}
-
-	gasCost := uint64(len(result.ReturnValue)) * 200
 
 	if result.GasLeft < gasCost {
 		result.Err = runtime.ErrCodeStoreOutOfGas
@@ -768,7 +896,7 @@ func (t *Transition) Selfdestruct(addr types.Address, beneficiary types.Address)
 
 func (t *Transition) Callx(c *runtime.Contract, h runtime.Host) *runtime.ExecutionResult {
 	if c.Type == runtime.Create {
-		return t.applyCreate(c, h)
+		return t.applyCreate(c, h, evm.CREATE)
 	}
 
 	return t.applyCall(c, c.Type, h)
