@@ -295,6 +295,13 @@ func setFlags(cmd *cobra.Command) {
 		"the address of the OutcomeReporter contract, used by the DataFeedService's EventListener",
 	)
 
+	cmd.Flags().BoolVar(
+		&params.rawConfig.Relayer,
+		relayerFlag,
+		defaultConfig.Relayer,
+		"start the state sync relayer service (PolyBFT only)",
+	)
+
 	setLegacyFlags(cmd)
 
 	setDevFlags(cmd)

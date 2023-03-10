@@ -249,6 +249,13 @@ func (r *Receipt) UnmarshalRLPFrom(p *fastrlp.Parser, v *fastrlp.Value) error {
 		r.Logs = append(r.Logs, log)
 	}
 
+	// Type
+	if len(elems) >= 5 {
+		if r.TransactionType, err = ReadRlpTxType(elems[4]); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -352,6 +359,27 @@ func (t *Transaction) UnmarshalRLPFrom(p *fastrlp.Parser, v *fastrlp.Value) erro
 	t.S = new(big.Int)
 	if err = elems[8].GetBigInt(t.S); err != nil {
 		return err
+	}
+
+	if len(elems) >= 10 {
+		// Type
+		if t.Type, err = ReadRlpTxType(elems[9]); err != nil {
+			return err
+		}
+
+		if t.IsStateTx() {
+			// We need to set From field for state transaction,
+			// because we are using unique, predefined address, for sending such transactions
+			// From
+			if vv, err := v.Get(10).Bytes(); err == nil && len(vv) == AddressLength {
+				// address
+				addr := BytesToAddress(vv)
+				t.From = addr
+			} else {
+				// reset From
+				t.From = ZeroAddress
+			}
+		}
 	}
 
 	return nil

@@ -47,6 +47,7 @@ const (
 	verifyOutcomeAPIURLFlag             = "verify-outcome-api-url"
 	outcomeVotingPeriodSecondsFlag      = "outcome-voting-period-seconds"
 	outcomeReporterAddressFlag          = "outcome-reporter-address"
+	relayerFlag                         = "relayer"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -108,6 +109,8 @@ type serverParams struct {
 	secretsConfig *secrets.SecretsManagerConfig
 
 	logFileLocation string
+
+	relayer bool
 }
 
 func (p *serverParams) isMaxPeersSet() bool {
@@ -208,5 +211,6 @@ func (p *serverParams) generateConfig() *server.Config {
 		LogLevel:           hclog.LevelFromString(p.rawConfig.LogLevel),
 		JSONLogFormat:      p.rawConfig.JSONLogFormat,
 		LogFilePath:        p.logFileLocation,
+		Relayer:            p.relayer,
 	}
 }

@@ -22,11 +22,15 @@ jobs:
   build:
     uses: ./.github/workflows/build.yml
     name: Build
+    secrets:
+      GH_TOKEN_CLONE_PRIVATE: ${{ secrets.GH_TOKEN_CLONE_PRIVATE }}
 
   test:
     uses: ./.github/workflows/test.yml
     name: Test
     needs: build
+    secrets:
+      GH_TOKEN_CLONE_PRIVATE: ${{ secrets.GH_TOKEN_CLONE_PRIVATE }}
 
   container_image_build:
     name: Build/Push Container Image

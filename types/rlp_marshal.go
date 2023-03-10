@@ -121,6 +121,10 @@ func (r *Receipt) MarshalRLPWith(a *fastrlp.Arena) *fastrlp.Value {
 	vv.Set(a.NewCopyBytes(r.LogsBloom[:]))
 	vv.Set(r.MarshalLogsWith(a))
 
+	if !r.IsLegacyTx() {
+		vv.Set(a.NewBytes([]byte{byte(r.TransactionType)}))
+	}
+
 	return vv
 }
 
@@ -185,6 +189,14 @@ func (t *Transaction) MarshalRLPWith(arena *fastrlp.Arena) *fastrlp.Value {
 	vv.Set(arena.NewBigInt(t.V))
 	vv.Set(arena.NewBigInt(t.R))
 	vv.Set(arena.NewBigInt(t.S))
+
+	if !t.IsLegacyTx() {
+		vv.Set(arena.NewBytes([]byte{byte(t.Type)}))
+	}
+
+	if t.IsStateTx() {
+		vv.Set(arena.NewBytes((t.From).Bytes()))
+	}
 
 	return vv
 }

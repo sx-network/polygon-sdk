@@ -28,6 +28,9 @@ const (
 	KeyEpochSize     = "epochSize"
 
 	ibftProto = "/ibft/0.2"
+
+	// consensusMetrics is a prefix used for consensus-related metrics
+	consensusMetrics = "consensus"
 )
 
 var (
@@ -308,7 +311,7 @@ func (i *backendIBFT) startConsensus() {
 		}
 
 		// Update the No.of validator metric
-		metrics.SetGauge([]string{"validators"}, float32(i.currentValidators.Len()))
+		metrics.SetGauge([]string{consensusMetrics, "validators"}, float32(i.currentValidators.Len()))
 
 		isValidator = i.isActiveValidator()
 
@@ -350,11 +353,11 @@ func (i *backendIBFT) updateMetrics(block *types.Block) {
 
 	// Update the block interval metric
 	if block.Number() > 1 {
-		metrics.SetGauge([]string{"block_interval"}, float32(headerTime.Sub(parentTime).Seconds()))
+		metrics.SetGauge([]string{consensusMetrics, "block_interval"}, float32(headerTime.Sub(parentTime).Seconds()))
 	}
 
 	// Update the Number of transactions in the block metric
-	metrics.SetGauge([]string{"num_txs"}, float32(len(block.Body().Transactions)))
+	metrics.SetGauge([]string{consensusMetrics, "num_txs"}, float32(len(block.Body().Transactions)))
 }
 
 // verifyHeaderImpl verifies fields including Extra
@@ -541,6 +544,11 @@ func (i *backendIBFT) SetHeaderHash() {
 
 		return hash
 	}
+}
+
+// GetBridgeProvider returns an instance of BridgeDataProvider
+func (i *backendIBFT) GetBridgeProvider() consensus.BridgeDataProvider {
+	return nil
 }
 
 // updateCurrentModules updates Signer, Hooks, and Validators

@@ -250,3 +250,7 @@ func (d *Dev) IsIbftStateStale() bool {
 func (d *Dev) GetConsensusInfo() consensus.ConsensusInfoFn {
 	return nil
 }
+
+func (d *Dev) GetBridgeProvider() consensus.BridgeDataProvider {
+	return nil
+}

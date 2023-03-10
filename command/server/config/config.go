@@ -35,6 +35,7 @@ type Config struct {
 	RPCNrAppName                    string     `json:"rpc_nr_app_name" yaml:"rpc_nr_app_name"`
 	RPCNrLicenseKey                 string     `json:"rpc_nr_license_key" yaml:"rpc_nr_license_key"`
 	GasPriceBlockUtilizationMinimum float64    `json:"gasprice_block_utilization_threshold" yaml:"gasprice_block_utilization_threshold"` //nolint:lll
+	Relayer                         bool       `json:"relayer" yaml:"relayer"`
 }
 
 // Telemetry holds the config details for metric services.
@@ -134,6 +135,7 @@ func DefaultConfig() *Config {
 		LogFilePath:              "",
 		JSONRPCBatchRequestLimit: DefaultJSONRPCBatchRequestLimit,
 		JSONRPCBlockRangeLimit:   DefaultJSONRPCBlockRangeLimit,
+		Relayer:                  false,
 	}
 }
 

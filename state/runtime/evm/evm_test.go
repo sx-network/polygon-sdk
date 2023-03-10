@@ -90,6 +90,10 @@ func (m *mockHost) GetNonce(addr types.Address) uint64 {
 	panic("Not implemented in tests")
 }
 
+func (m *mockHost) Transfer(from types.Address, to types.Address, amount *big.Int) error {
+	panic("Not implemented in tests")
+}
+
 func (m *mockHost) GetTracer() runtime.VMTracer {
 	return m.tracer
 }
@@ -324,7 +328,7 @@ func TestRunWithTracer(t *testing.T) {
 						"ip":              uint64(0),
 						"opcode":          opCodeToString[POP],
 						"availableGas":    uint64(5000),
-						"cost":            uint64(0),
+						"cost":            uint64(2),
 						"lastReturnData":  []byte{},
 						"depth":           1,
 						"err":             errStackUnderflow,
