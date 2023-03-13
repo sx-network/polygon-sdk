@@ -42,7 +42,7 @@ import (
 
 // init registers itself this packages as a lookup for tracers.
 func init() {
-	tracers.RegisterLookup(false, lookup)
+	tracers.RegisterLookup(true, lookup)
 }
 
 // ctorFn is the constructor signature of a native tracer.
