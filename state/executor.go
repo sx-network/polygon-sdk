@@ -152,8 +152,8 @@ func (e *Executor) BeginTxn(
 	}
 
 	txn := &Transition{
-		logger:   e.logger,
-		r:        e,
+		logger: e.logger,
+		// r:        e,
 		ctx:      txCtx,
 		state:    newTxn,
 		snap:     auxSnap2,
@@ -254,11 +254,11 @@ func NewTransition(config chain.ForksInTime, snap Snapshot, radix *Txn) *Transit
 		snap:        snap,
 		evm:         new_evm,
 		precompiles: precompiled.NewPrecompiled(),
-		r: &Executor{
-			runtimes: []runtime.Runtime{
-				new_evm,
-			},
-		},
+		// r: &Executor{
+		// 	runtimes: []runtime.Runtime{
+		// 		new_evm,
+		// 	},
+		// },
 	}
 }
 
@@ -706,16 +706,30 @@ func (t *Transition) applyCall(
 				t.traceConfig.Tracer.CaptureExit(result.ReturnValue, c.Gas-result.GasLeft, result.Err)
 			}()
 		}
+
+		result = t.run(c, host)
+		if result.Failed() {
+			t.state.RevertToSnapshot(snapshot)
+		}
+
+		t.captureCallEnd(c, result)
+
+		return result
+	} else {
+		// fallback to original implementation
+		t.captureCallStart(c, callType)
+
+		result = t.run(c, host)
+		if result.Failed() {
+			t.state.RevertToSnapshot(snapshot)
+		}
+
+		t.captureCallEnd(c, result)
+
+		return result
+
 	}
 
-	result = t.run(c, host)
-	if result.Failed() {
-		t.state.RevertToSnapshot(snapshot)
-	}
-
-	t.captureCallEnd(c, result)
-
-	return result
 }
 
 var emptyHash types.Hash
