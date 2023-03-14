@@ -537,7 +537,6 @@ func (j *jsonRPCHub) ApplyBlockTxn(
 	hash types.Hash,
 	tracerConfig runtime.TraceConfig,
 ) (result *runtime.ExecutionResult, err error) {
-	// dexiang: 执行区块中之前的交易操作
 	blockCreator, err := j.GetConsensus().GetBlockCreator(block.Header)
 	if err != nil {
 		return nil, err
@@ -556,7 +555,6 @@ func (j *jsonRPCHub) ApplyBlockTxn(
 		transition.Write(txn)
 	}
 
-	// 设置config
 	transition.SetTracerConfig(tracerConfig)
 	msg := txn.Copy()
 	msg.Gas = txn.Gas
