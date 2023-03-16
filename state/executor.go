@@ -152,8 +152,7 @@ func (e *Executor) BeginTxn(
 	}
 
 	txn := &Transition{
-		logger: e.logger,
-		// r:        e,
+		logger:   e.logger,
 		ctx:      txCtx,
 		state:    newTxn,
 		snap:     auxSnap2,
@@ -180,13 +179,11 @@ func (e *Executor) BeginTxnTracer(
 	tracerConfig runtime.TraceConfig,
 ) (*Transition, error) {
 	forkConfig := e.config.Forks.At(header.Number)
-	// fmt.Printf("parentRoot", parentRoot)
 	auxSnap2, err := e.state.NewSnapshotAt(parentRoot)
 	if err != nil {
 		return nil, err
 	}
 	newTxn := NewTxn(auxSnap2)
-	// fork chainID change
 	ChainID := e.config.ChainID
 
 	txCtx := runtime.TxContext{
@@ -254,11 +251,6 @@ func NewTransition(config chain.ForksInTime, snap Snapshot, radix *Txn) *Transit
 		snap:        snap,
 		evm:         new_evm,
 		precompiles: precompiled.NewPrecompiled(),
-		// r: &Executor{
-		// 	runtimes: []runtime.Runtime{
-		// 		new_evm,
-		// 	},
-		// },
 	}
 }
 
