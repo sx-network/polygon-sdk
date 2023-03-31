@@ -55,12 +55,6 @@ func (s StorageStatus) String() string {
 	}
 }
 
-type State interface {
-	Memory() []byte
-	Stack() []*big.Int
-	Msg() *Contract
-}
-
 // Host is the execution host
 type Host interface {
 	AccountExists(addr types.Address) bool
@@ -77,7 +71,6 @@ type Host interface {
 	Callx(*Contract, Host) *ExecutionResult
 	Empty(addr types.Address) bool
 	GetNonce(addr types.Address) uint64
-	GetTracerConfig() TraceConfig
 	GetTracer() VMTracer
 	GetRefund() uint64
 }

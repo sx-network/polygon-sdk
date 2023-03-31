@@ -5,9 +5,6 @@ import (
 
 	"github.com/0xPolygon/polygon-edge/command/root"
 	"github.com/0xPolygon/polygon-edge/licenses"
-
-	_ "github.com/0xPolygon/polygon-edge/tracers/js"
-	_ "github.com/0xPolygon/polygon-edge/tracers/native"
 )
 
 var (

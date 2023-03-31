@@ -359,10 +359,3 @@ func init() {
 func (op OpCode) String() string {
 	return opCodeToString[op]
 }
-
-func (op OpCode) IsPush() bool {
-	if op >= PUSH1 && op <= PUSH32 {
-		return true
-	}
-	return false
-}
