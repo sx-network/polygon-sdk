@@ -14,7 +14,10 @@ type verifyAPIResponse struct {
 
 // verifyMarket uses the verify market API to derive an outcome for the specified marketHash to vote on
 func (d *DataFeed) verifyMarket(marketHash string) (int32, error) {
+
 	requestURL := fmt.Sprintf("%s/%s", d.config.VerifyOutcomeURI, marketHash)
+
+	d.logger.Debug("verifyMarket", "requestUrl", requestURL)
 	response, err := http.Get(requestURL) //nolint:gosec
 
 	if err != nil {
