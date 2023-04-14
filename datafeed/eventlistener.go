@@ -105,10 +105,11 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("type assertion failed for int", "timestamp", results[2], "got type", reflect.TypeOf(results[2]).String())
 			}
 
-			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHash, "outcome", outcome, "blockTime", blockTimestamp)
+			marketHashStr := hex.EncodeToString(marketHash[:])
+			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHashStr, "outcome", outcome, "blockTime", blockTimestamp)
 
-			e.datafeedService.voteOutcome(hex.EncodeToString(marketHash[:]))
-			e.datafeedService.addToStore(hex.EncodeToString(marketHash[:]), uint64(blockTimestamp.Int64()))
+			e.datafeedService.voteOutcome(marketHashStr)
+			e.datafeedService.addToStore(marketHashStr, uint64(blockTimestamp.Int64()))
 		case vLog := <-outcomeReportedLogs:
 			results, err := contractAbi.Unpack("OutcomeReported", vLog.Data)
 
@@ -130,9 +131,10 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("type assertion failed for int", "outcome", results[1], "got type", reflect.TypeOf(results[1]).String())
 			}
 
-			e.logger.Debug("received OutcomeReported event", "marketHash", marketHash, "outcome", outcome)
+			marketHashStr := hex.EncodeToString(marketHash[:])
+			e.logger.Debug("received OutcomeReported event", "marketHash", marketHashStr, "outcome", outcome)
 
-			e.datafeedService.removeFromStore(hex.EncodeToString(marketHash[:]))
+			e.datafeedService.removeFromStore(marketHashStr)
 		}
 	}
 }
