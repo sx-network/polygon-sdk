@@ -3,9 +3,11 @@ package datafeed
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"math/big"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/0xPolygon/polygon-edge/contracts/abis"
 	"github.com/ethereum/go-ethereum"
@@ -59,16 +61,12 @@ func (e EventListener) startListeningLoop() {
 
 	proposeOutcomeSub, proposeOutcomeLogs, err := e.subscribeToProposeOutcome(contractAbi, outcomeReporterAddress)
 	if err != nil {
-		e.logger.Error("error while subscribing to ProposeOutcome logs", "err", err)
-
-		return
+		panic(fmt.Errorf("fatal error while subscribing to ProposeOutcome logs: %w", err))
 	}
 
 	outcomeReportedSub, outcomeReportedLogs, err := e.subscribeToOutcomeReported(contractAbi, outcomeReporterAddress)
 	if err != nil {
-		e.logger.Error("error while subscribing to OutcomeReported logs", "err", err)
-
-		return
+		panic(fmt.Errorf("fatal error while subscribing to OutcomeReported logs: %w", err))
 	}
 
 	e.logger.Debug("Listening for events...")
@@ -76,9 +74,22 @@ func (e EventListener) startListeningLoop() {
 	for {
 		select {
 		case err := <-proposeOutcomeSub.Err():
-			e.logger.Error("error listening to ProposeOutcome events", "err", err)
+			e.logger.Error("error listening to ProposeOutcome events, re-connecting after 5 seconds..", "err", err)
+			time.Sleep(5 * time.Second)
+			proposeOutcomeSub, proposeOutcomeLogs, err = e.subscribeToProposeOutcome(contractAbi, outcomeReporterAddress)
+			if err != nil {
+				panic(fmt.Errorf("fatal error while re-subscribing to ProposeOutcome logs: %w", err))
+			}
+
 		case err := <-outcomeReportedSub.Err():
-			e.logger.Error("error listening to OutcomeReported events", "err", err)
+			e.logger.Error("error listening to OutcomeReported events, re-connecting after 5 seconds..", "err", err)
+
+			time.Sleep(5 * time.Second)
+			outcomeReportedSub, outcomeReportedLogs, err = e.subscribeToOutcomeReported(contractAbi, outcomeReporterAddress)
+			if err != nil {
+				panic(fmt.Errorf("fatal error while re-subscribing to OutcomeReported logs: %w", err))
+			}
+
 		case vLog := <-proposeOutcomeLogs:
 			results, err := contractAbi.Unpack("ProposeOutcome", vLog.Data)
 
