@@ -80,18 +80,18 @@ func NewDataFeedService(
 		proto.RegisterDataFeedOperatorServer(grpcServer, datafeedService)
 	}
 
-	if config.VerifyOutcomeURI == "" && config.MQConfig.AMQPURI == "" {
-		logger.Warn("DataFeed 'verify_outcome_api_url' is missing but required for reporting - we will avoid participating in voting and reporting") //nolint:lll
-
-		return datafeedService, nil
-	}
-
 	// start jsonRpcTxService
 	txService, err := newTxService(datafeedService.logger)
 	if err != nil {
 		return nil, err
 	}
 	datafeedService.txService = txService
+
+	if config.VerifyOutcomeURI == "" {
+		logger.Warn("Datefeed 'verify_outcome_api_url' is missing but required for outcome voting and reporting.. we will avoid participating in outcome voting and reporting...") //nolint:lll
+
+		return datafeedService, nil
+	}
 
 	// start eventListener
 	eventListener, err := newEventListener(datafeedService.logger, datafeedService)

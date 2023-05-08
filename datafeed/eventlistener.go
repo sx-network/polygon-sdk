@@ -116,7 +116,7 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("type assertion failed for int", "timestamp", results[2], "got type", reflect.TypeOf(results[2]).String())
 			}
 
-			marketHashStr := hex.EncodeToString(marketHash[:])
+			marketHashStr := fmt.Sprintf("0x%s", hex.EncodeToString(marketHash[:]))
 			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHashStr, "outcome", outcome, "blockTime", blockTimestamp)
 
 			e.datafeedService.voteOutcome(marketHashStr)
@@ -142,7 +142,7 @@ func (e EventListener) startListeningLoop() {
 				e.logger.Error("type assertion failed for int", "outcome", results[1], "got type", reflect.TypeOf(results[1]).String())
 			}
 
-			marketHashStr := hex.EncodeToString(marketHash[:])
+			marketHashStr := fmt.Sprintf("0x%s", hex.EncodeToString(marketHash[:]))
 			e.logger.Debug("received OutcomeReported event", "marketHash", marketHashStr, "outcome", outcome)
 
 			e.datafeedService.removeFromStore(marketHashStr)
