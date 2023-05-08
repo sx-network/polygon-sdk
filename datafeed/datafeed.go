@@ -88,7 +88,7 @@ func NewDataFeedService(
 	datafeedService.txService = txService
 
 	if config.VerifyOutcomeURI == "" {
-		logger.Warn("Datefeed 'verify_outcome_api_url' is missing but required for outcome voting and reporting.. we will avoid participating in outcome voting and reporting...") //nolint:lll
+		datafeedService.logger.Warn("Datafeed 'verify_outcome_api_url' is missing but required for outcome voting and reporting.. we will avoid participating in outcome voting and reporting...") //nolint:lll
 
 		return datafeedService, nil
 	}
