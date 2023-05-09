@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	JSONRPCHost              = "https://localhost:10002"
+	JSONRPCHost              = "http://localhost:10002"
 	proposeOutcomeSCFunction = "function proposeOutcome(bytes32 marketHash, uint8 outcome)"
 	voteOutcomeSCFunction    = "function voteOutcome(bytes32 marketHash, uint8 outcome)"
 	reportOutcomeSCFunction  = "function reportOutcome(bytes32 marketHash)"
