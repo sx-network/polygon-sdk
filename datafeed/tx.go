@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	JSONRPCHost              = "http://localhost:10002"
+	JSONRPCHost              = "https://rpc.toronto.sx.technology"
 	proposeOutcomeSCFunction = "function proposeOutcome(bytes32 marketHash, uint8 outcome)"
 	voteOutcomeSCFunction    = "function voteOutcome(bytes32 marketHash, uint8 outcome)"
 	reportOutcomeSCFunction  = "function reportOutcome(bytes32 marketHash)"
@@ -133,7 +133,8 @@ func (d *DataFeed) sendTxWithRetry(
 			"attempting tx with nonce",
 			"function", functionName,
 			"nonce", currNonce,
-			"try", txTry)
+			"try #", txTry,
+			"marketHash", report.MarketHash)
 
 		//TODO: derive these gas params better, have it dynamic?
 		txn.WithOpts(

@@ -58,7 +58,7 @@ func (s *StoreProcessor) startProcessingLoop() {
 					"market", marketHash,
 					"block ts", timestamp,
 					"current ts", time.Now().Unix(),
-					"remaining %d s", timestamp+s.datafeedService.config.OutcomeVotingPeriodSeconds-uint64(time.Now().Unix()))
+					"remaining s", timestamp+s.datafeedService.config.OutcomeVotingPeriodSeconds-uint64(time.Now().Unix()))
 				continue
 			}
 
@@ -69,7 +69,7 @@ func (s *StoreProcessor) startProcessingLoop() {
 // addToStore adds a new market item specified by marketHash, outcome, timestamp to store to be processed later
 func (d *DataFeed) addToStore(marketHash string, blockTimestamp uint64) {
 	d.storeProcessor.store.add(marketHash, blockTimestamp)
-	d.logger.Debug("addeded to store", "market", marketHash, "blockTimestamp", blockTimestamp)
+	d.logger.Debug("added to store", "market", marketHash, "blockTimestamp", blockTimestamp)
 }
 
 // removeFromStore removes the market item from the store
