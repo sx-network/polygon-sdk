@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/0xPolygon/polygon-edge/datafeed/proto"
+	"github.com/0xPolygon/polygon-edge/helper/common"
 	"github.com/0xPolygon/polygon-edge/types"
 	"github.com/hashicorp/go-hclog"
 	"github.com/umbracle/ethgo"
@@ -15,7 +16,7 @@ import (
 )
 
 const (
-	JSONRPCHost              = "https://rpc.toronto.sx.technology"
+	JSONRPCHost              = "https://localhost:10002"
 	proposeOutcomeSCFunction = "function proposeOutcome(bytes32 marketHash, uint8 outcome)"
 	voteOutcomeSCFunction    = "function voteOutcome(bytes32 marketHash, uint8 outcome)"
 	reportOutcomeSCFunction  = "function reportOutcome(bytes32 marketHash)"
@@ -56,7 +57,7 @@ func (d *DataFeed) sendTxWithRetry(
 	report *proto.DataFeedReport,
 ) {
 	const (
-		maxTxTries        = 4
+		maxTxTries        = 5
 		txGasPriceWei     = 1000000000
 		txGasLimitWei     = 1000000
 		maxTxReceiptTries = 3
@@ -157,7 +158,7 @@ func (d *DataFeed) sendTxWithRetry(
 					"nonce", currNonce,
 					"marketHash", report.MarketHash,
 				)
-				currNonce++
+				currNonce = common.Max(d.consensusInfo().Nonce, currNonce + 1)
 				txTry++
 
 				continue
