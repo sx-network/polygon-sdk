@@ -57,11 +57,9 @@ func (d *DataFeed) sendTxWithRetry(
 	report *proto.DataFeedReport,
 ) {
 	const (
-		maxTxTries        = 5
-		txGasPriceWei     = 1000000000
-		txGasLimitWei     = 1000000
-		maxTxReceiptTries = 3
-		txReceiptWaitMs   = 5000
+		maxTxTries    = 4
+		txGasPriceWei = 1000000000
+		txGasLimitWei = 1000000
 	)
 
 	var functionSig string
@@ -227,7 +225,6 @@ func (t *TxService) waitTxConfirmed(hash ethgo.Hash) <-chan *ethgo.Receipt {
 			var receipt *ethgo.Receipt
 			t.client.Call("eth_getTransactionReceipt", &receipt, hash)
 			if receipt != nil {
-				t.logger.Debug("got receipt", "hash", hash)
 				ch <- receipt
 			}
 

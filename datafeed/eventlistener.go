@@ -120,7 +120,7 @@ func (e EventListener) startListeningLoop() {
 			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHashStr, "outcome", outcome, "blockTime", blockTimestamp)
 
 			e.datafeedService.queueReportingTx(VoteOutcome, marketHashStr, -1)
-			e.datafeedService.addToStore(marketHashStr, uint64(blockTimestamp.Int64()))
+			e.datafeedService.storeProcessor.store.add(marketHashStr, uint64(blockTimestamp.Int64()))
 		case vLog := <-outcomeReportedLogs:
 			results, err := contractAbi.Unpack("OutcomeReported", vLog.Data)
 
@@ -145,7 +145,7 @@ func (e EventListener) startListeningLoop() {
 			marketHashStr := fmt.Sprintf("0x%s", hex.EncodeToString(marketHash[:]))
 			e.logger.Debug("received OutcomeReported event", "marketHash", marketHashStr, "outcome", outcome)
 
-			e.datafeedService.removeFromStore(marketHashStr)
+			e.datafeedService.storeProcessor.store.remove(marketHashStr)
 		}
 	}
 }

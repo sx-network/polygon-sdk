@@ -21,6 +21,7 @@ type StoreProcessor struct {
 
 // MarketItemStore holds markets to be reported on after voting period
 type MarketItemStore struct {
+	logger      hclog.Logger
 	marketItems map[string]uint64
 	sync.Mutex
 }
@@ -33,6 +34,7 @@ func newStoreProcessor(logger hclog.Logger, datafeedService *DataFeed) (*StorePr
 			marketItems: make(map[string]uint64),
 		},
 	}
+	storeProcessor.store.logger = storeProcessor.logger.Named("store")
 
 	go storeProcessor.startProcessingLoop()
 
@@ -61,33 +63,24 @@ func (s *StoreProcessor) startProcessingLoop() {
 					"remaining s", timestamp+s.datafeedService.config.OutcomeVotingPeriodSeconds-uint64(time.Now().Unix()))
 				continue
 			}
-
 		}
 	}
 }
 
-// addToStore adds a new market item specified by marketHash, outcome, timestamp to store to be processed later
-func (d *DataFeed) addToStore(marketHash string, blockTimestamp uint64) {
-	d.storeProcessor.store.add(marketHash, blockTimestamp)
-	d.logger.Debug("added to store", "market", marketHash, "blockTimestamp", blockTimestamp)
-}
-
-// removeFromStore removes the market item from the store
-func (d *DataFeed) removeFromStore(marketHash string) {
-	d.storeProcessor.store.remove(marketHash)
-	d.logger.Debug("removed from store", "market", marketHash)
-}
-
+// add adds a new market item specified by marketHash, outcome, timestamp to store to be processed later
 func (m *MarketItemStore) add(marketHash string, blockTimestamp uint64) {
 	m.Lock()
 	defer m.Unlock()
 
 	m.marketItems[marketHash] = blockTimestamp
+	m.logger.Debug("added to store", "market", marketHash, "blockTimestamp", blockTimestamp)
 }
 
+// remove removes the market item from the store
 func (m *MarketItemStore) remove(marketHash string) {
 	m.Lock()
 	defer m.Unlock()
 
 	delete(m.marketItems, marketHash)
+	m.logger.Debug("removed from store", "market", marketHash)
 }
