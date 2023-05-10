@@ -852,8 +852,6 @@ func (p *TxPool) addGossipTx(obj interface{}, _ peer.ID) {
 		return
 	}
 
-	p.logger.Debug("adding tx gossiped by other node", "from", tx.From.String(), "hash", tx.Hash.String(), "nonce", tx.Nonce, "expectedNonce", p.accounts.get(tx.From).getNonce())
-
 	// add tx
 	if err := p.addTx(gossip, tx); err != nil {
 		if errors.Is(err, ErrAlreadyKnown) {
