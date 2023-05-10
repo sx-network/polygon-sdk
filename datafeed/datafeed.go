@@ -125,7 +125,7 @@ func NewDataFeedService(
 func (d *DataFeed) proposeOutcome(report *proto.DataFeedReport) {
 
 	reportingTx := &ReportingTx{
-		functionType: VoteOutcome,
+		functionType: ProposeOutcome,
 		report: &proto.DataFeedReport{
 			MarketHash: report.MarketHash,
 			Outcome:    report.Outcome,
