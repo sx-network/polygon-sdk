@@ -95,14 +95,14 @@ func NewDataFeedService(
 	}
 	datafeedService.txService = txService
 
+	// start txWorker
+	go datafeedService.txWorker()
+
 	if config.VerifyOutcomeURI == "" {
 		datafeedService.logger.Warn("Datafeed 'verify_outcome_api_url' is missing but required for outcome voting and reporting.. we will avoid participating in outcome voting and reporting...") //nolint:lll
 
 		return datafeedService, nil
 	}
-
-	// start txWorker
-	go datafeedService.txWorker()
 
 	// start eventListener
 	eventListener, err := newEventListener(datafeedService.logger, datafeedService)
@@ -170,6 +170,7 @@ func (d *DataFeed) reportOutcome(marketHash string) {
 // txWorker processes each transaction separately
 func (d *DataFeed) txWorker() {
 	for reportingTx := range d.reportingTxChan {
+		d.logger.Debug("processing reportingTx..", "type", reportingTx.functionType)
 		d.sendTxWithRetry(reportingTx.functionType, reportingTx.report)
 	}
 }
