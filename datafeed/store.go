@@ -50,7 +50,7 @@ func (s *StoreProcessor) startProcessingLoop() {
 					"market", marketHash,
 					"block ts", timestamp,
 					"current ts", time.Now().Unix())
-				s.datafeedService.reportOutcome(marketHash)
+				s.datafeedService.queueReportingTx(ReportOutcome, marketHash, -1)
 				s.store.remove(marketHash)
 			} else {
 				s.logger.Debug(

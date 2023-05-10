@@ -64,6 +64,7 @@ func (d *DataFeed) sendTxWithRetry(
 		txReceiptWaitMs   = 5000
 	)
 
+	//TODO: do we need this?
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
@@ -93,7 +94,7 @@ func (d *DataFeed) sendTxWithRetry(
 
 	abiContract, err := ethgoabi.NewABIFromList([]string{functionSig})
 	if err != nil {
-		d.logger.Error(
+		d.txService.logger.Error(
 			"failed to retrieve ethgo ABI",
 			"function", functionName,
 			"err", err,
@@ -115,7 +116,7 @@ func (d *DataFeed) sendTxWithRetry(
 	)
 
 	if err != nil {
-		d.logger.Error(
+		d.txService.logger.Error(
 			"failed to create txn via ethgo",
 			"function", functionName,
 			"functionArgs", functionArgs,
@@ -130,7 +131,7 @@ func (d *DataFeed) sendTxWithRetry(
 	currNonce := d.consensusInfo().Nonce
 
 	for txTry < maxTxTries {
-		d.logger.Debug(
+		d.txService.logger.Debug(
 			"attempting tx with nonce",
 			"function", functionName,
 			"nonce", currNonce,
@@ -152,20 +153,20 @@ func (d *DataFeed) sendTxWithRetry(
 		if err != nil {
 			if strings.Contains(err.Error(), "nonce too low") {
 				// if nonce too low, retry with higher nonce
-				d.logger.Debug(
+				d.txService.logger.Debug(
 					"encountered nonce too low error trying to send raw txn via ethgo, retrying...",
 					"function", functionName,
 					"try #", txTry,
 					"nonce", currNonce,
 					"marketHash", report.MarketHash,
 				)
-				currNonce = common.Max(d.consensusInfo().Nonce, currNonce+1)
+				currNonce = common.Max(d.consensusInfo().Nonce, d.consensusInfo().Nonce+1)
 				txTry++
 
 				continue
 			} else {
 				// if any other error, just log and return for now
-				d.logger.Error(
+				d.txService.logger.Error(
 					"failed to send raw txn via ethgo due to non-recoverable error",
 					"function", functionName,
 					"err", err,
@@ -178,7 +179,7 @@ func (d *DataFeed) sendTxWithRetry(
 			}
 		}
 
-		d.logger.Debug(
+		d.txService.logger.Debug(
 			"sent tx",
 			"function", functionName,
 			"hash", txn.Hash(),
@@ -213,7 +214,7 @@ func (d *DataFeed) sendTxWithRetry(
 		}
 
 		if receipt == nil {
-			d.logger.Warn(
+			d.txService.logger.Warn(
 				"failed to get txn receipt via ethgo, retry with same nonce and more gas",
 				"function", functionName,
 				"try #", txTry,
@@ -227,7 +228,7 @@ func (d *DataFeed) sendTxWithRetry(
 		}
 
 		if receipt.Status == 1 {
-			d.logger.Debug(
+			d.txService.logger.Debug(
 				"got success receipt",
 				"function", functionName,
 				"nonce", currNonce,
@@ -238,7 +239,7 @@ func (d *DataFeed) sendTxWithRetry(
 			return
 		} else {
 			currNonce++
-			d.logger.Debug(
+			d.txService.logger.Debug(
 				"got failed receipt, retrying with nextNonce and more gas",
 				"function", functionName,
 				"try #", txTry,
@@ -249,7 +250,7 @@ func (d *DataFeed) sendTxWithRetry(
 			txTry++
 		}
 	}
-	d.logger.Debug("could not get success tx receipt even after max tx retries",
+	d.txService.logger.Debug("could not get success tx receipt even after max tx retries",
 		"function", functionName,
 		"try #", txTry,
 		"nonce", currNonce,

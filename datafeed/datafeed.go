@@ -30,12 +30,13 @@ type DataFeed struct {
 	// processes marketItems once they are ready to be reported
 	storeProcessor *StoreProcessor
 
+	// channel used to queue reporting txs for processing
+	reportingTxChan chan *ReportingTx
+
 	// indicates which DataFeed operator commands should be implemented
 	proto.UnimplementedDataFeedOperatorServer
 
 	lock sync.Mutex
-
-	reportingTxChan chan *ReportingTx
 }
 
 // Config
@@ -88,7 +89,7 @@ func NewDataFeedService(
 		proto.RegisterDataFeedOperatorServer(grpcServer, datafeedService)
 	}
 
-	// start jsonRpcTxService
+	// start jsonRpc TxService
 	txService, err := newTxService(datafeedService.logger)
 	if err != nil {
 		return nil, err
@@ -96,7 +97,7 @@ func NewDataFeedService(
 	datafeedService.txService = txService
 
 	// start txWorker
-	go datafeedService.txWorker()
+	go datafeedService.processTxsFromQueue()
 
 	if config.VerifyOutcomeURI == "" {
 		datafeedService.logger.Warn("Datafeed 'verify_outcome_api_url' is missing but required for outcome voting and reporting.. we will avoid participating in outcome voting and reporting...") //nolint:lll
@@ -121,56 +122,41 @@ func NewDataFeedService(
 	return datafeedService, nil
 }
 
-// proposeOutcome proposes new report outcome (from a datafeed source like MQ or GRPC)
-func (d *DataFeed) proposeOutcome(report *proto.DataFeedReport) {
+// queueReportingTx Queues the reporting tx by writing to reportTxChan to be processed by txWorker
+func (d *DataFeed) queueReportingTx(functionType string, marketHash string, outcome int32) {
 
 	reportingTx := &ReportingTx{
-		functionType: ProposeOutcome,
-		report: &proto.DataFeedReport{
-			MarketHash: report.MarketHash,
-			Outcome:    report.Outcome,
-		},
-	}
-
-	d.reportingTxChan <- reportingTx
-}
-
-// voteOutcome adds vote for a previously proposed report outcome
-func (d *DataFeed) voteOutcome(marketHash string) {
-
-	outcome, err := d.verifyMarket(marketHash)
-	if err != nil {
-		d.logger.Error("Error encountered in verifying market, skipping vote tx", "err", err)
-		return
-	}
-
-	reportingTx := &ReportingTx{
-		functionType: VoteOutcome,
-		report: &proto.DataFeedReport{
-			MarketHash: marketHash,
-			Outcome:    outcome,
-		},
-	}
-
-	d.reportingTxChan <- reportingTx
-}
-
-// reportOutcome calls the reportOutcome function to publish the outcome once the voting period has ended
-func (d *DataFeed) reportOutcome(marketHash string) {
-	reportingTx := &ReportingTx{
-		functionType: ReportOutcome,
+		functionType: functionType,
 		report: &proto.DataFeedReport{
 			MarketHash: marketHash,
 		},
 	}
 
+	switch functionType {
+	case ProposeOutcome:
+		reportingTx.report.Outcome = outcome
+	case VoteOutcome:
+		verifyOutcome, err := d.verifyMarket(marketHash)
+		reportingTx.report.Outcome = verifyOutcome
+		if err != nil {
+			d.logger.Error("Error encountered in verifying market, skipping vote tx", "err", err)
+			return
+		}
+	default:
+		if functionType != ReportOutcome {
+			d.logger.Error("Unrecognized function type, skipping tx..", "functionType", functionType)
+			return
+		}
+	}
+
+	d.logger.Debug("queueing reporting tx for processing", "function", functionType, "marketHash", marketHash)
 	d.reportingTxChan <- reportingTx
 }
 
-// txWorker processes each transaction separately
-func (d *DataFeed) txWorker() {
+// txWorker processes each tx in the queue
+func (d *DataFeed) processTxsFromQueue() {
 	for reportingTx := range d.reportingTxChan {
-		d.logger.Debug("processing reportingTx..", "type", reportingTx.functionType)
+		d.logger.Debug("processing reporting tx", "function", reportingTx.functionType, "marketHash", reportingTx.report.MarketHash)
 		d.sendTxWithRetry(reportingTx.functionType, reportingTx.report)
 	}
 }
