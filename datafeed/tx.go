@@ -147,6 +147,7 @@ func (d *DataFeed) sendTxWithRetry(
 		)
 
 		// TODO: consider adding directly to txpool txpool.AddTx() instead of over local jsonrpc
+		// can use TxnPoolOperatorClient.AddTx()
 		err = txn.Do()
 		if err != nil {
 			if strings.Contains(err.Error(), "nonce too low") {
@@ -158,7 +159,7 @@ func (d *DataFeed) sendTxWithRetry(
 					"nonce", currNonce,
 					"marketHash", report.MarketHash,
 				)
-				currNonce = common.Max(d.consensusInfo().Nonce, currNonce + 1)
+				currNonce = common.Max(d.consensusInfo().Nonce, currNonce+1)
 				txTry++
 
 				continue

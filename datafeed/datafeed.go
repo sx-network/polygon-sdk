@@ -34,6 +34,8 @@ type DataFeed struct {
 	proto.UnimplementedDataFeedOperatorServer
 
 	lock sync.Mutex
+
+	reportingTxChan chan *ReportingTx
 }
 
 // Config
@@ -44,6 +46,11 @@ type Config struct {
 	OutcomeReporterAddress     string
 }
 
+type ReportingTx struct {
+	functionType string
+	report       *proto.DataFeedReport
+}
+
 // NewDataFeedService returns the new datafeed service
 func NewDataFeedService(
 	logger hclog.Logger,
@@ -52,9 +59,10 @@ func NewDataFeedService(
 	consensusInfoFn consensus.ConsensusInfoFn,
 ) (*DataFeed, error) {
 	datafeedService := &DataFeed{
-		logger:        logger.Named("datafeed"),
-		config:        config,
-		consensusInfo: consensusInfoFn,
+		logger:          logger.Named("datafeed"),
+		config:          config,
+		consensusInfo:   consensusInfoFn,
+		reportingTxChan: make(chan *ReportingTx, 100),
 	}
 
 	// configure and start mqService
@@ -93,6 +101,9 @@ func NewDataFeedService(
 		return datafeedService, nil
 	}
 
+	// start txWorker
+	go datafeedService.txWorker()
+
 	// start eventListener
 	eventListener, err := newEventListener(datafeedService.logger, datafeedService)
 	if err != nil {
@@ -100,6 +111,7 @@ func NewDataFeedService(
 	}
 	datafeedService.eventListener = eventListener
 
+	// start storeProcessor
 	storeProcessor, err := newStoreProcessor(datafeedService.logger, datafeedService)
 	if err != nil {
 		return nil, err
@@ -111,7 +123,16 @@ func NewDataFeedService(
 
 // proposeOutcome proposes new report outcome (from a datafeed source like MQ or GRPC)
 func (d *DataFeed) proposeOutcome(report *proto.DataFeedReport) {
-	d.sendTxWithRetry(ProposeOutcome, report)
+
+	reportingTx := &ReportingTx{
+		functionType: VoteOutcome,
+		report: &proto.DataFeedReport{
+			MarketHash: report.MarketHash,
+			Outcome:    report.Outcome,
+		},
+	}
+
+	d.reportingTxChan <- reportingTx
 }
 
 // voteOutcome adds vote for a previously proposed report outcome
@@ -122,17 +143,33 @@ func (d *DataFeed) voteOutcome(marketHash string) {
 		d.logger.Error("Error encountered in verifying market, skipping vote tx", "err", err)
 		return
 	}
-	report := &proto.DataFeedReport{
-		MarketHash: marketHash,
-		Outcome:    outcome,
+
+	reportingTx := &ReportingTx{
+		functionType: VoteOutcome,
+		report: &proto.DataFeedReport{
+			MarketHash: marketHash,
+			Outcome:    outcome,
+		},
 	}
-	d.sendTxWithRetry(VoteOutcome, report)
+
+	d.reportingTxChan <- reportingTx
 }
 
 // reportOutcome calls the reportOutcome function to publish the outcome once the voting period has ended
 func (d *DataFeed) reportOutcome(marketHash string) {
-	report := &proto.DataFeedReport{
-		MarketHash: marketHash,
+	reportingTx := &ReportingTx{
+		functionType: ReportOutcome,
+		report: &proto.DataFeedReport{
+			MarketHash: marketHash,
+		},
 	}
-	d.sendTxWithRetry(ReportOutcome, report)
+
+	d.reportingTxChan <- reportingTx
+}
+
+// txWorker processes each transaction separately
+func (d *DataFeed) txWorker() {
+	for reportingTx := range d.reportingTxChan {
+		d.sendTxWithRetry(reportingTx.functionType, reportingTx.report)
+	}
 }
