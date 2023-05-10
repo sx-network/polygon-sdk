@@ -64,10 +64,6 @@ func (d *DataFeed) sendTxWithRetry(
 		txReceiptWaitMs   = 5000
 	)
 
-	//TODO: do we need this?
-	d.lock.Lock()
-	defer d.lock.Unlock()
-
 	var functionSig string
 
 	var functionName string
@@ -189,43 +185,8 @@ func (d *DataFeed) sendTxWithRetry(
 			"outcome", report.Outcome,
 		)
 
-		var receipt *ethgo.Receipt
-
-		receiptTry := uint64(0)
-		for receiptTry < maxTxReceiptTries {
-			time.Sleep(txReceiptWaitMs * time.Millisecond)
-
-			err := d.txService.client.Call("eth_getTransactionReceipt", &receipt, txn.Hash())
-
-			if receipt != nil {
-				break
-			}
-
-			if err != nil {
-				d.logger.Error(
-					"error while waiting for transaction receipt",
-					"function", functionName,
-					"err", err.Error(),
-					"try", receiptTry,
-				)
-			}
-
-			receiptTry++
-		}
-
-		if receipt == nil {
-			d.txService.logger.Warn(
-				"failed to get txn receipt via ethgo, retry with same nonce and more gas",
-				"function", functionName,
-				"try #", txTry,
-				"nonce", currNonce,
-				"txHash", txn.Hash(),
-				"marketHash", report.MarketHash,
-			)
-			txTry++
-
-			continue
-		}
+		// wait for tx to mine
+		receipt := <-d.txService.waitTxConfirmed(txn.Hash())
 
 		if receipt.Status == 1 {
 			d.txService.logger.Debug(
@@ -238,7 +199,7 @@ func (d *DataFeed) sendTxWithRetry(
 
 			return
 		} else {
-			currNonce++
+			currNonce = common.Max(d.consensusInfo().Nonce, d.consensusInfo().Nonce+1)
 			d.txService.logger.Debug(
 				"got failed receipt, retrying with nextNonce and more gas",
 				"function", functionName,
@@ -256,4 +217,23 @@ func (d *DataFeed) sendTxWithRetry(
 		"nonce", currNonce,
 		"txHash", txn.Hash(),
 		"marketHash", report.MarketHash)
+}
+
+// Returns a channel that blocks until the transaction is mined
+func (t *TxService) waitTxConfirmed(hash ethgo.Hash) <-chan *ethgo.Receipt {
+	ch := make(chan *ethgo.Receipt)
+	go func() {
+		for {
+			var receipt *ethgo.Receipt
+			t.client.Call("eth_getTransactionReceipt", &receipt, hash)
+			if receipt != nil {
+				t.logger.Debug("got receipt", "hash", hash)
+				ch <- receipt
+			}
+
+			time.Sleep(time.Millisecond * 500)
+		}
+	}()
+
+	return ch
 }
