@@ -195,6 +195,10 @@ func (d *DataFeed) sendTxWithRetry(
 				"marketHash", report.MarketHash,
 			)
 
+			if functionName == ReportOutcome {
+				d.storeProcessor.store.remove(report.MarketHash)
+			}
+
 			return
 		} else {
 			currNonce = common.Max(d.consensusInfo().Nonce, d.consensusInfo().Nonce+1)
@@ -215,6 +219,10 @@ func (d *DataFeed) sendTxWithRetry(
 		"nonce", currNonce,
 		"txHash", txn.Hash(),
 		"marketHash", report.MarketHash)
+
+		if functionName == ReportOutcome {
+			d.storeProcessor.store.remove(report.MarketHash)
+		}
 }
 
 // Returns a channel that blocks until the transaction is mined

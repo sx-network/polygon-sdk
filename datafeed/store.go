@@ -53,7 +53,6 @@ func (s *StoreProcessor) startProcessingLoop() {
 					"block ts", timestamp,
 					"current ts", time.Now().Unix())
 				s.datafeedService.queueReportingTx(ReportOutcome, marketHash, -1)
-				s.store.remove(marketHash)
 			} else {
 				s.logger.Debug(
 					"market item not yet ready for processing",
