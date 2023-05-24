@@ -6,6 +6,7 @@ import (
 	"math/big"
 
 	"github.com/hashicorp/go-hclog"
+	"github.com/umbracle/fastrlp"
 
 	"github.com/0xPolygon/polygon-edge/chain"
 	"github.com/0xPolygon/polygon-edge/helper/common"
@@ -360,7 +361,21 @@ func (e *Eth) GetStorageAt(
 		return nil, err
 	}
 
-	return argBytesPtr(result), nil
+	// Parse the RLP value
+	p := &fastrlp.Parser{}
+	v, err := p.Parse(result)
+
+	if err != nil {
+		return argBytesPtr(types.ZeroHash[:]), nil
+	}
+
+	data, err := v.Bytes()
+
+	if err != nil {
+		return argBytesPtr(types.ZeroHash[:]), nil
+	}
+
+	return argBytesPtr(data), nil
 }
 
 // GasPrice returns the average gas price based on the last x blocks
