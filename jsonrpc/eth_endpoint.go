@@ -360,7 +360,7 @@ func (e *Eth) GetStorageAt(
 		return nil, err
 	}
 
-	return argBytesPtr(types.BytesToHash(result).Bytes()), nil
+	return argBytesPtr(types.BytesToAddress(result).Bytes()), nil
 }
 
 // GasPrice returns the average gas price based on the last x blocks
