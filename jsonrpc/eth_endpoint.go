@@ -668,6 +668,9 @@ func (e *Eth) GetTransactionCount(address types.Address, filter BlockNumberOrHas
 
 // GetCode returns account code at given block number
 func (e *Eth) GetCode(address types.Address, filter BlockNumberOrHash) (interface{}, error) {
+	if address == types.ZeroAddress {
+		return "0x", nil
+	}
 	header, err := GetHeaderFromBlockNumberOrHash(filter, e.store)
 	if err != nil {
 		return nil, err
