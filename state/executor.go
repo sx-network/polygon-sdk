@@ -17,8 +17,7 @@ import (
 )
 
 const (
-	SpuriousDragonMaxCodeSize = 24576
-	MaxInitCodeSize     = 2 * SpuriousDragonMaxCodeSize
+	spuriousDragonMaxCodeSize = 24576
 
 	TxGas                 uint64 = 21000 // Per transaction not creating a contract
 	TxGasContractCreation uint64 = 53000 // Per transaction that creates a contract
@@ -673,7 +672,7 @@ func (t *Transition) applyCreate(c *runtime.Contract, host runtime.Host) *runtim
 		return result
 	}
 
-	if t.config.EIP158 && len(result.ReturnValue) > MaxInitCodeSize {
+	if t.config.EIP158 && len(result.ReturnValue) > spuriousDragonMaxCodeSize {
 		// Contract size exceeds 'SpuriousDragon' size limit
 		t.state.RevertToSnapshot(snapshot)
 
