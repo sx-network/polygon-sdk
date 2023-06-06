@@ -131,7 +131,7 @@ func (i *backendIBFT) IsProposer(id []byte, height, round uint64) bool {
 		previousProposer,
 	)
 
-	i.logger.Debug("isProposer", "nextProposer", nextProposer.Addr())
+	// store nextProposer in case we need to ID them as offline 
 	i.nextProposer = nextProposer.Addr()
 
 	return types.BytesToAddress(id) == nextProposer.Addr()
