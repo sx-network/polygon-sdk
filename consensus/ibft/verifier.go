@@ -125,9 +125,8 @@ func (i *backendIBFT) IsProposer(id []byte, height, round uint64) bool {
 		return false
 	}
 
-	i.logger.Debug("isProposer", "previousProposer", previousProposer);
 	if round > 0 {
-		i.logger.Debug("isProposer - previousProposer likely offline", "previousProposer", previousProposer);
+		i.logger.Debug("isProposer", "detected offline proposer", i.nextProposer);
 	}
 	
 	nextProposer := CalcProposer(
@@ -136,7 +135,8 @@ func (i *backendIBFT) IsProposer(id []byte, height, round uint64) bool {
 		previousProposer,
 	)
 
-	i.logger.Debug("isProposer", "nextProposer", nextProposer);
+	i.logger.Debug("isProposer", "nextProposer", nextProposer.Addr());
+	i.nextProposer = nextProposer.Addr();
 
 	return types.BytesToAddress(id) == nextProposer.Addr()
 }

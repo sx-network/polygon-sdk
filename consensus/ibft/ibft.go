@@ -82,6 +82,7 @@ type backendIBFT struct {
 	currentSigner     signer.Signer         // Signer at current sequence
 	currentValidators validators.Validators // signer at current sequence
 	currentHooks      fork.HooksInterface   // Hooks at current sequence
+	nextProposer      types.Address         // The next up proposer
 
 	// Configurations
 	config             *consensus.Config // Consensus configuration
