@@ -80,6 +80,7 @@ func (mq *MQService) startConsumeLoop() {
 		case err = <-errors:
 			mq.logger.Error("error while consuming from message queue", "err", err)
 		case <-common.GetTerminationSignalCh():
+			mq.logger.Debug("got sigterm, shuttown down mq consumer..")
 			cfunc()
 		}
 	}

@@ -78,7 +78,7 @@ func (e EventListener) startListeningLoop() {
 			time.Sleep(5 * time.Second)
 			proposeOutcomeSub, proposeOutcomeLogs, err = e.subscribeToProposeOutcome(contractAbi, outcomeReporterAddress)
 			if err != nil {
-				panic(fmt.Errorf("fatal error while re-subscribing to ProposeOutcome logs: %w", err))
+				e.logger.Error("fatal error while re-subscribing to ProposeOutcome logs", "err", err)
 			}
 
 		case err := <-outcomeReportedSub.Err():
@@ -87,7 +87,7 @@ func (e EventListener) startListeningLoop() {
 			time.Sleep(5 * time.Second)
 			outcomeReportedSub, outcomeReportedLogs, err = e.subscribeToOutcomeReported(contractAbi, outcomeReporterAddress)
 			if err != nil {
-				panic(fmt.Errorf("fatal error while re-subscribing to OutcomeReported logs: %w", err))
+				e.logger.Error("fatal error while re-subscribing to OutcomeReported logs", "err", err)
 			}
 
 		case vLog := <-proposeOutcomeLogs:
