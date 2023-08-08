@@ -7,11 +7,6 @@ import (
 	"github.com/hashicorp/go-hclog"
 )
 
-//TODO: we should add a new queue struct similar to txpool's queue promoteRequest
-//TODO: pop() should take off oldest event
-//TODO: peek() should return oldest
-//TODO: push() should add event
-
 // StoreProcessor
 type StoreProcessor struct {
 	logger          hclog.Logger
