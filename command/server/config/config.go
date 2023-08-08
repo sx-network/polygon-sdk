@@ -31,6 +31,7 @@ type Config struct {
 	LogFilePath                     string     `json:"log_to" yaml:"log_to"`
 	JSONRPCBatchRequestLimit        uint64     `json:"json_rpc_batch_request_limit" yaml:"json_rpc_batch_request_limit"`
 	JSONRPCBlockRangeLimit          uint64     `json:"json_rpc_block_range_limit" yaml:"json_rpc_block_range_limit"`
+	JSONLogFormat                   bool       `json:"json_log_format" yaml:"json_log_format"`
 	RPCNrAppName                    string     `json:"rpc_nr_app_name" yaml:"rpc_nr_app_name"`
 	RPCNrLicenseKey                 string     `json:"rpc_nr_license_key" yaml:"rpc_nr_license_key"`
 	GasPriceBlockUtilizationMinimum float64    `json:"gasprice_block_utilization_threshold" yaml:"gasprice_block_utilization_threshold"` //nolint:lll
@@ -55,10 +56,12 @@ type Network struct {
 
 // DataFeed defines the DataFeed configuration params
 type DataFeed struct {
-	AMQPURI             string `json:"amqp_uri" yaml:"amqp_uri"`
-	AMQPExchangeName    string `json:"amqp_exchange_name" yaml:"amqp_exchange_name"`
-	AMQPQueueName       string `json:"amqp_queue_name" yaml:"amqp_queue_name"`
-	VerifyOutcomeAPIURL string `json:"verify_outcome_api_url" yaml:"verify_outcome_api_url"`
+	AMQPURI                    string `json:"amqp_uri" yaml:"amqp_uri"`
+	AMQPExchangeName           string `json:"amqp_exchange_name" yaml:"amqp_exchange_name"`
+	AMQPQueueName              string `json:"amqp_queue_name" yaml:"amqp_queue_name"`
+	VerifyOutcomeAPIURL        string `json:"verify_outcome_api_url" yaml:"verify_outcome_api_url"`
+	OutcomeVotingPeriodSeconds uint64 `json:"outcome_voting_period_seconds" yaml:"outcome_voting_period_seconds"`
+	OutcomeReporterAddress     string `json:"outcome_reporter_address" yaml:"outcome_reporter_address"`
 }
 
 // TxPool defines the TxPool configuration params
@@ -115,10 +118,12 @@ func DefaultConfig() *Config {
 			MaxAccountEnqueued: 128,
 		},
 		DataFeed: &DataFeed{
-			AMQPURI:             "",
-			AMQPExchangeName:    "",
-			AMQPQueueName:       "",
-			VerifyOutcomeAPIURL: "",
+			AMQPURI:                    "",
+			AMQPExchangeName:           "",
+			AMQPQueueName:              "",
+			VerifyOutcomeAPIURL:        "",
+			OutcomeVotingPeriodSeconds: 30,
+			OutcomeReporterAddress:     "",
 		},
 		LogLevel:    "INFO",
 		RestoreFile: "",

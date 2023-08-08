@@ -10,6 +10,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/network/common"
 	"github.com/0xPolygon/polygon-edge/network/dial"
 	"github.com/0xPolygon/polygon-edge/network/discovery"
+	"github.com/armon/go-metrics"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	rawGrpc "google.golang.org/grpc"
@@ -45,8 +46,8 @@ const (
 
 	DefaultLibp2pPort int = 1478
 
-	MinimumPeerConnections int64 = 1
 	MinimumBootNodes       int   = 1
+	MinimumPeerConnections int64 = 1
 )
 
 var (
@@ -65,8 +66,6 @@ type Server struct {
 
 	peers     map[peer.ID]*PeerConnInfo // map of all peer connections
 	peersLock sync.Mutex                // lock for the peer map
-
-	metrics *Metrics // reference for metrics tracking
 
 	dialQueue *dial.DialQueue // queue used to asynchronously connect to peers
 
@@ -138,7 +137,6 @@ func NewServer(logger hclog.Logger, config *Config) (*Server, error) {
 		host:             host,
 		addrs:            host.Addrs(),
 		peers:            make(map[peer.ID]*PeerConnInfo),
-		metrics:          config.Metrics,
 		dialQueue:        dial.NewDialQueue(),
 		closeCh:          make(chan struct{}),
 		emitterPeerEvent: emitter,
@@ -261,7 +259,7 @@ func (s *Server) Start() error {
 	}
 
 	go s.runDial()
-	go s.checkPeerConnections()
+	go s.keepAliveMinimumPeerConnections()
 
 	// watch for disconnected peers
 	s.host.Network().Notify(&network.NotifyBundle{
@@ -317,8 +315,9 @@ func (s *Server) setupBootnodes() error {
 	return nil
 }
 
-// checkPeerCount will attempt to make new connections if the active peer count is lesser than the specified limit.
-func (s *Server) checkPeerConnections() {
+// keepAliveMinimumPeerConnections will attempt to make new connections
+// if the active peer count is lesser than the specified limit.
+func (s *Server) keepAliveMinimumPeerConnections() {
 	for {
 		select {
 		case <-time.After(10 * time.Second):
@@ -328,10 +327,16 @@ func (s *Server) checkPeerConnections() {
 
 		if s.numPeers() < MinimumPeerConnections {
 			if s.config.NoDiscover || !s.bootnodes.hasBootnodes() {
-				// TODO: dial peers from the peerstore
+				// dial unconnected peer
+				randPeer := s.GetRandomPeer()
+				if randPeer != nil && !s.IsConnected(*randPeer) {
+					s.addToDialQueue(s.GetPeerInfo(*randPeer), common.PriorityRandomDial)
+				}
 			} else {
-				randomNode := s.GetRandomBootnode()
-				s.addToDialQueue(randomNode, common.PriorityRandomDial)
+				// dial random unconnected bootnode
+				if randomNode := s.GetRandomBootnode(); randomNode != nil {
+					s.addToDialQueue(randomNode, common.PriorityRandomDial)
+				}
 			}
 		}
 	}
@@ -403,7 +408,7 @@ func (s *Server) runDial() {
 				// the connection process is async because it involves connection (here) +
 				// the handshake done in the identity service.
 				if err := s.host.Connect(context.Background(), *peerInfo); err != nil {
-					s.logger.Debug("failed to dial", "addr", peerInfo.String(), "err", err)
+					s.logger.Debug("failed to dial", "addr", peerInfo.String(), "err", err.Error())
 
 					s.emitEvent(peerInfo.ID, peerEvent.PeerFailedToConnect)
 				}
@@ -509,9 +514,7 @@ func (s *Server) removePeerInfo(peerID peer.ID) *PeerConnInfo {
 		}
 	}
 
-	s.metrics.TotalPeerCount.Set(
-		float64(len(s.peers)),
-	)
+	metrics.SetGauge([]string{"peers"}, float32(len(s.peers)))
 
 	return connectionInfo
 }
@@ -550,7 +553,7 @@ func (s *Server) DisconnectFromPeer(peer peer.ID, reason string) {
 
 var (
 	// Anything below 35s is prone to false timeouts, as seen from empirical test data
-	DefaultJoinTimeout   = 40 * time.Second
+	DefaultJoinTimeout   = 100 * time.Second
 	DefaultBufferTimeout = DefaultJoinTimeout + time.Second*5
 )
 
@@ -774,13 +777,10 @@ func (s *Server) SubscribeCh(ctx context.Context) (<-chan *peerEvent.PeerEvent, 
 func (s *Server) updateConnCountMetrics(direction network.Direction) {
 	switch direction {
 	case network.DirInbound:
-		s.metrics.InboundConnectionsCount.Set(
-			float64(s.connectionCounts.GetInboundConnCount()),
-		)
+		metrics.SetGauge([]string{"inbound_connections_count"}, float32(s.connectionCounts.GetInboundConnCount()))
+
 	case network.DirOutbound:
-		s.metrics.OutboundConnectionsCount.Set(
-			float64(s.connectionCounts.GetOutboundConnCount()),
-		)
+		metrics.SetGauge([]string{"outbound_connections_count"}, float32(s.connectionCounts.GetOutboundConnCount()))
 	}
 }
 
@@ -788,12 +788,11 @@ func (s *Server) updateConnCountMetrics(direction network.Direction) {
 func (s *Server) updatePendingConnCountMetrics(direction network.Direction) {
 	switch direction {
 	case network.DirInbound:
-		s.metrics.PendingInboundConnectionsCount.Set(
-			float64(s.connectionCounts.GetPendingInboundConnCount()),
-		)
+		metrics.SetGauge([]string{"pending_inbound_connections_count"},
+			float32(s.connectionCounts.GetPendingInboundConnCount()))
+
 	case network.DirOutbound:
-		s.metrics.PendingOutboundConnectionsCount.Set(
-			float64(s.connectionCounts.GetPendingOutboundConnCount()),
-		)
+		metrics.SetGauge([]string{"pending_outbound_connections_count"},
+			float32(s.connectionCounts.GetPendingOutboundConnCount()))
 	}
 }

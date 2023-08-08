@@ -10,13 +10,4 @@ message DataFeedReport {
 
     // outcome is the outcome of the report
     int32 outcome = 2;
- 
-    // signatures is the concatenated list of validator signatures 
-    string signatures = 3;
- 
-    // epoch is the epoch at which the message was initially gossiped at
-    uint64 epoch = 4;
- 
-    // timestamp is the initial signature's server clock
-    int64 timestamp = 5;
 }

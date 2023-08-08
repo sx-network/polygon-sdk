@@ -275,7 +275,24 @@ func setFlags(cmd *cobra.Command) {
 		&params.rawConfig.DataFeed.VerifyOutcomeAPIURL,
 		verifyOutcomeAPIURLFlag,
 		defaultConfig.DataFeed.VerifyOutcomeAPIURL,
-		"API to verify market outcome payload",
+		"the GET URL to verify market outcome, used by the DataFeedService",
+	)
+
+	cmd.Flags().Uint64Var(
+		&params.rawConfig.DataFeed.OutcomeVotingPeriodSeconds,
+		outcomeVotingPeriodSecondsFlag,
+		defaultConfig.DataFeed.OutcomeVotingPeriodSeconds,
+		fmt.Sprintf(
+			"the outcome voting period (seconds), used by the DataFeedService's EventListener (default %d)",
+			defaultConfig.DataFeed.OutcomeVotingPeriodSeconds,
+		),
+	)
+
+	cmd.Flags().StringVar(
+		&params.rawConfig.DataFeed.OutcomeReporterAddress,
+		outcomeReporterAddressFlag,
+		defaultConfig.DataFeed.OutcomeReporterAddress,
+		"the address of the OutcomeReporter contract, used by the DataFeedService's EventListener",
 	)
 
 	setLegacyFlags(cmd)
@@ -322,6 +339,7 @@ func runPreRun(cmd *cobra.Command, _ []string) error {
 	// The config file will have precedence over --flag
 	params.setRawGRPCAddress(helper.GetGRPCAddress(cmd))
 	params.setRawJSONRPCAddress(helper.GetJSONRPCAddress(cmd))
+	params.setJSONLogFormat(helper.GetJSONLogFormat(cmd))
 
 	// Check if the config file has been specified
 	// Config file settings will override JSON-RPC and GRPC address values

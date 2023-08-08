@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	// ABI for Staking Contract
+	// ABI for Staking contract
 	StakingABI = abi.MustNewABI(StakingJSONABI)
 
 	// ABI for Contract used in e2e stress test

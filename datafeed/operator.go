@@ -16,7 +16,7 @@ func (d *DataFeed) ReportOutcome(
 		Outcome:    request.Outcome,
 	}
 
-	d.addNewReport(reportOutcome)
+	d.queueReportingTx(ProposeOutcome, reportOutcome.MarketHash, reportOutcome.Outcome)
 
 	return &proto.ReportOutcomeResp{
 		MarketHash: request.Market,

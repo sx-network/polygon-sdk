@@ -45,6 +45,8 @@ const (
 	dataFeedAMQPExchangeNameFlag        = "data-feed-amqp-exchange-name"
 	dataFeedAMQPQueueNameFlag           = "data-feed-amqp-queue-name"
 	verifyOutcomeAPIURLFlag             = "verify-outcome-api-url"
+	outcomeVotingPeriodSecondsFlag      = "outcome-voting-period-seconds"
+	outcomeReporterAddressFlag          = "outcome-reporter-address"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -93,10 +95,12 @@ type serverParams struct {
 	jsonRPCBatchLengthLimit uint64
 	jsonRPCBlockRangeLimit  uint64
 
-	dataFeedAMQPURI          string
-	dataFeedAMQPExchangeName string
-	dataFeedAMQPQueueName    string
-	verifyOutcomeAPIURL      string
+	dataFeedAMQPURI                    string
+	dataFeedAMQPExchangeName           string
+	dataFeedAMQPQueueName              string
+	verifyOutcomeAPIURL                string
+	dataFeedOutcomeVotingPeriodSeconds uint64
+	dataFeedOutcomeReporterAddress     string
 
 	ibftBaseTimeoutLegacy uint64
 
@@ -155,6 +159,10 @@ func (p *serverParams) setRawJSONRPCAddress(jsonRPCAddress string) {
 	p.rawConfig.JSONRPCAddr = jsonRPCAddress
 }
 
+func (p *serverParams) setJSONLogFormat(jsonLogFormat bool) {
+	p.rawConfig.JSONLogFormat = jsonLogFormat
+}
+
 func (p *serverParams) generateConfig() *server.Config {
 	return &server.Config{
 		Chain: p.genesisConfig,
@@ -182,23 +190,23 @@ func (p *serverParams) generateConfig() *server.Config {
 			Chain:            p.genesisConfig,
 		},
 		DataFeed: &server.DataFeed{
-			DataFeedAMQPURI:          p.dataFeedAMQPURI,
-			DataFeedAMQPExchangeName: p.dataFeedAMQPExchangeName,
-			DataFeedAMQPQueueName:    p.dataFeedAMQPQueueName,
-			VerifyOutcomeURI:         p.verifyOutcomeAPIURL,
+			DataFeedAMQPURI:            p.dataFeedAMQPURI,
+			DataFeedAMQPExchangeName:   p.dataFeedAMQPExchangeName,
+			DataFeedAMQPQueueName:      p.dataFeedAMQPQueueName,
+			VerifyOutcomeURI:           p.verifyOutcomeAPIURL,
+			OutcomeVotingPeriodSeconds: p.dataFeedOutcomeVotingPeriodSeconds,
+			OutcomeReporterAddress:     p.dataFeedOutcomeReporterAddress,
 		},
-		DataDir:                         p.rawConfig.DataDir,
-		Seal:                            p.rawConfig.ShouldSeal,
-		PriceLimit:                      p.rawConfig.TxPool.PriceLimit,
-		MaxSlots:                        p.rawConfig.TxPool.MaxSlots,
-		MaxAccountEnqueued:              p.rawConfig.TxPool.MaxAccountEnqueued,
-		SecretsManager:                  p.secretsConfig,
-		RestoreFile:                     p.getRestoreFilePath(),
-		BlockTime:                       p.rawConfig.BlockTime,
-		RPCNrAppName:                    p.rpcNRAppName,
-		RPCNrLicenseKey:                 p.rpcNRLicenseKey,
-		GasPriceBlockUtilizationMinimum: p.rawConfig.GasPriceBlockUtilizationMinimum,
-		LogLevel:                        hclog.LevelFromString(p.rawConfig.LogLevel),
-		LogFilePath:                     p.logFileLocation,
+		DataDir:            p.rawConfig.DataDir,
+		Seal:               p.rawConfig.ShouldSeal,
+		PriceLimit:         p.rawConfig.TxPool.PriceLimit,
+		MaxSlots:           p.rawConfig.TxPool.MaxSlots,
+		MaxAccountEnqueued: p.rawConfig.TxPool.MaxAccountEnqueued,
+		SecretsManager:     p.secretsConfig,
+		RestoreFile:        p.getRestoreFilePath(),
+		BlockTime:          p.rawConfig.BlockTime,
+		LogLevel:           hclog.LevelFromString(p.rawConfig.LogLevel),
+		JSONLogFormat:      p.rawConfig.JSONLogFormat,
+		LogFilePath:        p.logFileLocation,
 	}
 }

@@ -35,40 +35,42 @@ type endpoints struct {
 	Web3   *Web3
 	Net    *Net
 	TxPool *TxPool
+	Debug  *Debug
 }
 
 // Dispatcher handles all json rpc requests by delegating
 // the execution flow to the corresponding service
 type Dispatcher struct {
-	logger                          hclog.Logger
-	serviceMap                      map[string]*serviceData
-	filterManager                   *FilterManager
-	endpoints                       endpoints
-	chainID                         uint64
+	logger        hclog.Logger
+	serviceMap    map[string]*serviceData
+	filterManager *FilterManager
+	endpoints     endpoints
+
+	params *dispatcherParams
+}
+
+type dispatcherParams struct {
+	chainID   uint64
+	chainName string
+
 	priceLimit                      uint64
 	jsonRPCBatchLengthLimit         uint64
+	blockRangeLimit                 uint64
 	gasPriceBlockUtilizationMinimum float64
 }
 
 func newDispatcher(
 	logger hclog.Logger,
 	store JSONRPCStore,
-	chainID uint64,
-	priceLimit uint64,
-	jsonRPCBatchLengthLimit uint64,
-	blockRangeLimit uint64,
-	gasPriceBlockUtilizationMinimum float64,
+	params *dispatcherParams,
 ) *Dispatcher {
 	d := &Dispatcher{
-		logger:                          logger.Named("dispatcher"),
-		chainID:                         chainID,
-		priceLimit:                      priceLimit,
-		jsonRPCBatchLengthLimit:         jsonRPCBatchLengthLimit,
-		gasPriceBlockUtilizationMinimum: gasPriceBlockUtilizationMinimum,
+		logger: logger.Named("dispatcher"),
+		params: params,
 	}
 
 	if store != nil {
-		d.filterManager = NewFilterManager(logger, store, blockRangeLimit)
+		d.filterManager = NewFilterManager(logger, store, params.blockRangeLimit)
 		go d.filterManager.Run()
 	}
 
@@ -78,15 +80,33 @@ func newDispatcher(
 }
 
 func (d *Dispatcher) registerEndpoints(store JSONRPCStore) {
-	d.endpoints.Eth = &Eth{d.logger, store, d.chainID, d.filterManager, d.priceLimit}
-	d.endpoints.Net = &Net{store, d.chainID}
-	d.endpoints.Web3 = &Web3{}
-	d.endpoints.TxPool = &TxPool{store}
+	d.endpoints.Eth = &Eth{
+		d.logger,
+		store,
+		d.params.chainID,
+		d.filterManager,
+		d.params.priceLimit,
+	}
+	d.endpoints.Net = &Net{
+		store,
+		d.params.chainID,
+	}
+	d.endpoints.Web3 = &Web3{
+		d.params.chainID,
+		d.params.chainName,
+	}
+	d.endpoints.TxPool = &TxPool{
+		store,
+	}
+	d.endpoints.Debug = &Debug{
+		store,
+	}
 
 	d.registerService("eth", d.endpoints.Eth)
 	d.registerService("net", d.endpoints.Net)
 	d.registerService("web3", d.endpoints.Web3)
 	d.registerService("txpool", d.endpoints.TxPool)
+	d.registerService("debug", d.endpoints.Debug)
 }
 
 func (d *Dispatcher) getFnHandler(req Request) (*serviceData, *funcData, Error) {
@@ -281,15 +301,14 @@ func (d *Dispatcher) Handle(reqBody []byte, txn *newrelic.Transaction) ([]byte, 
 		return NewRPCResponse(nil, "2.0", nil, invalidJSONError).Bytes()
 	}
 
-	// avoid handling long batch requests
-	if len(requests) > int(d.jsonRPCBatchLengthLimit) {
-		return NewRPCResponse(nil, "2.0", nil, NewInvalidRequestError("Batch request length too long")).Bytes()
-	}
-
 	// if not disabled, avoid handling long batch requests
-	if d.jsonRPCBatchLengthLimit != 0 &&
-		len(requests) > int(d.jsonRPCBatchLengthLimit) {
-		return NewRPCResponse(nil, "2.0", nil, NewInvalidRequestError("Batch request length too long")).Bytes()
+	if d.params.jsonRPCBatchLengthLimit != 0 && len(requests) > int(d.params.jsonRPCBatchLengthLimit) {
+		return NewRPCResponse(
+			nil,
+			"2.0",
+			nil,
+			NewInvalidRequestError("Batch request length too long"),
+		).Bytes()
 	}
 
 	responses := make([]Response, 0)

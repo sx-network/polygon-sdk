@@ -91,6 +91,9 @@ func (i *backendIBFT) BuildRoundChangeMessage(
 	certificate *protoIBFT.PreparedCertificate,
 	view *protoIBFT.View,
 ) *protoIBFT.Message {
+
+	i.logger.Debug("BuildRoundChangeMessage", "detected offline proposer", i.GetNextProposer())
+
 	msg := &protoIBFT.Message{
 		View: view,
 		From: i.ID(),

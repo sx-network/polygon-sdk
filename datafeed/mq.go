@@ -69,16 +69,18 @@ func (mq *MQService) startConsumeLoop() {
 	reports, errors, err := mq.startConsumer(ctx, mqConsumerConcurrency)
 
 	if err != nil {
+		mq.logger.Error("error while starting mq consumer", "err", err)
 		panic(err)
 	}
 
 	for {
 		select {
 		case report := <-reports:
-			mq.datafeedService.addNewReport(report)
+			mq.datafeedService.queueReportingTx(ProposeOutcome, report.MarketHash, report.Outcome)
 		case err = <-errors:
 			mq.logger.Error("error while consuming from message queue", "err", err)
 		case <-common.GetTerminationSignalCh():
+			mq.logger.Debug("got sigterm, shuttown down mq consumer..")
 			cfunc()
 		}
 	}
