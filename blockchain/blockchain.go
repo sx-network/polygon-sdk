@@ -978,8 +978,7 @@ func (b *Blockchain) extractBlockReceipts(block *types.Block) ([]*types.Receipt,
 func (b *Blockchain) updateGasPriceAvgWithBlock(block *types.Block) {
 	if len(block.Transactions) < 1 {
 		// No transactions in the block,
-		// so no gas price average to update
-		// reset gasPriceAvg data to 0 so that eth_gasPrice will return configured price-limit
+		// reset gasPriceAvg data to 0 so that eth_gasPrice will return Max(0,price-limit)
 		b.resetGasPriceAvg()
 
 		return
@@ -988,7 +987,7 @@ func (b *Blockchain) updateGasPriceAvgWithBlock(block *types.Block) {
 	if float64(block.Header.GasUsed)/float64(block.Header.GasLimit) < b.gasPriceBlockUtilizationMinimum {
 		// We want to ignore blocks where the usage is less than that minimum
 		// Default is 0, so this is a no-op if it's not set.
-		// reset gasPriceAvg data to 0 so that eth_gasPrice will return configured price-limit
+		// reset gasPriceAvg data to 0 so that eth_gasPrice will return Max(0,price-limit)
 		b.resetGasPriceAvg()
 
 		return
