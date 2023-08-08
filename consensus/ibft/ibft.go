@@ -647,22 +647,6 @@ func (i *backendIBFT) IsIbftStateStale() bool {
 	return false
 }
 
-// ValidateExtraDataFormat Verifies that extra data can be unmarshaled
-func (i *backendIBFT) ValidateExtraDataFormat(header *types.Header) error {
-	blockSigner, _, _, err := getModulesFromForkManager(
-		i.forkManager,
-		header.Number,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	_, err = blockSigner.GetIBFTExtra(header)
-
-	return err
-}
-
 // getValidatorInfoFunc returns a callback that returns ValidaotrInfo when executed
 func (i *backendIBFT) GetConsensusInfo() consensus.ConsensusInfoFn {
 	return i.getConsensusInfoImpl
