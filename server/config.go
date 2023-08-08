@@ -44,6 +44,8 @@ type Config struct {
 
 	LogLevel hclog.Level
 
+	JSONLogFormat bool
+
 	LogFilePath string
 }
 
@@ -62,8 +64,10 @@ type JSONRPC struct {
 
 // DataFeed holds the config details for the DataFeedService
 type DataFeed struct {
-	DataFeedAMQPURI          string
-	DataFeedAMQPExchangeName string
-	DataFeedAMQPQueueName    string
-	VerifyOutcomeURI         string
+	DataFeedAMQPURI            string
+	DataFeedAMQPExchangeName   string
+	DataFeedAMQPQueueName      string
+	VerifyOutcomeURI           string
+	OutcomeVotingPeriodSeconds uint64
+	OutcomeReporterAddress     string
 }

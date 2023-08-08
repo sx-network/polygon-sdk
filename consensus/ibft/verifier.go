@@ -124,14 +124,21 @@ func (i *backendIBFT) IsProposer(id []byte, height, round uint64) bool {
 
 		return false
 	}
-
+	
 	nextProposer := CalcProposer(
 		i.currentValidators,
 		round,
 		previousProposer,
 	)
 
+	// store nextProposer in case we need to ID them as offline 
+	i.nextProposer = nextProposer.Addr()
+
 	return types.BytesToAddress(id) == nextProposer.Addr()
+}
+
+func (i *backendIBFT) GetNextProposer() types.Address {
+	return i.nextProposer
 }
 
 func (i *backendIBFT) IsValidProposalHash(proposal, hash []byte) bool {

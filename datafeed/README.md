@@ -5,11 +5,6 @@ Decentralized data feed oracle.
 Current methods of consumption include:
 - MQ
 - GRPC Operator (used by validator operators)
-- libp2p (via Subscribe() function)
-
-Contains a ProcessPayload() function that gets invoked by all methods of consumption.
-
-Will interface with Subscribe and Publish libp2p methods.
 
 ## MQ Consumer
 

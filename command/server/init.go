@@ -320,6 +320,8 @@ func (p *serverParams) initDataFeedParams() error {
 	p.dataFeedAMQPExchangeName = p.rawConfig.DataFeed.AMQPExchangeName
 	p.dataFeedAMQPQueueName = p.rawConfig.DataFeed.AMQPQueueName
 	p.verifyOutcomeAPIURL = p.rawConfig.DataFeed.VerifyOutcomeAPIURL
+	p.dataFeedOutcomeVotingPeriodSeconds = p.rawConfig.DataFeed.OutcomeVotingPeriodSeconds
+	p.dataFeedOutcomeReporterAddress = p.rawConfig.DataFeed.OutcomeReporterAddress
 
 	return nil
 }
