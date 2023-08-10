@@ -100,7 +100,7 @@ func registerCustomContractAddressHooks(
 
 		logger.Debug("calling setValidators", "validators", validatorAddresses)
 
-		_, err = datafeed.SetValidators(t, types.DeadAddress, types.StringToAddress(customContractAddress), validatorAddresses) //nolint:lll
+		_, err = datafeed.SetValidators(t, types.ZeroAddress, types.StringToAddress(customContractAddress), validatorAddresses) //nolint:lll
 		if err != nil {
 			return fmt.Errorf("failed to call setValidators: " + err.Error())
 		}
