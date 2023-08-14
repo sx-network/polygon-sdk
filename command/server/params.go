@@ -47,6 +47,7 @@ const (
 	verifyOutcomeAPIURLFlag             = "verify-outcome-api-url"
 	outcomeVotingPeriodSecondsFlag      = "outcome-voting-period-seconds"
 	outcomeReporterAddressFlag          = "outcome-reporter-address"
+	sxNodeAddressFlag                   = "sx-node-address"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -101,6 +102,7 @@ type serverParams struct {
 	verifyOutcomeAPIURL                string
 	dataFeedOutcomeVotingPeriodSeconds uint64
 	dataFeedOutcomeReporterAddress     string
+	dataFeedSXNodeAddress              string
 
 	ibftBaseTimeoutLegacy uint64
 
@@ -196,6 +198,7 @@ func (p *serverParams) generateConfig() *server.Config {
 			VerifyOutcomeURI:           p.verifyOutcomeAPIURL,
 			OutcomeVotingPeriodSeconds: p.dataFeedOutcomeVotingPeriodSeconds,
 			OutcomeReporterAddress:     p.dataFeedOutcomeReporterAddress,
+			SXNodeAddress:              p.dataFeedSXNodeAddress,
 		},
 		DataDir:            p.rawConfig.DataDir,
 		Seal:               p.rawConfig.ShouldSeal,

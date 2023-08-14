@@ -721,6 +721,7 @@ func (s *Server) setupDataFeedService() error {
 		VerifyOutcomeURI:           s.config.DataFeed.VerifyOutcomeURI,
 		OutcomeVotingPeriodSeconds: s.config.DataFeed.OutcomeVotingPeriodSeconds,
 		OutcomeReporterAddress:     s.config.DataFeed.OutcomeReporterAddress,
+		SXNodeAddress:              s.config.DataFeed.SXNodeAddress,
 	}
 
 	datafeedService, err := datafeed.NewDataFeedService(

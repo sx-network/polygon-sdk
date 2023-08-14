@@ -45,6 +45,7 @@ type Config struct {
 	VerifyOutcomeURI           string
 	OutcomeVotingPeriodSeconds uint64
 	OutcomeReporterAddress     string
+	SXNodeAddress              string
 }
 
 type ReportingTx struct {

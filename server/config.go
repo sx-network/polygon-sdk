@@ -70,4 +70,5 @@ type DataFeed struct {
 	VerifyOutcomeURI           string
 	OutcomeVotingPeriodSeconds uint64
 	OutcomeReporterAddress     string
+	SXNodeAddress              string
 }

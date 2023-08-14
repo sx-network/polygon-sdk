@@ -295,6 +295,13 @@ func setFlags(cmd *cobra.Command) {
 		"the address of the OutcomeReporter contract, used by the DataFeedService's EventListener",
 	)
 
+	cmd.Flags().StringVar(
+		&params.rawConfig.DataFeed.SXNodeAddress,
+		sxNodeAddressFlag,
+		defaultConfig.DataFeed.SXNodeAddress,
+		"the address of the SXNode contract, used by DataFeedService reporting txs",
+	)
+
 	setLegacyFlags(cmd)
 
 	setDevFlags(cmd)
