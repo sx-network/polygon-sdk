@@ -98,7 +98,7 @@ func (d *DataFeed) sendTxWithRetry(
 	}
 
 	c := contract.NewContract(
-		ethgo.Address(d.consensusInfo().CustomContractAddress),
+		ethgo.Address(ethgo.HexToAddress(d.config.SXNodeAddress)),
 		abiContract,
 		contract.WithSender(wallet.NewKey(d.consensusInfo().ValidatorKey)),
 		contract.WithJsonRPC(d.txService.client.Eth()),

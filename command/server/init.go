@@ -322,6 +322,7 @@ func (p *serverParams) initDataFeedParams() error {
 	p.verifyOutcomeAPIURL = p.rawConfig.DataFeed.VerifyOutcomeAPIURL
 	p.dataFeedOutcomeVotingPeriodSeconds = p.rawConfig.DataFeed.OutcomeVotingPeriodSeconds
 	p.dataFeedOutcomeReporterAddress = p.rawConfig.DataFeed.OutcomeReporterAddress
+	p.dataFeedSXNodeAddress = p.rawConfig.DataFeed.SXNodeAddress
 
 	return nil
 }

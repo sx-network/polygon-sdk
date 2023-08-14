@@ -62,6 +62,7 @@ type DataFeed struct {
 	VerifyOutcomeAPIURL        string `json:"verify_outcome_api_url" yaml:"verify_outcome_api_url"`
 	OutcomeVotingPeriodSeconds uint64 `json:"outcome_voting_period_seconds" yaml:"outcome_voting_period_seconds"`
 	OutcomeReporterAddress     string `json:"outcome_reporter_address" yaml:"outcome_reporter_address"`
+	SXNodeAddress              string `json:"sx_node_address" yaml:"sx_node_address"`
 }
 
 // TxPool defines the TxPool configuration params
@@ -124,6 +125,7 @@ func DefaultConfig() *Config {
 			VerifyOutcomeAPIURL:        "",
 			OutcomeVotingPeriodSeconds: 30,
 			OutcomeReporterAddress:     "",
+			SXNodeAddress:              "",
 		},
 		LogLevel:    "INFO",
 		RestoreFile: "",
