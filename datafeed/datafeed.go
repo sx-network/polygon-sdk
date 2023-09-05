@@ -64,7 +64,7 @@ func NewDataFeedService(
 		logger:          logger.Named("datafeed"),
 		config:          config,
 		consensusInfo:   consensusInfoFn,
-		reportingTxChan: make(chan *ReportingTx, 100),
+		reportingTxChan: make(chan *ReportingTx, 200),
 	}
 
 	// configure and start mqService

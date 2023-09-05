@@ -58,7 +58,7 @@ func (d *DataFeed) sendTxWithRetry(
 ) {
 	const (
 		maxTxTries    = 4
-		txGasPriceWei = 1000000000
+		txGasPriceWei = 20000000000
 		txGasLimitWei = 1000000
 	)
 
