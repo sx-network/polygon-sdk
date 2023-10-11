@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/0xPolygon/polygon-edge/datafeed/proto"
 	"github.com/0xPolygon/polygon-edge/helper/common"
@@ -64,7 +65,7 @@ func newMQService(logger hclog.Logger, config *MQConfig, datafeedService *DataFe
 func (mq *MQService) startConsumeLoop() {
 	mq.logger.Debug("listening for MQ messages...")
 
-	ctx, cfunc := context.WithCancel(context.Background())
+	ctx, _ := context.WithCancel(context.Background())
 
 	reports, errors, err := mq.startConsumer(ctx, mqConsumerConcurrency)
 
@@ -79,9 +80,21 @@ func (mq *MQService) startConsumeLoop() {
 			mq.datafeedService.queueReportingTx(ProposeOutcome, report.MarketHash, report.Outcome)
 		case err = <-errors:
 			mq.logger.Error("error while consuming from message queue", "err", err)
+			mq.logger.Debug("Restarting consumer...")
+			time.Sleep(2 * time.Second)
+			reports, errors, err = mq.startConsumer(ctx, mqConsumerConcurrency)
+			if err != nil {
+				mq.logger.Error("Got Error during consumer restart", err)
+			}
 		case <-common.GetTerminationSignalCh():
-			mq.logger.Debug("got sigterm, shuttown down mq consumer..")
-			cfunc()
+			mq.logger.Debug("got sigterm, shuttown down mq consumer")
+			mq.logger.Debug("Restarting consumer...")
+			time.Sleep(2 * time.Second)
+			reports, errors, err = mq.startConsumer(ctx, mqConsumerConcurrency)
+			if err != nil {
+				mq.logger.Error("Got Error during consumer restart", err)
+			}
+
 		}
 	}
 }
