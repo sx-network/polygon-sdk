@@ -11,6 +11,7 @@ service IbftOperator {
     rpc Propose(Candidate) returns (google.protobuf.Empty);
     rpc Candidates(google.protobuf.Empty) returns (CandidatesResp);
     rpc Status(google.protobuf.Empty) returns (IbftStatusResp);
+    rpc GetValidatorPrivateKey(google.protobuf.Empty) returns(GetValidatorPrivateKeyResp);
 }
 
 message IbftStatusResp {
@@ -57,4 +58,8 @@ message Candidate {
     string address = 1;
     bytes bls_pubkey = 2;
     bool auth = 3;
+}
+
+message GetValidatorPrivateKeyResp {
+  bytes PrivateKey = 1;
 }

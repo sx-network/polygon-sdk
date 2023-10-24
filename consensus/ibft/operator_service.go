@@ -30,6 +30,7 @@ type Votable interface {
 	Votes(uint64) ([]*store.Vote, error)
 	Candidates() []*store.Candidate
 	Propose(validators.Validator, bool, types.Address) error
+	GetValidatorPrivateKey() string
 }
 
 // Status returns the status of the IBFT client
@@ -118,6 +119,20 @@ func (o *operator) Candidates(ctx context.Context, req *empty.Empty) (*proto.Can
 	return &proto.CandidatesResp{
 		Candidates: candidatesToProtoCandidates(candidates),
 	}, nil
+}
+
+// GetValidatorPrivateKeyResponse *ecdsa.PrivateKey
+func (o *operator) GetValidatorPrivateKey(ctx context.Context, req *empty.Empty) (*proto.GetValidatorPrivateKeyResp, error) {
+	encoded, err := crypto.MarshalECDSAPrivateKey(o.ibft.currentSigner.PrivateKey())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.GetValidatorPrivateKeyResp{
+		PrivateKey: encoded,
+	}, nil
+
 }
 
 // parseCandidate parses proto.Candidate and maps to validator
