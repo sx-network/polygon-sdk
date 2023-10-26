@@ -72,7 +72,9 @@ func runCommand(cmd *cobra.Command, _ []string) {
 	outputter := command.InitializeOutputter(cmd)
 	defer outputter.WriteOutput()
 
-	params.ibftSetVotingStationValidators(helper.GetGRPCAddress(cmd), helper.GetJSONRPCAddress(cmd))
+	if votingStationErr := params.ibftSetVotingStationValidators(helper.GetGRPCAddress(cmd), helper.GetJSONRPCAddress(cmd)); votingStationErr != nil {
+		return
+	}
 
 	if err := params.proposeCandidate(helper.GetGRPCAddress(cmd)); err != nil {
 		outputter.SetError(err)

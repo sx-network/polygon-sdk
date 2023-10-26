@@ -145,14 +145,14 @@ func (p *proposeParams) proposeCandidate(grpcAddress string) error {
 	return nil
 }
 
-func (p *proposeParams) ibftSetVotingStationValidators(grpcAddress string, jsonrpcAddress string) {
+func (p *proposeParams) ibftSetVotingStationValidators(grpcAddress string, jsonrpcAddress string) error {
 	var functionArgs []interface{}
 	var functionSig, functionName string
 
 	ibftClient, err := helper.GetIBFTOperatorClientConnection(grpcAddress)
 	if err != nil {
 		fmt.Printf("Failed to get ibft client conn")
-		return
+		return err
 	}
 
 	switch p.vote {
@@ -166,40 +166,40 @@ func (p *proposeParams) ibftSetVotingStationValidators(grpcAddress string, jsonr
 		functionArgs = append(make([]interface{}, 0), types.StringToAddress(p.addressRaw))
 	default:
 		fmt.Printf("invalid ibft vote command %s", p.vote)
-		return
+		return errors.New("invalid ibft vote command")
 	}
 
 	abiContract, err := ethgoabi.NewABIFromList([]string{functionSig})
 
 	if err != nil {
 		fmt.Println(fmt.Errorf("failed to retrieve ethgo ABI %s function with error %w ", functionName, err))
-		return
+		return err
 	}
 
-	client, err := jsonrpc.NewClient(jsonrpcAddress)
+	JsonRPCClient, err := jsonrpc.NewClient(jsonrpcAddress)
 	if err != nil {
-		fmt.Println(fmt.Errorf("failed to initialize new ethgo client"))
-		return
+		fmt.Println(fmt.Errorf("failed to initialize new ethgo client %w", err))
+		return err
 	}
 	encodedPrivateKey, encodeError := ibftClient.GetValidatorPrivateKey(context.Background(), &empty.Empty{})
 
 	if encodeError != nil {
 		fmt.Println(fmt.Errorf("failed to get encoded private key %w ", encodeError))
-		return
+		return encodeError
 	}
 
 	decodedValidatorKey, decodedError := crypto.ParseECDSAPrivateKey(encodedPrivateKey.PrivateKey)
 
 	if decodedError != nil {
-		fmt.Println(fmt.Errorf("failed to get decoded private key %w", encodeError))
-		return
+		fmt.Println(fmt.Errorf("failed to get decoded private key %w", decodedError))
+		return decodedError
 	}
 
 	c := contract.NewContract(
 		ethgo.Address(p.votingStation),
 		abiContract,
 		contract.WithSender(wallet.NewKey(decodedValidatorKey)),
-		contract.WithJsonRPC(client.Eth()),
+		contract.WithJsonRPC(JsonRPCClient.Eth()),
 	)
 
 	txn, txnErr := c.Txn(
@@ -208,23 +208,25 @@ func (p *proposeParams) ibftSetVotingStationValidators(grpcAddress string, jsonr
 	)
 
 	if txnErr != nil {
-		fmt.Printf("failed to initiate voting-station txn")
-		return
+		fmt.Println(fmt.Errorf("failed to initiate voting-station txn %w", txnErr))
+		return txnErr
 	}
 
 	executeErr := txn.Do()
 
 	if executeErr != nil {
-		fmt.Printf("failed to execute voting-station txn")
-		return
+		fmt.Println(fmt.Errorf("failed to execute voting-station txn %w", executeErr))
+		return executeErr
 	}
 
 	_, mineError := txn.Wait()
 
 	if mineError != nil {
-		fmt.Printf("failed to mine  voting-station txn")
-		return
+		fmt.Println(fmt.Errorf("failed to mine  voting-station txn %w", mineError))
+		return mineError
 	}
+
+	return nil
 
 }
 
