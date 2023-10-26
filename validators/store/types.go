@@ -111,3 +111,7 @@ type Candidate struct {
 	Validator validators.Validator
 	Authorize bool
 }
+
+type ValidatorKey struct {
+	PrivateKey []byte
+}
