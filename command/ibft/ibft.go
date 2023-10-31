@@ -18,7 +18,7 @@ func GetCommand() *cobra.Command {
 	}
 
 	helper.RegisterGRPCAddressFlag(ibftCmd)
-
+	helper.RegisterJSONRPCFlag(ibftCmd)
 	registerSubcommands(ibftCmd)
 
 	return ibftCmd

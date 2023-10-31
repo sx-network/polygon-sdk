@@ -50,7 +50,14 @@ func setFlags(cmd *cobra.Command) {
 		),
 	)
 
-	cmd.MarkFlagsRequiredTogether(addressFlag, voteFlag)
+	cmd.Flags().StringVar(
+		&params.rawVotingStation,
+		votingStationFlag,
+		"",
+		"the address of VotingStation contract",
+	)
+
+	cmd.MarkFlagsRequiredTogether(addressFlag, voteFlag, votingStationFlag)
 }
 
 func runPreRun(_ *cobra.Command, _ []string) error {
@@ -64,6 +71,10 @@ func runPreRun(_ *cobra.Command, _ []string) error {
 func runCommand(cmd *cobra.Command, _ []string) {
 	outputter := command.InitializeOutputter(cmd)
 	defer outputter.WriteOutput()
+
+	if votingStationErr := params.ibftSetVotingStationValidators(helper.GetGRPCAddress(cmd), helper.GetJSONRPCAddress(cmd)); votingStationErr != nil {
+		return
+	}
 
 	if err := params.proposeCandidate(helper.GetGRPCAddress(cmd)); err != nil {
 		outputter.SetError(err)
