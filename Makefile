@@ -29,6 +29,19 @@ build:
 		-X 'github.com/0xPolygon/polygon-edge/versioning.BuildTime=$(TIME)'" \
 	main.go
 
+.PHONY: build-amd
+build-amd:
+	$(eval LATEST_VERSION = $(shell git describe --tags --abbrev=0))
+	$(eval COMMIT_HASH = $(shell git rev-parse HEAD))
+	$(eval BRANCH = $(shell git rev-parse --abbrev-ref HEAD | tr -d '\040\011\012\015\n'))
+	$(eval TIME = $(shell date))
+	GOOS=linux GOARCH=amd64 go build -o main -ldflags="\
+    	-X 'github.com/0xPolygon/polygon-edge/versioning.Version=$(LATEST_VERSION)' \
+		-X 'github.com/0xPolygon/polygon-edge/versioning.Commit=$(COMMIT_HASH)'\
+		-X 'github.com/0xPolygon/polygon-edge/versioning.Branch=$(BRANCH)'\
+		-X 'github.com/0xPolygon/polygon-edge/versioning.BuildTime=$(TIME)'" \
+	main.go
+
 .PHONY: lint
 lint:
 	golangci-lint run --config .golangci.yml

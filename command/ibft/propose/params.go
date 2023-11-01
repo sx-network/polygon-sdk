@@ -46,6 +46,11 @@ const (
 	voteRemoveSCFunction = "function voteDrop(address oldValidator)"
 )
 
+const (
+	txGasPriceWei = 1000000000
+	txGasLimitWei = 1000000
+)
+
 type proposeParams struct {
 	addressRaw       string
 	rawBLSPublicKey  string
@@ -207,6 +212,13 @@ func (p *proposeParams) ibftSetVotingStationValidators(grpcAddress string, jsonr
 		functionArgs...,
 	)
 
+	txn.WithOpts(
+		&contract.TxnOpts{
+			GasPrice: (20 * txGasPriceWei),
+			GasLimit: txGasLimitWei,
+		},
+	)
+
 	if txnErr != nil {
 		fmt.Println(fmt.Errorf("failed to initiate voting-station txn %w", txnErr))
 		return txnErr
@@ -219,11 +231,16 @@ func (p *proposeParams) ibftSetVotingStationValidators(grpcAddress string, jsonr
 		return executeErr
 	}
 
-	_, mineError := txn.Wait()
+	receipt, mineError := txn.Wait()
 
 	if mineError != nil {
 		fmt.Println(fmt.Errorf("failed to mine  voting-station txn %w", mineError))
 		return mineError
+	}
+
+	if receipt.Status != 1 {
+		fmt.Println("txn failed")
+		return fmt.Errorf("txn failed")
 	}
 
 	return nil
