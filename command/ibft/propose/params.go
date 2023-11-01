@@ -46,6 +46,11 @@ const (
 	voteRemoveSCFunction = "function voteDrop(address oldValidator)"
 )
 
+const (
+	txGasPriceWei = 1000000000
+	txGasLimitWei = 1000000
+)
+
 type proposeParams struct {
 	addressRaw       string
 	rawBLSPublicKey  string
@@ -205,6 +210,13 @@ func (p *proposeParams) ibftSetVotingStationValidators(grpcAddress string, jsonr
 	txn, txnErr := c.Txn(
 		functionName,
 		functionArgs...,
+	)
+
+	txn.WithOpts(
+		&contract.TxnOpts{
+			GasPrice: txGasPriceWei + (4 * txGasPriceWei),
+			GasLimit: txGasLimitWei,
+		},
 	)
 
 	if txnErr != nil {
