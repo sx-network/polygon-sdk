@@ -37,12 +37,13 @@ func newStoreProcessor(logger hclog.Logger, datafeedService *DataFeed) (*StorePr
 }
 
 func (s *StoreProcessor) startProcessingLoop() {
-	s.logger.Debug(" FOO2 -----------------")
 	for {
 		time.Sleep(5 * time.Second)
 		for marketHash, timestamp := range s.store.marketItems {
+			s.logger.Debug("timestamp+s.datafeedService.config.OutcomeVotingPeriodSeconds", timestamp+s.datafeedService.config.OutcomeVotingPeriodSeconds)
 			// @note onde alterar o datafeedService.config.OutcomeVotingPeriodSeconds
 			if timestamp+s.datafeedService.config.OutcomeVotingPeriodSeconds <= uint64(time.Now().Unix()) { // @note here start the loop 
+				
 				s.logger.Debug(
 					"processing market item",
 					"market", marketHash,
