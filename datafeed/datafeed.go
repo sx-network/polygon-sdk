@@ -68,8 +68,8 @@ func NewDataFeedService(
 		reportingTxChan: make(chan *ReportingTx, 100),
 	}
 
-	datafeedService.logger.Info(" FOO -----------------")
-	datafeedService.logger.Info(fmt.Sprintf("%d", config.OutcomeVotingPeriodSeconds))
+	datafeedService.logger.Debug(" FOO -----------------")
+	datafeedService.logger.Debug(fmt.Sprintf("%d", config.OutcomeVotingPeriodSeconds))
 
 	// configure and start mqService
 	if config.MQConfig.AMQPURI != "" {
