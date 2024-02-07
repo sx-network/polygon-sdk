@@ -53,6 +53,7 @@ type ReportingTx struct {
 	report       *proto.DataFeedReport
 }
 
+// @note build the Data Service
 // NewDataFeedService returns the new datafeed service
 func NewDataFeedService(
 	logger hclog.Logger,
@@ -66,6 +67,9 @@ func NewDataFeedService(
 		consensusInfo:   consensusInfoFn,
 		reportingTxChan: make(chan *ReportingTx, 100),
 	}
+
+	datafeedService.logger.Info(" FOO -----------------")
+	datafeedService.logger.Info(fmt.Sprintf("%d", config.OutcomeVotingPeriodSeconds))
 
 	// configure and start mqService
 	if config.MQConfig.AMQPURI != "" {
@@ -107,6 +111,7 @@ func NewDataFeedService(
 	}
 
 	// start eventListener
+	// @note talvez aqui que devemos alterar - dentro de data service
 	eventListener, err := newEventListener(datafeedService.logger, datafeedService)
 	if err != nil {
 		return nil, err
