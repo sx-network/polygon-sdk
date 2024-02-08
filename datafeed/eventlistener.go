@@ -120,8 +120,11 @@ func (e EventListener) startListeningLoop() {
 			marketHashStr := fmt.Sprintf("0x%s", hex.EncodeToString(marketHash[:]))
 			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHashStr, "outcome", outcome, "blockTime", blockTimestamp)
 
-
-			e.datafeedService.config.OutcomeVotingPeriodSeconds = 30
+			// @here
+			// e.datafeedService.config.OutcomeVotingPeriodSeconds = 30
+			res := e.datafeedService.sendCall("_votingPeriod");
+			e.logger.Debug("------------ RES", res);
+			
 			e.datafeedService.queueReportingTx(VoteOutcome, marketHashStr, -1)
 			e.datafeedService.storeProcessor.store.add(marketHashStr, uint64(blockTimestamp.Int64()))
 		case vLog := <-outcomeReportedLogs:
