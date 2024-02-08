@@ -6,6 +6,7 @@ import (
 	"github.com/umbracle/ethgo"
 	ethgoabi "github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/contract"
+	"github.com/umbracle/ethgo/jsonrpc"
 )
 
 const (
@@ -32,11 +33,15 @@ func (d *DataFeed) sendCall(
     abiContract, err := ethgoabi.NewABIFromList([]string{functionSig})
 	handleErr(err, " - 1 - ")
 	
+    client, err := jsonrpc.NewClient("https://rpc.toronto.sx.technology")
+    handleErr(err, " - 2 - ") 
+
     c := contract.NewContract(
-        ethgo.Address(ethgo.HexToAddress(d.config.SXNodeAddress)),
+        ethgo.Address(ethgo.HexToAddress("0x55b3d7c853aD2382f1c62dEc70056BD301CE5098")),
         abiContract,
-        contract.WithJsonRPC(d.txService.client.Eth()),
+        contract.WithJsonRPC(client.Eth()),
     )
+
 
 	res, err := c.Call("_votingPeriod", ethgo.Latest)
 	handleErr(err, " - 3 - ")
