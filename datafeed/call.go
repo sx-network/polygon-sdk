@@ -1,4 +1,4 @@
-package main
+package datafeed
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/umbracle/ethgo/jsonrpc"
 )
 
-func main() {
+func main(d *DataFeed) {
 	fmt.Println("-------------------------------------------------------------------------------------------------------------------------------------------------------------------")
 	var functions = []string{
 		"function _votingPeriod() view returns (uint256)",
