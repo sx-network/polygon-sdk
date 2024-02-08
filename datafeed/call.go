@@ -1,6 +1,7 @@
 package datafeed
 
 import (
+	"github.com/hashicorp/go-hclog"
 	"github.com/umbracle/ethgo"
 	ethgoabi "github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/contract"
@@ -17,6 +18,9 @@ const (
 func (d *DataFeed) sendCall(
 	functionType string,
 ) interface{}{
+
+	var logger hclog.Logger
+	logger.Debug("------------------------------------------------------------------------------------------------------------------------------ 11")
 	d.logger.Debug("------------ 1");
 	var functionSig string
 	var functionName string
