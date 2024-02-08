@@ -48,6 +48,7 @@ func newEventListener(logger hclog.Logger, datafeedService *DataFeed) (*EventLis
 	return eventListener, nil
 }
 
+// @note realizar a mudança aqui ?
 func (e EventListener) startListeningLoop() {
 
 	contractAbi, err := abi.JSON(strings.NewReader(abis.OutcomeReporterJSONABI))
@@ -59,6 +60,7 @@ func (e EventListener) startListeningLoop() {
 
 	outcomeReporterAddress := common.HexToAddress(e.datafeedService.config.OutcomeReporterAddress)
 
+	// @note change here
 	proposeOutcomeSub, proposeOutcomeLogs, err := e.subscribeToProposeOutcome(contractAbi, outcomeReporterAddress)
 	if err != nil {
 		panic(fmt.Errorf("fatal error while subscribing to ProposeOutcome logs: %w", err))
@@ -119,6 +121,7 @@ func (e EventListener) startListeningLoop() {
 			marketHashStr := fmt.Sprintf("0x%s", hex.EncodeToString(marketHash[:]))
 			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHashStr, "outcome", outcome, "blockTime", blockTimestamp)
 
+			e.datafeedService.config.OutcomeVotingPeriodSeconds = 600; // @note here ? create a function inside datafeedservice ?
 			e.datafeedService.queueReportingTx(VoteOutcome, marketHashStr, -1)
 			e.datafeedService.storeProcessor.store.add(marketHashStr, uint64(blockTimestamp.Int64()))
 		case vLog := <-outcomeReportedLogs:

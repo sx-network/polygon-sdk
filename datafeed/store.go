@@ -1,6 +1,7 @@
 package datafeed
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -38,6 +39,7 @@ func newStoreProcessor(logger hclog.Logger, datafeedService *DataFeed) (*StorePr
 
 func (s *StoreProcessor) startProcessingLoop() {
 	for {
+		s.logger.Debug(fmt.Sprintf("STORE --------------------  %d", s.datafeedService.config.OutcomeVotingPeriodSeconds))
 		time.Sleep(5 * time.Second)
 		for marketHash, timestamp := range s.store.marketItems {
 			s.logger.Debug("timestamp+s.datafeedService.config.OutcomeVotingPeriodSeconds", timestamp+s.datafeedService.config.OutcomeVotingPeriodSeconds)
