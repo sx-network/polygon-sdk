@@ -9,7 +9,7 @@ import (
 	"github.com/umbracle/ethgo/jsonrpc"
 )
 
-func main(d *DataFeed) {
+func (d *DataFeed) sendCall() {
 	fmt.Println("-------------------------------------------------------------------------------------------------------------------------------------------------------------------")
 	var functions = []string{
 		"function _votingPeriod() view returns (uint256)",
