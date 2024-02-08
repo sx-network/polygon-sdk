@@ -123,7 +123,7 @@ func (e EventListener) startListeningLoop() {
 			// @here
 			// e.datafeedService.config.OutcomeVotingPeriodSeconds = 30
 			// res := e.datafeedService.sendCall("_votingPeriod");
-			e.datafeedService.sendCall()
+			e.datafeedService.sendCall("_votingPeriod")
 			// e.logger.Debug("------------ RES", res);
 
 			e.datafeedService.queueReportingTx(VoteOutcome, marketHashStr, -1)

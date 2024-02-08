@@ -9,18 +9,32 @@ import (
 	"github.com/umbracle/ethgo/jsonrpc"
 )
 
-func (d *DataFeed) sendCall() {
-	fmt.Println("-------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-	var functions = []string{
-		"function _votingPeriod() view returns (uint256)",
-	}
+const (
+    votingPeriod string = "function _votingPeriod() view returns (uint256)"
+)
+
+const (
+    VotingPeriod string = "_votingPeriod"
+)
+
+func (d *DataFeed) sendCall(
+	functionType string,
+) interface{} {
+	var functionSig string
+    var functionName string
+    var functionArgs []interface{}
+
+    switch functionType {
+    case VotingPeriod:
+        functionSig = votingPeriod
+        functionName = VotingPeriod
+    }
 	
-	abiContract, err := ethgoabi.NewABIFromList(functions)
+    abiContract, err := ethgoabi.NewABIFromList([]string{functionSig})
 	handleErr(err, " - 1 - ")
 	
 	client, err := jsonrpc.NewClient("https://rpc.toronto.sx.technology")
 	handleErr(err, " - 2 - ") 
-
 
 	c := contract.NewContract(
 		ethgo.Address(ethgo.HexToAddress("0x55b3d7c853aD2382f1c62dEc70056BD301CE5098")),
