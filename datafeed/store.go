@@ -1,6 +1,7 @@
 package datafeed
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -42,6 +43,7 @@ func (s *StoreProcessor) startProcessingLoop() {
 		time.Sleep(5 * time.Second)
 		for marketHash, timestamp := range s.store.marketItems {
 			s.logger.Debug("------------ START PROCESSING", s.datafeedService.config.OutcomeVotingPeriodSeconds)
+			s.logger.Debug(fmt.Sprintf("%d", timestamp+s.datafeedService.config.OutcomeVotingPeriodSeconds), uint64(time.Now().Unix()))
 			if timestamp+s.datafeedService.config.OutcomeVotingPeriodSeconds <= uint64(time.Now().Unix()) {
 				s.logger.Debug(
 					"processing market item",
