@@ -33,12 +33,12 @@ func (d *DataFeed) sendCall(
 	handleErr(err, " - 1 - ")
 	
 	c := contract.NewContract(
-        ethgo.Address(ethgo.HexToAddress(d.config.SXNodeAddress)),
+        ethgo.Address(ethgo.HexToAddress(d.config.OutcomeReporterAddress)),
         abiContract,
         contract.WithJsonRPC(d.txService.client.Eth()),
     )
 
-	res, err := c.Call("_votingPeriod", ethgo.Latest)
+	res, err := c.Call(functionName, ethgo.Latest)
 	handleErr(err, " - 3 - ")
 
 	value := res["0"]
