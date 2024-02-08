@@ -43,6 +43,8 @@ func (d *DataFeed) sendCall(
 
 	value := res["0"]
 	fmt.Println("Value:", value, functionName, functionArgs)
+
+	return nil
 }
 
 func handleErr(err error, msg string) {
