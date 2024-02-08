@@ -120,9 +120,10 @@ func (e EventListener) startListeningLoop() {
 			marketHashStr := fmt.Sprintf("0x%s", hex.EncodeToString(marketHash[:]))
 			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHashStr, "outcome", outcome, "blockTime", blockTimestamp)
 
+
+			e.datafeedService.config.OutcomeVotingPeriodSeconds = 30
 			e.datafeedService.queueReportingTx(VoteOutcome, marketHashStr, -1)
 			e.datafeedService.storeProcessor.store.add(marketHashStr, uint64(blockTimestamp.Int64()))
-			//@ note talvez adicionar aqui
 		case vLog := <-outcomeReportedLogs:
 			e.logger.Debug("------------ OUTCOME REPORTED")
 			results, err := contractAbi.Unpack("OutcomeReported", vLog.Data)
