@@ -42,7 +42,7 @@ func (d *DataFeed) sendCall(
 	handleErr(err, " - 3 - ")
 
 	value := res["0"]
-	fmt.Println("Value:", value)
+	fmt.Println("Value:", value, functionName, functionArgs)
 }
 
 func handleErr(err error, msg string) {
