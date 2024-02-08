@@ -4,7 +4,6 @@ import (
 	"github.com/umbracle/ethgo"
 	ethgoabi "github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/contract"
-	"github.com/umbracle/ethgo/wallet"
 )
 
 const (
@@ -41,7 +40,6 @@ func (d *DataFeed) sendCall(
 	c := contract.NewContract(
 		ethgo.Address(ethgo.HexToAddress(d.config.SXNodeAddress)),
 		abiContract,
-		contract.WithSender(wallet.NewKey(d.consensusInfo().ValidatorKey)),
 		contract.WithJsonRPC(d.txService.client.Eth()),
 	)
 	
@@ -56,6 +54,8 @@ func (d *DataFeed) sendCall(
 		)
 		return nil
 	}
+
+	d.logger.Debug("------------ CALL ", res["0"]);
 
 	return res["0"]
 }
