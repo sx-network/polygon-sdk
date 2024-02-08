@@ -125,6 +125,7 @@ func newLoggerFromConfig(config *Config) (hclog.Logger, error) {
 // NewServer creates a new Minimal server, using the passed in configuration
 func NewServer(config *Config) (*Server, error) {
 	logger, err := newLoggerFromConfig(config)
+	logger.Debug("------ START ------------")
 	if err != nil {
 		return nil, fmt.Errorf("could not setup new logger instance, %w", err)
 	}
@@ -710,6 +711,7 @@ func (s *Server) setupJSONRPC() error {
 
 // setupDataFeedService set up and start datafeed service
 func (s *Server) setupDataFeedService() error {
+	s.logger.Debug("-------------- 1 start");
 	conf := &datafeed.Config{
 		MQConfig: &datafeed.MQConfig{
 			AMQPURI:      s.config.DataFeed.DataFeedAMQPURI,
@@ -735,7 +737,7 @@ func (s *Server) setupDataFeedService() error {
 	}
 
 	s.datafeedService = datafeedService
-
+	s.logger.Debug("-------------- 1 end");
 	return nil
 }
 
