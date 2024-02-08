@@ -1,19 +1,16 @@
-package datafeed
+package main
 
 import (
 	"fmt"
 
-	"github.com/hashicorp/go-hclog"
 	"github.com/umbracle/ethgo"
 	ethgoabi "github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/contract"
 	"github.com/umbracle/ethgo/jsonrpc"
 )
 
-func (d *DataFeed) sendCall() {
-	var logger hclog.Logger
-	logger.Debug("------------------------------------------------------------------------------------------------------------------------------ 11")
-	d.logger.Debug("------------ 1");
+func main() {
+	fmt.Println("-------------------------------------------------------------------------------------------------------------------------------------------------------------------")
 	var functions = []string{
 		"function _votingPeriod() view returns (uint256)",
 	}
