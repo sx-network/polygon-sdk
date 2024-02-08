@@ -38,11 +38,11 @@ func (d *DataFeed) sendCall(
         contract.WithJsonRPC(d.txService.client.Eth()),
     )
 
-	res, err := c.Call(functionName, ethgo.Latest)
+	res, err := c.Call("_votingPeriod", ethgo.Latest)
 	handleErr(err, " - 3 - ")
 
 	value := res["0"]
-	fmt.Println("-------------- ---------------------- --------------------- Value:", value, functionName, functionArgs)
+	fmt.Println("-------------- ---------------------- --------------------- Value:", functionName, value, functionName, functionArgs)
 
 	return nil
 }
