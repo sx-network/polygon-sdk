@@ -41,6 +41,7 @@ func (s *StoreProcessor) startProcessingLoop() {
 	for {
 		time.Sleep(5 * time.Second)
 		for marketHash, timestamp := range s.store.marketItems {
+			s.logger.Debug("------------ START PROCESSING", s.datafeedService.config.OutcomeVotingPeriodSeconds)
 			if timestamp+s.datafeedService.config.OutcomeVotingPeriodSeconds <= uint64(time.Now().Unix()) {
 				s.logger.Debug(
 					"processing market item",
