@@ -1,66 +1,46 @@
 package datafeed
 
 import (
+	"fmt"
+
 	"github.com/hashicorp/go-hclog"
 	"github.com/umbracle/ethgo"
 	ethgoabi "github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/contract"
+	"github.com/umbracle/ethgo/jsonrpc"
 )
 
-const (
-	votingPeriod string = "function _votingPeriod() view returns (uint256)"
-)
-
-const (
-	VotingPeriod string = "_votingPeriod"
-)
-
-func (d *DataFeed) sendCall(
-	functionType string,
-) interface{}{
-
+func (d *DataFeed) sendCall() {
 	var logger hclog.Logger
 	logger.Debug("------------------------------------------------------------------------------------------------------------------------------ 11")
 	d.logger.Debug("------------ 1");
-	var functionSig string
-	var functionName string
-	var functionArgs []interface{}
-	d.logger.Debug("------------ 2");
-	switch functionType {
-	case VotingPeriod:
-		functionSig = votingPeriod
-		functionName = VotingPeriod
+	var functions = []string{
+		"function _votingPeriod() view returns (uint256)",
 	}
-	d.logger.Debug("------------ 3", functionSig, functionName);
-	abiContract, err := ethgoabi.NewABIFromList([]string{functionSig})
-	if err != nil {
-		d.txService.logger.Error(
-			"failed to retrieve ethgo ABI",
-			"function", functionName,
-			"err", err,
-		)
-		return nil
-	}
-	d.logger.Debug("------------ 4", abiContract);
+	
+	abiContract, err := ethgoabi.NewABIFromList(functions)
+	handleErr(err, " - 1 - ")
+	
+	client, err := jsonrpc.NewClient("https://rpc.toronto.sx.technology")
+	handleErr(err, " - 2 - ") 
+
+
 	c := contract.NewContract(
-		ethgo.Address(ethgo.HexToAddress(d.config.SXNodeAddress)),
+		ethgo.Address(ethgo.HexToAddress("0x55b3d7c853aD2382f1c62dEc70056BD301CE5098")),
 		abiContract,
-		contract.WithJsonRPC(d.txService.client.Eth()),
+		contract.WithJsonRPC(client.Eth()),
 	)
-	d.logger.Debug("------------ 5", c);
-	res, err := c.Call(functionName, ethgo.Latest)
+
+	res, err := c.Call("_votingPeriod", ethgo.Latest)
+	handleErr(err, " - 3 - ")
+
+	value := res["0"]
+	fmt.Println("Value:", value)
+}
+
+func handleErr(err error, msg string) {
 	if err != nil {
-		d.txService.logger.Error(
-			"failed to call via ethgo",
-			"function", functionName,
-			"functionArgs", functionArgs,
-			"functionSig", abiContract,
-			"err", err,
-		)
-		return nil
+		fmt.Println(msg)
+		panic(err)
 	}
-
-	d.logger.Debug("------------ CALL ", res["0"]);
-
-	return res["0"]
 }
