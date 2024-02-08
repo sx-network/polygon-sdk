@@ -17,16 +17,17 @@ const (
 func (d *DataFeed) sendCall(
 	functionType string,
 ) interface{}{
+	d.logger.Debug("------------ 1");
 	var functionSig string
 	var functionName string
 	var functionArgs []interface{}
-
+	d.logger.Debug("------------ 2");
 	switch functionType {
 	case VotingPeriod:
 		functionSig = votingPeriod
 		functionName = VotingPeriod
 	}
-	
+	d.logger.Debug("------------ 3", functionSig, functionName);
 	abiContract, err := ethgoabi.NewABIFromList([]string{functionSig})
 	if err != nil {
 		d.txService.logger.Error(
@@ -36,13 +37,13 @@ func (d *DataFeed) sendCall(
 		)
 		return nil
 	}
-
+	d.logger.Debug("------------ 4", abiContract);
 	c := contract.NewContract(
 		ethgo.Address(ethgo.HexToAddress(d.config.SXNodeAddress)),
 		abiContract,
 		contract.WithJsonRPC(d.txService.client.Eth()),
 	)
-	
+	d.logger.Debug("------------ 5", c);
 	res, err := c.Call(functionName, ethgo.Latest)
 	if err != nil {
 		d.txService.logger.Error(
