@@ -121,7 +121,7 @@ func (e EventListener) startListeningLoop() {
 			e.logger.Debug("received ProposeOutcome event", "marketHash", marketHashStr, "outcome", outcome, "blockTime", blockTimestamp)
 
 		
-			// e.datafeedService.syncVotingPeriod()
+			e.datafeedService.syncVotingPeriod()
 			e.datafeedService.queueReportingTx(VoteOutcome, marketHashStr, -1)
 			e.datafeedService.storeProcessor.store.add(marketHashStr, uint64(blockTimestamp.Int64()))
 		case vLog := <-outcomeReportedLogs:
