@@ -1,7 +1,6 @@
 package datafeed
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/umbracle/ethgo"
@@ -20,8 +19,7 @@ const (
 func (d *DataFeed) sendCall(
 	functionType string,
 ) interface{} {
-	fmt.Println(functionType, "-------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-    var functionName string
+	var functionName string
     var functionArgs []interface{}
 
     switch functionType {
@@ -42,7 +40,7 @@ func (d *DataFeed) sendCall(
 	}
 
 	c := contract.NewContract(
-        ethgo.Address(ethgo.HexToAddress("0x55b3d7c853aD2382f1c62dEc70056BD301CE5098")),
+		ethgo.Address(ethgo.HexToAddress(d.config.OutcomeReporterAddress)),
         abiContract,
         contract.WithJsonRPC(d.txService.client.Eth()),
     )
@@ -58,12 +56,10 @@ func (d *DataFeed) sendCall(
 		)
 		return nil
 	}
-	fmt.Println("------------------------------------------------------------------------------------------------------------------------------------------")
-	fmt.Println(functionType, VotingPeriod, VotingPeriod == functionType)
+
 	switch functionType {
 	case VotingPeriod:
-		votingPhase, ok := res["0"].(*big.Int)
-		fmt.Println(votingPhase, "33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333")
+		votingPeriod, ok := res["0"].(*big.Int)
 		if !ok {
 			d.txService.logger.Error(
 				"failed to convert result to big int",
@@ -74,8 +70,7 @@ func (d *DataFeed) sendCall(
 			)
 			return nil
 		}
-		
-		return votingPhase
+		return votingPeriod
 	}
 	
 	return nil
