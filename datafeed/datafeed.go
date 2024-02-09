@@ -165,7 +165,7 @@ func (d *DataFeed) processTxsFromQueue() {
 
 // syncVotingPeriod synchronizes the outcome voting period onchain with the local configuration
 func (d* DataFeed) syncVotingPeriod() {
-	result:= d.sendCall("_votingPhase")
+	result:= d.sendCall("_votingPeriod")
 	if result == nil {
         d.logger.Error("voting period returned nil")
         return
