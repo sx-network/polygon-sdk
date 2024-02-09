@@ -43,7 +43,7 @@ func (d *DataFeed) sendCall(
 	}
 
 	c := contract.NewContract(
-        ethgo.Address(ethgo.HexToAddress(d.config.OutcomeReporterAddress)),
+        ethgo.Address(ethgo.HexToAddress("0x55b3d7c853aD2382f1c62dEc70056BD301CE5098")),
         abiContract,
         contract.WithJsonRPC(d.txService.client.Eth()),
     )
