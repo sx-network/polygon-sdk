@@ -45,7 +45,7 @@ func (d *DataFeed) sendCall(
         contract.WithJsonRPC(d.txService.client.Eth()),
     )
 
-	res, err := c.Call(functionName, ethgo.Latest)
+	res, err := c.Call("_votingPeriod", ethgo.Latest)
 	if err != nil {
 		d.txService.logger.Error(
 			"failed to call via ethgo",
