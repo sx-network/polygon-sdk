@@ -1,8 +1,6 @@
 package datafeed
 
 import (
-	"fmt"
-
 	"github.com/umbracle/ethgo"
 	ethgoabi "github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/contract"
@@ -32,7 +30,7 @@ func (d *DataFeed) sendCall(
     abiContract, err := ethgoabi.NewABIFromList([]string{functionSig})
 	if err != nil {
 		d.txService.logger.Error(
-			"failed to call via ethgo",
+			"failed to get abi contract via ethgo",
 			"function", functionName,
 			"functionArgs", functionArgs,
 			"functionSig", abiContract,
@@ -49,17 +47,17 @@ func (d *DataFeed) sendCall(
     )
 
 	res, err := c.Call(functionName, ethgo.Latest)
-	handleErr(err, " - 3 - ")
-
-	value := res["0"]
-	fmt.Println("-------------- ---------------------- --------------------- Value:", functionName, value, functionName, functionArgs)
-
-	return nil
-}
-
-func handleErr(err error, msg string) {
 	if err != nil {
-		fmt.Println(msg)
-		panic(err)
+		d.txService.logger.Error(
+			"failed to call via ethgo",
+			"function", functionName,
+			"functionArgs", functionArgs,
+			"functionSig", abiContract,
+			"err", err,
+		)
+
+		return nil
 	}
+
+	return res["0"]
 }
