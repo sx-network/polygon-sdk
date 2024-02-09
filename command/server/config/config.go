@@ -123,7 +123,7 @@ func DefaultConfig() *Config {
 			AMQPExchangeName:           "",
 			AMQPQueueName:              "",
 			VerifyOutcomeAPIURL:        "",
-			OutcomeVotingPeriodSeconds: 30,
+			OutcomeVotingPeriodSeconds: 16,
 			OutcomeReporterAddress:     "",
 			SXNodeAddress:              "",
 		},
