@@ -176,10 +176,10 @@ func (d* DataFeed) syncVotingPeriod() {
         d.logger.Error("failed to convert result to *big.Int")
         return
     }
-	d.logger.Debug("retrieved the onchain voting period", votingPeriodOnchain)
+	d.logger.Debug("retrieved onchain voting period", votingPeriodOnchain)
 	
 	votingPeriodConfig := big.NewInt(int64(d.config.OutcomeVotingPeriodSeconds))
-	d.logger.Debug("retrieved from the local config voting period", votingPeriodConfig)
+	d.logger.Debug("retrieved voting period from the local config", votingPeriodConfig)
 
 	if votingPeriodOnchain.Cmp(big.NewInt(0)) > 0 && votingPeriodOnchain.Cmp(votingPeriodConfig) != 0 {
 		d.logger.Debug("onchain voting period differs from the local config")
