@@ -165,7 +165,17 @@ func (d *DataFeed) processTxsFromQueue() {
 
 // syncVotingPeriod synchronizes the outcome voting period onchain with the local configuration
 func (d* DataFeed) syncVotingPeriod() {
-	votingPeriodOnchain:= d.sendCall("_votingPhase").(*big.Int)
+	result:= d.sendCall("_votingPhase")
+	if result == nil {
+        d.logger.Error("voting period returned nil")
+        return
+    }
+
+	votingPeriodOnchain, ok := result.(*big.Int)
+    if !ok {
+        d.logger.Error("failed to convert result to *big.Int")
+        return
+    }
 	d.logger.Debug("retrieved the onchain voting period", votingPeriodOnchain)
 	
 	votingPeriodConfig := big.NewInt(int64(d.config.OutcomeVotingPeriodSeconds))
