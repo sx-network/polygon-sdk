@@ -40,13 +40,13 @@ func (d *DataFeed) sendCall(
 		)
 		return nil
 	}
-	fmt.Println("111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111")
+
 	c := contract.NewContract(
         ethgo.Address(ethgo.HexToAddress("0x55b3d7c853aD2382f1c62dEc70056BD301CE5098")),
         abiContract,
         contract.WithJsonRPC(d.txService.client.Eth()),
     )
-	fmt.Println("22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222")
+
 	res, err := c.Call("_votingPeriod", ethgo.Latest)
 	if err != nil {
 		d.txService.logger.Error(
@@ -58,7 +58,8 @@ func (d *DataFeed) sendCall(
 		)
 		return nil
 	}
-	fmt.Println("33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333")
+	fmt.Println("------------------------------------------------------------------------------------------------------------------------------------------")
+	fmt.Println(functionType, VotingPeriod, VotingPeriod == functionType)
 	switch functionType {
 	case VotingPeriod:
 		votingPhase, ok := res["0"].(*big.Int)
