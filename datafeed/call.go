@@ -1,6 +1,8 @@
 package datafeed
 
 import (
+	"math/big"
+
 	"github.com/umbracle/ethgo"
 	ethgoabi "github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/contract"
@@ -59,5 +61,22 @@ func (d *DataFeed) sendCall(
 		return nil
 	}
 
-	return res["0"]
+	switch functionType {
+	case VotingPeriod:
+		votingPhase, ok := res["0"].(*big.Int)
+		if !ok {
+			d.txService.logger.Error(
+				"failed to convert result to big int",
+				"function", functionName,
+				"functionArgs", functionArgs,
+				"functionSig", abiContract,
+				"err", err,
+			)
+			return nil
+		}
+		
+		return votingPhase
+	}
+	
+	return nil
 }
