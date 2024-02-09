@@ -123,6 +123,7 @@ func (e EventListener) startListeningLoop() {
 			// @here
 			// e.datafeedService.config.OutcomeVotingPeriodSeconds = 30
 			// res := e.datafeedService.sendCall("_votingPeriod");
+			e.logger.Debug("------------------------------------------------------------------------------------");
 			res := e.datafeedService.sendCall("_votingPeriod")
 			e.logger.Debug("------------ RES", res);
 
