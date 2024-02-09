@@ -24,14 +24,24 @@ func (d *DataFeed) sendCall(
     var functionArgs []interface{}
 
     switch functionType {
-    case VotingPeriod:
-        functionSig = votingPeriod
-        functionName = VotingPeriod
-    }
-	
+		case VotingPeriod:
+			functionSig = votingPeriod
+			functionName = VotingPeriod
+		}
+		
     abiContract, err := ethgoabi.NewABIFromList([]string{functionSig})
-	handleErr(err, " - 1 - ")
-	
+	if err != nil {
+		d.txService.logger.Error(
+			"failed to call via ethgo",
+			"function", functionName,
+			"functionArgs", functionArgs,
+			"functionSig", abiContract,
+			"err", err,
+		)
+
+		return nil
+	}
+
 	c := contract.NewContract(
         ethgo.Address(ethgo.HexToAddress(d.config.OutcomeReporterAddress)),
         abiContract,
