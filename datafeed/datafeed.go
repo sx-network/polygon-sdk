@@ -164,28 +164,20 @@ func (d *DataFeed) processTxsFromQueue() {
 }
 
 // syncVotingPeriod synchronizes the outcome voting period onchain with the local configuration
-func (d* DataFeed) syncVotingPeriod() {
-    result:= d.sendCall("_votingPeriod")
-    if result == nil {
-        d.logger.Error("voting period returned nil")
-        return
-    }
+func (d *DataFeed) syncVotingPeriod() {
+	result := d.sendCall("_votingPeriod")
+	if result == nil {
+		d.logger.Error("voting period returned nil")
+		return
+	}
 
-    votingPeriodOnchain, ok := result.(*big.Int)
-    if !ok {
-        d.logger.Error("failed to convert result to *big.Int")
-        return
-    }
-    d.logger.Debug("retrieved onchain voting period", votingPeriodOnchain)
-    
-    votingPeriodConfig := big.NewInt(int64(d.config.OutcomeVotingPeriodSeconds))
-    d.logger.Debug("retrieved voting period from the local config", votingPeriodConfig)
+	votingPeriodOnchain, ok := result.(*big.Int)
+	if !ok {
+		d.logger.Error("failed to convert result to *big.Int")
+		return
+	}
+	d.logger.Debug("retrieved onchain voting period", votingPeriodOnchain)
 
-    if votingPeriodOnchain.Cmp(big.NewInt(0)) > 0 && votingPeriodOnchain.Cmp(votingPeriodConfig) != 0 {
-        d.logger.Debug("onchain voting period differs from the local config")
-        if votingPeriodConfig != votingPeriodOnchain {
-            d.logger.Debug("update local config voting period from onchain voting period", votingPeriodOnchain)
-            d.config.OutcomeVotingPeriodSeconds = votingPeriodOnchain.Uint64()
-        }
-    }
+	d.logger.Debug("update voting period", votingPeriodOnchain)
+	d.config.OutcomeVotingPeriodSeconds = votingPeriodOnchain.Uint64()
 }
