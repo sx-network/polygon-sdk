@@ -43,14 +43,14 @@ type QueueConfig struct {
 
 func newMQService(logger hclog.Logger, config *MQConfig, datafeedService *DataFeed) (*MQService, error) {
 	
-	logger.Debug("------------------------------------------------------------------ MQ 1 --------------------------------------------------")
+	logger.Debug("------------------------------------------------------------------ MQ 1.1 --------------------------------------------------")
 	conn, err := getConnection(
 		config.AMQPURI,
 	)
 	if err != nil {
 		return nil, err
 	}
-	logger.Debug("------------------------------------------------------------------ MQ 2 --------------------------------------------------")
+	logger.Debug("------------------------------------------------------------------ MQ 2.1 --------------------------------------------------")
 	mq := &MQService{
 		logger:          logger.Named("mq"),
 		config:          config,
@@ -103,7 +103,9 @@ func (mq *MQService) startConsumeLoop() {
 
 // getConnection establishes connection via TCP on provided rabbitMQURL (AMQP URI) and returns Connection and Channel
 func getConnection(rabbitMQURL string) (Connection, error) {
-	conn, err := amqp.Dial(rabbitMQURL)
+	conn, err := amqp.DialConfig(rabbitMQURL, amqp.Config{
+		Heartbeat: 10 * time.Second,
+	})
 	if err != nil {
 		return Connection{}, err
 	}
