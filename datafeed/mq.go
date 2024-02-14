@@ -129,21 +129,22 @@ func (mq *MQService) startConsumer(
 	if err != nil {
 		return nil, nil, err
 	}
+	mq.logger.Debug("------------------------ startConsumer 1 ---------------------------")
 
 	// bind the queue to the routing key
 	err = mq.connection.Channel.QueueBind(mq.config.QueueConfig.QueueName, "", mq.config.ExchangeName, false, nil)
 	if err != nil {
 		return nil, nil, err
 	}
-
+	mq.logger.Debug("------------------------ startConsumer 2 ---------------------------")
 	// prefetch 4x as many messages as we can handle at once
 	prefetchCount := concurrency * 4
-
+	mq.logger.Debug("------------------------ startConsumer 3 ---------------------------")
 	err = mq.connection.Channel.Qos(prefetchCount, 0, false)
 	if err != nil {
 		return nil, nil, err
 	}
-
+	mq.logger.Debug("------------------------ startConsumer 4 ---------------------------")
 	uuid := uuid.New().String()
 	deliveries, err := mq.connection.Channel.Consume(
 		mq.config.QueueConfig.QueueName, // queue
@@ -154,14 +155,14 @@ func (mq *MQService) startConsumer(
 		false,                           // no-wait
 		nil,                             // args
 	)
-
+	mq.logger.Debug("------------------------ startConsumer 5 ---------------------------")
 	if err != nil {
 		return nil, nil, err
 	}
-
+	mq.logger.Debug("------------------------ startConsumer 6 ---------------------------")
 	reports := make(chan *proto.DataFeedReport)
 	errors := make(chan error)
-
+	mq.logger.Debug("------------------------ startConsumer 7 ---------------------------")
 	for i := 0; i < concurrency; i++ {
 		go func() {
 			for delivery := range deliveries {
@@ -178,14 +179,14 @@ func (mq *MQService) startConsumer(
 			}
 		}()
 	}
-
+	mq.logger.Debug("------------------------ startConsumer 8 ---------------------------")
 	// stop the consumer upon sigterm
 	go func() {
 		<-ctx.Done()
 		// stop consumer quickly
 		mq.connection.Channel.Cancel(uuid, false) //nolint:errcheck
 	}()
-
+	mq.logger.Debug("------------------------ startConsumer 9 ---------------------------")
 	return reports, errors, nil
 }
 
