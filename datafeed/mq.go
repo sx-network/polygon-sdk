@@ -42,13 +42,15 @@ type QueueConfig struct {
 }
 
 func newMQService(logger hclog.Logger, config *MQConfig, datafeedService *DataFeed) (*MQService, error) {
+	
+	logger.Debug("------------------------------------------------------------------ MQ 1 --------------------------------------------------")
 	conn, err := getConnection(
 		config.AMQPURI,
 	)
 	if err != nil {
 		return nil, err
 	}
-
+	logger.Debug("------------------------------------------------------------------ MQ 2 --------------------------------------------------")
 	mq := &MQService{
 		logger:          logger.Named("mq"),
 		config:          config,

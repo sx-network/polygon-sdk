@@ -61,13 +61,14 @@ func NewDataFeedService(
 	grpcServer *grpc.Server,
 	consensusInfoFn consensus.ConsensusInfoFn,
 ) (*DataFeed, error) {
+	logger.Debug("------------------------------------------------------------------ DATAFEED 1 --------------------------------------------------")
 	datafeedService := &DataFeed{
 		logger:          logger.Named("datafeed"),
 		config:          config,
 		consensusInfo:   consensusInfoFn,
 		reportingTxChan: make(chan *ReportingTx, 100),
 	}
-
+	datafeedService.logger.Debug("------------------------------------------------------------------ DATAFEED 2 --------------------------------------------------")
 	// configure and start mqService
 	if config.MQConfig.AMQPURI != "" {
 		if config.MQConfig.ExchangeName == "" {
@@ -85,42 +86,42 @@ func NewDataFeedService(
 
 		datafeedService.mqService = mqService
 	}
-
+	datafeedService.logger.Debug("------------------------------------------------------------------ DATAFEED 3 --------------------------------------------------")
 	// configure grpc operator service
 	if grpcServer != nil {
 		proto.RegisterDataFeedOperatorServer(grpcServer, datafeedService)
 	}
-
+	datafeedService.logger.Debug("------------------------------------------------------------------ DATAFEED 4 --------------------------------------------------")
 	// start jsonRpc TxService
 	txService, err := newTxService(datafeedService.logger)
 	if err != nil {
 		return nil, err
 	}
 	datafeedService.txService = txService
-
+	datafeedService.logger.Debug("------------------------------------------------------------------ DATAFEED 5 --------------------------------------------------")
 	// start txWorker
 	go datafeedService.processTxsFromQueue()
-
+	datafeedService.logger.Debug("------------------------------------------------------------------ DATAFEED 6 --------------------------------------------------")
 	if config.VerifyOutcomeURI == "" {
 		datafeedService.logger.Warn("Datafeed 'verify_outcome_api_url' is missing but required for outcome voting and reporting.. we will avoid participating in outcome voting and reporting...") //nolint:lll
 
 		return datafeedService, nil
 	}
-
+	datafeedService.logger.Debug("------------------------------------------------------------------ DATAFEED 7 --------------------------------------------------")
 	// start eventListener
 	eventListener, err := newEventListener(datafeedService.logger, datafeedService)
 	if err != nil {
 		return nil, err
 	}
 	datafeedService.eventListener = eventListener
-
+	datafeedService.logger.Debug("------------------------------------------------------------------ DATAFEED 8 --------------------------------------------------")
 	// start storeProcessor
 	storeProcessor, err := newStoreProcessor(datafeedService.logger, datafeedService)
 	if err != nil {
 		return nil, err
 	}
 	datafeedService.storeProcessor = storeProcessor
-
+	datafeedService.logger.Debug("------------------------------------------------------------------ DATAFEED 9 --------------------------------------------------")
 	return datafeedService, nil
 }
 

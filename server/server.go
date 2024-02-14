@@ -275,7 +275,7 @@ func NewServer(config *Config) (*Server, error) {
 	}
 
 	// setup and start datafeed consumer
-	if err := m.setupDataFeedService(); err != nil {
+	if err := m.setupDataFeedService(); err != nil { // @note aqui
 		return nil, err
 	}
 
