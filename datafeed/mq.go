@@ -57,9 +57,9 @@ func newMQService(logger hclog.Logger, config *MQConfig, datafeedService *DataFe
 		connection:      conn,
 		datafeedService: datafeedService,
 	}
-
+	logger.Debug("------------------------------------------------------------------ MQ 2.2 --------------------------------------------------")
 	go mq.startConsumeLoop()
-
+	logger.Debug("------------------------------------------------------------------ MQ 2.3 --------------------------------------------------")
 	return mq, nil
 }
 
