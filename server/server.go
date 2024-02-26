@@ -36,6 +36,7 @@ import (
 	"google.golang.org/grpc"
 
 	_ "net/http/pprof"
+	"runtime/pprof"
 )
 
 // Server is the central manager of the blockchain client
@@ -298,14 +299,36 @@ func NewServer(config *Config) (*Server, error) {
 
 	m.txpool.Start()
 
+	// start pprof server listen
 	go func() {
 		m.logger.Info("pprof listen and serve")
 
 		if err := http.ListenAndServe("localhost:6060", nil); !errors.Is(err, http.ErrServerClosed) {
-			m.logger.Info("pprof s HTTP server ListenAndServe", "err", err)
+			m.logger.Info("pprof HTTP server ListenAndServe", "err", err)
 		}
 	}()
-	
+
+	// go routine to create pprof file every 5 minutes
+	go func() {
+		for {
+			fileName := fmt.Sprintf("../pprof/heap_%s.prof", time.Now().Format("20060102-150405"))
+			file, err := os.Create(fileName)
+			if err != nil {
+				m.logger.Error("Error creating heap prifle file: %v", err)
+				return
+			}
+
+			if err := pprof.WriteHeapProfile(file); err != nil {
+				m.logger.Error("Error writing heap profile: %v", err)
+			}
+
+			file.Close()
+
+			m.logger.Info("pprof heap profile file created")
+			time.Sleep(time.Minute * 1)
+		}
+	}()
+
 	return m, nil
 }
 
@@ -728,9 +751,9 @@ func (s *Server) setupDataFeedService() error {
 				QueueName: s.config.DataFeed.DataFeedAMQPQueueName,
 			},
 		},
-		VerifyOutcomeURI:           s.config.DataFeed.VerifyOutcomeURI,
-		OutcomeReporterAddress:     s.config.DataFeed.OutcomeReporterAddress,
-		SXNodeAddress:              s.config.DataFeed.SXNodeAddress,
+		VerifyOutcomeURI:       s.config.DataFeed.VerifyOutcomeURI,
+		OutcomeReporterAddress: s.config.DataFeed.OutcomeReporterAddress,
+		SXNodeAddress:          s.config.DataFeed.SXNodeAddress,
 	}
 
 	datafeedService, err := datafeed.NewDataFeedService(
