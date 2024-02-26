@@ -34,6 +34,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
+
+	_ "net/http/pprof"
 )
 
 // Server is the central manager of the blockchain client
