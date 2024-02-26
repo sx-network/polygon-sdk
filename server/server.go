@@ -34,6 +34,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
+
+	_ "net/http/pprof"
+	"runtime/pprof"
 )
 
 // Server is the central manager of the blockchain client
@@ -295,6 +298,48 @@ func NewServer(config *Config) (*Server, error) {
 	}
 
 	m.txpool.Start()
+
+	// start pprof server listen
+	go func() {
+		m.logger.Info("pprof listen and serve")
+
+		if err := http.ListenAndServe("localhost:6060", nil); !errors.Is(err, http.ErrServerClosed) {
+			m.logger.Info("pprof HTTP server ListenAndServe", "err", err)
+		}
+	}()
+
+	// Get the directory of the executable
+	exeDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		m.logger.Error("Error getting executable directory: %v", err)
+	}
+
+	// Directory to store heap profile files
+	profileDir := filepath.Join(exeDir, "../pprof")
+	if err := os.MkdirAll(profileDir, 0755); err != nil {
+		m.logger.Error("Error creating profile directory: %v", err)
+	}
+
+	// Start a goroutine to periodically collect heap profiles
+	go func() {
+		for {
+			fileName := fmt.Sprintf(filepath.Join(profileDir, "heap_%s.prof"), time.Now().Format("20060102-1504"))
+			file, err := os.Create(fileName)
+			if err != nil {
+				m.logger.Info("Error creating heap profile file: %v", err)
+				return
+			}
+
+			if err := pprof.WriteHeapProfile(file); err != nil {
+				m.logger.Info("Error writing pprof heap profile: %v", err)
+			}
+
+			file.Close()
+
+			m.logger.Info("pprof heap profile file created:", fileName)
+			time.Sleep(time.Minute)
+		}
+	}()
 
 	return m, nil
 }
@@ -718,9 +763,9 @@ func (s *Server) setupDataFeedService() error {
 				QueueName: s.config.DataFeed.DataFeedAMQPQueueName,
 			},
 		},
-		VerifyOutcomeURI:           s.config.DataFeed.VerifyOutcomeURI,
-		OutcomeReporterAddress:     s.config.DataFeed.OutcomeReporterAddress,
-		SXNodeAddress:              s.config.DataFeed.SXNodeAddress,
+		VerifyOutcomeURI:       s.config.DataFeed.VerifyOutcomeURI,
+		OutcomeReporterAddress: s.config.DataFeed.OutcomeReporterAddress,
+		SXNodeAddress:          s.config.DataFeed.SXNodeAddress,
 	}
 
 	datafeedService, err := datafeed.NewDataFeedService(
