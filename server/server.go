@@ -315,7 +315,7 @@ func NewServer(config *Config) (*Server, error) {
 	}
 
 	// Directory to store heap profile files
-	profileDir := filepath.Join(exeDir, "pprof")
+	profileDir := filepath.Join(exeDir, "../pprof")
 	if err := os.MkdirAll(profileDir, 0755); err != nil {
 		m.logger.Error("Error creating profile directory: %v", err)
 	}
@@ -337,7 +337,7 @@ func NewServer(config *Config) (*Server, error) {
 			file.Close()
 
 			m.logger.Info("pprof heap profile file created:", fileName)
-			time.Sleep(time.Minute)
+			time.Sleep(time.Minute * 5)
 		}
 	}()
 
