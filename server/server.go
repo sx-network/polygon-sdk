@@ -308,24 +308,36 @@ func NewServer(config *Config) (*Server, error) {
 		}
 	}()
 
-	// go routine to create pprof file every 5 minutes
+	// Get the directory of the executable
+	exeDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		m.logger.Error("Error getting executable directory: %v", err)
+	}
+
+	// Directory to store heap profile files
+	profileDir := filepath.Join(exeDir, "pprof")
+	if err := os.MkdirAll(profileDir, 0755); err != nil {
+		m.logger.Error("Error creating profile directory: %v", err)
+	}
+
+	// Start a goroutine to periodically collect heap profiles
 	go func() {
 		for {
-			fileName := fmt.Sprintf("../pprof/heap_%s.prof", time.Now().Format("20060102-150405"))
+			fileName := fmt.Sprintf(filepath.Join(profileDir, "heap_%s.prof"), time.Now().Format("20060102-150405"))
 			file, err := os.Create(fileName)
 			if err != nil {
-				m.logger.Error("Error creating heap prifle file: %v", err)
+				m.logger.Info("Error creating heap profile file: %v", err)
 				return
 			}
 
 			if err := pprof.WriteHeapProfile(file); err != nil {
-				m.logger.Error("Error writing heap profile: %v", err)
+				m.logger.Info("Error writing pprof heap profile: %v", err)
 			}
 
 			file.Close()
 
-			m.logger.Info("pprof heap profile file created")
-			time.Sleep(time.Minute * 1)
+			m.logger.Info("pprof heap profile file created:", fileName)
+			time.Sleep(time.Minute)
 		}
 	}()
 
