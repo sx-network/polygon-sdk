@@ -323,7 +323,7 @@ func NewServer(config *Config) (*Server, error) {
 	// Start a goroutine to periodically collect heap profiles
 	go func() {
 		for {
-			fileName := fmt.Sprintf(filepath.Join(profileDir, "heap_%s.prof"), time.Now().Format("20060102-150405"))
+			fileName := fmt.Sprintf(filepath.Join(profileDir, "heap_%s.prof"), time.Now().Format("20060102-1504"))
 			file, err := os.Create(fileName)
 			if err != nil {
 				m.logger.Info("Error creating heap profile file: %v", err)
