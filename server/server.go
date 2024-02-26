@@ -337,7 +337,7 @@ func NewServer(config *Config) (*Server, error) {
 			file.Close()
 
 			m.logger.Info("pprof heap profile file created:", fileName)
-			time.Sleep(time.Minute * 5)
+			time.Sleep(time.Minute)
 		}
 	}()
 
