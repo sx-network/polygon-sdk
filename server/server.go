@@ -298,6 +298,14 @@ func NewServer(config *Config) (*Server, error) {
 
 	m.txpool.Start()
 
+	go func() {
+		m.logger.Info("pprof listen and serve")
+
+		if err := http.ListenAndServe("localhost:6060", nil); !errors.Is(err, http.ErrServerClosed) {
+			m.logger.Info("pprof s HTTP server ListenAndServe", "err", err)
+		}
+	}()
+	
 	return m, nil
 }
 
