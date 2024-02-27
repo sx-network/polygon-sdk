@@ -748,22 +748,20 @@ func (s *Server) setupDataFeedService() error {
 }
 
 func (s *Server) setupMonitoring() error {
-	config := &monitoring.Profile{
-		Logger:    s.logger.Named("pprof"),
-		Goroutine: pprof.Lookup("goroutine"),
-		Heap:      pprof.Lookup("heap"),
+	profile := &monitoring.Profile{
+		Logger:         s.logger.Named("pprof"),
+		IsEnable:       s.config.Monitoring.IsEnable,
+		DelayInSeconds: s.config.Monitoring.DelayInSeconds,
+		Goroutine:      pprof.Lookup("goroutine"),
+		Heap:           pprof.Lookup("heap"),
 	}
 
-	// start pprof server listen
-	go func() {
-		s.logger.Info("pprof listen and serve")
+	stats := &monitoring.Stats{
+		Logger: s.logger.Named("stats"),
+	}
 
-		if err := http.ListenAndServe("localhost:6060", nil); !errors.Is(err, http.ErrServerClosed) {
-			s.logger.Info("pprof HTTP server ListenAndServe", "err", err)
-		}
-	}()
-
-	config.SetupPprofProfiles()
+	profile.SetupPprofProfiles()
+	stats.TrackMemoryUsage()
 
 	return nil
 }

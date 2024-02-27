@@ -47,6 +47,8 @@ const (
 	verifyOutcomeAPIURLFlag             = "verify-outcome-api-url"
 	outcomeReporterAddressFlag          = "outcome-reporter-address"
 	sxNodeAddressFlag                   = "sx-node-address"
+	isEnable                            = "is-enable"
+	delayInSeconds                      = "delay-in-seconds"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -101,6 +103,9 @@ type serverParams struct {
 	verifyOutcomeAPIURL            string
 	dataFeedOutcomeReporterAddress string
 	dataFeedSXNodeAddress          string
+
+	isEnable       bool
+	delayInSeconds uint64
 
 	ibftBaseTimeoutLegacy uint64
 
@@ -196,6 +201,10 @@ func (p *serverParams) generateConfig() *server.Config {
 			VerifyOutcomeURI:         p.verifyOutcomeAPIURL,
 			OutcomeReporterAddress:   p.dataFeedOutcomeReporterAddress,
 			SXNodeAddress:            p.dataFeedSXNodeAddress,
+		},
+		Monitoring: &server.Monitoring{
+			IsEnable:       p.isEnable,
+			DelayInSeconds: p.delayInSeconds,
 		},
 		DataDir:            p.rawConfig.DataDir,
 		Seal:               p.rawConfig.ShouldSeal,

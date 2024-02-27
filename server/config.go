@@ -38,6 +38,8 @@ type Config struct {
 
 	DataFeed *DataFeed
 
+	Monitoring *Monitoring
+
 	Seal bool
 
 	SecretsManager *secrets.SecretsManagerConfig
@@ -70,4 +72,9 @@ type DataFeed struct {
 	VerifyOutcomeURI         string
 	OutcomeReporterAddress   string
 	SXNodeAddress            string
+}
+
+type Monitoring struct {
+	IsEnable       bool
+	DelayInSeconds uint64
 }
