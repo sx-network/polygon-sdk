@@ -21,6 +21,7 @@ import (
 	configHelper "github.com/0xPolygon/polygon-edge/helper/config"
 	"github.com/0xPolygon/polygon-edge/helper/progress"
 	"github.com/0xPolygon/polygon-edge/jsonrpc"
+	"github.com/0xPolygon/polygon-edge/monitoring"
 	"github.com/0xPolygon/polygon-edge/network"
 	"github.com/0xPolygon/polygon-edge/secrets"
 	"github.com/0xPolygon/polygon-edge/server/proto"
@@ -282,6 +283,11 @@ func NewServer(config *Config) (*Server, error) {
 		return nil, err
 	}
 
+	// setup and start monitoring consumer
+	if err := m.setupMonitoring(); err != nil {
+		return nil, err
+	}
+
 	// setup and start grpc server
 	if err := m.setupGRPC(); err != nil {
 		return nil, err
@@ -298,48 +304,6 @@ func NewServer(config *Config) (*Server, error) {
 	}
 
 	m.txpool.Start()
-
-	// start pprof server listen
-	go func() {
-		m.logger.Info("pprof listen and serve")
-
-		if err := http.ListenAndServe("localhost:6060", nil); !errors.Is(err, http.ErrServerClosed) {
-			m.logger.Info("pprof HTTP server ListenAndServe", "err", err)
-		}
-	}()
-
-	// Get the directory of the executable
-	exeDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		m.logger.Error("Error getting executable directory: %v", err)
-	}
-
-	// Directory to store heap profile files
-	profileDir := filepath.Join(exeDir, "../pprof")
-	if err := os.MkdirAll(profileDir, 0755); err != nil {
-		m.logger.Error("Error creating profile directory: %v", err)
-	}
-
-	// Start a goroutine to periodically collect heap profiles
-	go func() {
-		for {
-			fileName := fmt.Sprintf(filepath.Join(profileDir, "heap_%s.prof"), time.Now().Format("20060102-1504"))
-			file, err := os.Create(fileName)
-			if err != nil {
-				m.logger.Info("Error creating heap profile file: %v", err)
-				return
-			}
-
-			if err := pprof.WriteHeapProfile(file); err != nil {
-				m.logger.Info("Error writing pprof heap profile: %v", err)
-			}
-
-			file.Close()
-
-			m.logger.Info("pprof heap profile file created:", fileName)
-			time.Sleep(time.Minute)
-		}
-	}()
 
 	return m, nil
 }
@@ -779,6 +743,27 @@ func (s *Server) setupDataFeedService() error {
 	}
 
 	s.datafeedService = datafeedService
+
+	return nil
+}
+
+func (s *Server) setupMonitoring() error {
+	config := &monitoring.Profile{
+		Logger:    s.logger.Named("pprof"),
+		Goroutine: pprof.Lookup("goroutine"),
+		Heap:      pprof.Lookup("heap"),
+	}
+
+	// start pprof server listen
+	go func() {
+		s.logger.Info("pprof listen and serve")
+
+		if err := http.ListenAndServe("localhost:6060", nil); !errors.Is(err, http.ErrServerClosed) {
+			s.logger.Info("pprof HTTP server ListenAndServe", "err", err)
+		}
+	}()
+
+	config.SetupPprofProfiles()
 
 	return nil
 }
