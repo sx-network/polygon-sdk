@@ -56,17 +56,3 @@ func restart(logger hclog.Logger) {
 
 	logger.Info("Service restarted successfully")
 }
-
-func (stats *Stats) ForceMemoryHeapSpike() {
-	var memorySlice [][]byte
-
-	// Loop 1000 times to force memory allocations
-	for i := 0; i < 1000; i++ {
-		// Allocate a large slice of bytes (100 MB)
-		memory := make([]byte, 1024*1024*1000) // 100 MB
-		memorySlice = append(memorySlice, memory)
-
-		stats.Logger.Info(fmt.Sprintf("Iteration %d - Allocated MB %d", i+1, len(memorySlice)*100))
-		time.Sleep(time.Second * 5)
-	}
-}
