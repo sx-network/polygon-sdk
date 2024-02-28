@@ -59,7 +59,7 @@ func (d *DataFeed) sendTxWithRetry(
 	const (
 		maxTxTries    = 4
 		txGasPriceWei = 20000000000
-		txGasLimitWei = 1000000
+		txGasLimitWei = 2000000
 	)
 
 	var functionSig string
