@@ -66,8 +66,9 @@ type DataFeed struct {
 }
 
 type Monitoring struct {
-	IsEnable       bool   `json:"is_enable" yaml:"is_enable"`
-	DelayInSeconds uint64 `json:"delay_in_seconds" yaml:"delay_in_seconds"`
+	IsEnable              bool   `json:"is_enable" yaml:"is_enable"`
+	DelayInSeconds        uint64 `json:"delay_in_seconds" yaml:"delay_in_seconds"`
+	IsMemStressTestEnable bool   `json:"is_mem_stress_test_enable" yaml:"is_mem_stress_test_enable"`
 }
 
 // TxPool defines the TxPool configuration params
@@ -132,8 +133,9 @@ func DefaultConfig() *Config {
 			SXNodeAddress:          "",
 		},
 		Monitoring: &Monitoring{
-			IsEnable:       false,
-			DelayInSeconds: 60,
+			IsEnable:              false,
+			DelayInSeconds:        60,
+			IsMemStressTestEnable: false,
 		},
 		LogLevel:    "INFO",
 		RestoreFile: "",

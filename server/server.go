@@ -757,7 +757,8 @@ func (s *Server) setupMonitoring() error {
 	}
 
 	stats := &monitoring.Stats{
-		Logger: s.logger.Named("stats"),
+		Logger:                s.logger.Named("stats"),
+		IsMemStressTestEnable: s.config.Monitoring.IsMemStressTestEnable,
 	}
 
 	profile.SetupPprofProfiles()

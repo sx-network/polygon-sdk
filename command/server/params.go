@@ -49,6 +49,7 @@ const (
 	sxNodeAddressFlag                   = "sx-node-address"
 	isEnable                            = "is-enable"
 	delayInSeconds                      = "delay-in-seconds"
+	isMemStressTestEnable               = "is-mem-stress-test-enable"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -104,8 +105,9 @@ type serverParams struct {
 	dataFeedOutcomeReporterAddress string
 	dataFeedSXNodeAddress          string
 
-	isEnable       bool
-	delayInSeconds uint64
+	isEnable              bool
+	delayInSeconds        uint64
+	isMemStressTestEnable bool
 
 	ibftBaseTimeoutLegacy uint64
 
@@ -203,8 +205,9 @@ func (p *serverParams) generateConfig() *server.Config {
 			SXNodeAddress:            p.dataFeedSXNodeAddress,
 		},
 		Monitoring: &server.Monitoring{
-			IsEnable:       p.isEnable,
-			DelayInSeconds: p.delayInSeconds,
+			IsEnable:              p.isEnable,
+			DelayInSeconds:        p.delayInSeconds,
+			IsMemStressTestEnable: p.isMemStressTestEnable,
 		},
 		DataDir:            p.rawConfig.DataDir,
 		Seal:               p.rawConfig.ShouldSeal,

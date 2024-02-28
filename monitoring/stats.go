@@ -11,7 +11,8 @@ import (
 )
 
 type Stats struct {
-	Logger hclog.Logger
+	Logger                hclog.Logger
+	IsMemStressTestEnable bool
 }
 
 func (stats *Stats) TrackMemoryUsage() {
@@ -19,6 +20,12 @@ func (stats *Stats) TrackMemoryUsage() {
 
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
+
+	if stats.IsMemStressTestEnable {
+		go func() {
+			heapMemoryStressTest(stats.Logger)
+		}()
+	}
 
 	for {
 		<-ticker.C
@@ -55,4 +62,18 @@ func restart(logger hclog.Logger) {
 	}
 
 	logger.Info("Service restarted successfully")
+}
+
+func heapMemoryStressTest(logger hclog.Logger) {
+	var memorySlice [][]byte
+
+	// Loop 1000 times to force memory allocations
+	for i := 0; i < 1000; i++ {
+		// Allocate a large slice of bytes (100 MB)
+		memory := make([]byte, 1024*1024*1000) // 100 MB
+		memorySlice = append(memorySlice, memory)
+
+		logger.Info(fmt.Sprintf("Iteration %d - Allocated MB %d", i+1, len(memorySlice)*100))
+		time.Sleep(time.Second * 5)
+	}
 }
