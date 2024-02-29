@@ -749,7 +749,7 @@ func (s *Server) setupDataFeedService() error {
 
 func (s *Server) setupMonitoring() error {
 	profile := &monitoring.Profile{
-		Logger:         s.logger.Named("pprof"),
+		Logger:         s.logger.Named("monitoring.pprof"),
 		IsEnable:       s.config.Monitoring.IsEnable,
 		DelayInSeconds: s.config.Monitoring.DelayInSeconds,
 		Goroutine:      pprof.Lookup("goroutine"),
@@ -757,7 +757,7 @@ func (s *Server) setupMonitoring() error {
 	}
 
 	stats := &monitoring.Stats{
-		Logger:                s.logger.Named("stats"),
+		Logger:                s.logger.Named("monitoring.stats"),
 		IsMemStressTestEnable: s.config.Monitoring.IsMemStressTestEnable,
 	}
 
