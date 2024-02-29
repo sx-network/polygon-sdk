@@ -334,6 +334,8 @@ func (p *serverParams) initMonitoringParams() error {
 	p.isEnable = p.rawConfig.Monitoring.IsEnable
 	p.delayInSeconds = p.rawConfig.Monitoring.DelayInSeconds
 	p.isMemStressTestEnable = p.rawConfig.Monitoring.IsMemStressTestEnable
+	p.tickerInSeconds = p.rawConfig.Monitoring.TickerInSeconds
+	p.threshold = p.rawConfig.Monitoring.Threshold
 
 	return nil
 }

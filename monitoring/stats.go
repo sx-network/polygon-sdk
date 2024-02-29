@@ -13,12 +13,12 @@ import (
 type Stats struct {
 	Logger                hclog.Logger
 	IsMemStressTestEnable bool
+	TickerInSeconds       uint64
+	Threshold             float64
 }
 
 func (stats *Stats) TrackMemoryUsage() {
-	threshold := 0.8 // 80% threshold for memory usage
-
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(time.Second * time.Duration(stats.TickerInSeconds)) 
 	defer ticker.Stop()
 
 	if stats.IsMemStressTestEnable {
@@ -39,10 +39,10 @@ func (stats *Stats) TrackMemoryUsage() {
 
 		// Calculate the memory usage percentage
 		memUsage := float64(vm.Used) / float64(vm.Total)
-		stats.Logger.Info(fmt.Sprintf("Memory usage: %.2f%% (%v bytes), Total Memory: %v bytes, Threshold: %.2f%%", memUsage*100, vm.Used, vm.Total, threshold*100))
+		stats.Logger.Info(fmt.Sprintf("Memory usage: %.2f%% (%v bytes), Total Memory: %v bytes, Threshold: %.2f%%", memUsage*100, vm.Used, vm.Total, stats.Threshold*100))
 
 		// Check if memory usage exceeds the threshold
-		if memUsage > threshold {
+		if memUsage > stats.Threshold {
 			stats.Logger.Info("Memory usage exceeds threshold. Performing graceful shutdown...")
 			restart(stats.Logger)
 			return

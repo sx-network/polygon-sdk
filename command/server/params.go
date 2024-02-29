@@ -50,6 +50,8 @@ const (
 	isEnable                            = "is-enable"
 	delayInSeconds                      = "delay-in-seconds"
 	isMemStressTestEnable               = "is-mem-stress-test-enable"
+	tickerInSeconds                     = "ticker-in-seconds"
+	threshold                           = "threshold"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -108,6 +110,8 @@ type serverParams struct {
 	isEnable              bool
 	delayInSeconds        uint64
 	isMemStressTestEnable bool
+	tickerInSeconds       uint64
+	threshold             float64
 
 	ibftBaseTimeoutLegacy uint64
 
@@ -208,6 +212,8 @@ func (p *serverParams) generateConfig() *server.Config {
 			IsEnable:              p.isEnable,
 			DelayInSeconds:        p.delayInSeconds,
 			IsMemStressTestEnable: p.isMemStressTestEnable,
+			TickerInSeconds:       p.tickerInSeconds,
+			Threshold:             p.threshold,
 		},
 		DataDir:            p.rawConfig.DataDir,
 		Seal:               p.rawConfig.ShouldSeal,

@@ -78,4 +78,6 @@ type Monitoring struct {
 	IsEnable              bool
 	DelayInSeconds        uint64
 	IsMemStressTestEnable bool
+	TickerInSeconds       uint64
+	Threshold             float64
 }
