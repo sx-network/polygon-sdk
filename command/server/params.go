@@ -45,9 +45,13 @@ const (
 	dataFeedAMQPExchangeNameFlag        = "data-feed-amqp-exchange-name"
 	dataFeedAMQPQueueNameFlag           = "data-feed-amqp-queue-name"
 	verifyOutcomeAPIURLFlag             = "verify-outcome-api-url"
-	outcomeVotingPeriodSecondsFlag      = "outcome-voting-period-seconds"
 	outcomeReporterAddressFlag          = "outcome-reporter-address"
 	sxNodeAddressFlag                   = "sx-node-address"
+	isEnable                            = "is-enable"
+	delayInSeconds                      = "delay-in-seconds"
+	isMemStressTestEnable               = "is-mem-stress-test-enable"
+	tickerInSeconds                     = "ticker-in-seconds"
+	threshold                           = "threshold"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -96,13 +100,18 @@ type serverParams struct {
 	jsonRPCBatchLengthLimit uint64
 	jsonRPCBlockRangeLimit  uint64
 
-	dataFeedAMQPURI                    string
-	dataFeedAMQPExchangeName           string
-	dataFeedAMQPQueueName              string
-	verifyOutcomeAPIURL                string
-	dataFeedOutcomeVotingPeriodSeconds uint64
-	dataFeedOutcomeReporterAddress     string
-	dataFeedSXNodeAddress              string
+	dataFeedAMQPURI                string
+	dataFeedAMQPExchangeName       string
+	dataFeedAMQPQueueName          string
+	verifyOutcomeAPIURL            string
+	dataFeedOutcomeReporterAddress string
+	dataFeedSXNodeAddress          string
+
+	isEnable              bool
+	delayInSeconds        uint64
+	isMemStressTestEnable bool
+	tickerInSeconds       uint64
+	threshold             float64
 
 	ibftBaseTimeoutLegacy uint64
 
@@ -192,13 +201,19 @@ func (p *serverParams) generateConfig() *server.Config {
 			Chain:            p.genesisConfig,
 		},
 		DataFeed: &server.DataFeed{
-			DataFeedAMQPURI:            p.dataFeedAMQPURI,
-			DataFeedAMQPExchangeName:   p.dataFeedAMQPExchangeName,
-			DataFeedAMQPQueueName:      p.dataFeedAMQPQueueName,
-			VerifyOutcomeURI:           p.verifyOutcomeAPIURL,
-			OutcomeVotingPeriodSeconds: p.dataFeedOutcomeVotingPeriodSeconds,
-			OutcomeReporterAddress:     p.dataFeedOutcomeReporterAddress,
-			SXNodeAddress:              p.dataFeedSXNodeAddress,
+			DataFeedAMQPURI:          p.dataFeedAMQPURI,
+			DataFeedAMQPExchangeName: p.dataFeedAMQPExchangeName,
+			DataFeedAMQPQueueName:    p.dataFeedAMQPQueueName,
+			VerifyOutcomeURI:         p.verifyOutcomeAPIURL,
+			OutcomeReporterAddress:   p.dataFeedOutcomeReporterAddress,
+			SXNodeAddress:            p.dataFeedSXNodeAddress,
+		},
+		Monitoring: &server.Monitoring{
+			IsEnable:              p.isEnable,
+			DelayInSeconds:        p.delayInSeconds,
+			IsMemStressTestEnable: p.isMemStressTestEnable,
+			TickerInSeconds:       p.tickerInSeconds,
+			Threshold:             p.threshold,
 		},
 		DataDir:            p.rawConfig.DataDir,
 		Seal:               p.rawConfig.ShouldSeal,

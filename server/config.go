@@ -38,6 +38,8 @@ type Config struct {
 
 	DataFeed *DataFeed
 
+	Monitoring *Monitoring
+
 	Seal bool
 
 	SecretsManager *secrets.SecretsManagerConfig
@@ -64,11 +66,18 @@ type JSONRPC struct {
 
 // DataFeed holds the config details for the DataFeedService
 type DataFeed struct {
-	DataFeedAMQPURI            string
-	DataFeedAMQPExchangeName   string
-	DataFeedAMQPQueueName      string
-	VerifyOutcomeURI           string
-	OutcomeVotingPeriodSeconds uint64
-	OutcomeReporterAddress     string
-	SXNodeAddress              string
+	DataFeedAMQPURI          string
+	DataFeedAMQPExchangeName string
+	DataFeedAMQPQueueName    string
+	VerifyOutcomeURI         string
+	OutcomeReporterAddress   string
+	SXNodeAddress            string
+}
+
+type Monitoring struct {
+	IsEnable              bool
+	DelayInSeconds        uint64
+	IsMemStressTestEnable bool
+	TickerInSeconds       uint64
+	Threshold             float64
 }

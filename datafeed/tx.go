@@ -220,9 +220,9 @@ func (d *DataFeed) sendTxWithRetry(
 		"txHash", txn.Hash(),
 		"marketHash", report.MarketHash)
 
-		if functionName == ReportOutcome {
-			d.storeProcessor.store.remove(report.MarketHash)
-		}
+	if functionName == ReportOutcome {
+		d.storeProcessor.store.remove(report.MarketHash)
+	}
 }
 
 // Returns a channel that blocks until the transaction is mined

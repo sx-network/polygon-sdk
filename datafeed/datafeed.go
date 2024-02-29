@@ -2,6 +2,7 @@ package datafeed
 
 import (
 	"fmt"
+	"math/big"
 	"sync"
 
 	"github.com/0xPolygon/polygon-edge/consensus"
@@ -160,4 +161,23 @@ func (d *DataFeed) processTxsFromQueue() {
 		d.logger.Debug("processing reporting tx", "function", reportingTx.functionType, "marketHash", reportingTx.report.MarketHash)
 		d.sendTxWithRetry(reportingTx.functionType, reportingTx.report)
 	}
+}
+
+// syncVotingPeriod synchronizes the outcome voting period onchain with the local configuration
+func (d *DataFeed) syncVotingPeriod() {
+	result := d.sendCall("_votingPeriod")
+	if result == nil {
+		d.logger.Error("voting period returned nil")
+		return
+	}
+
+	votingPeriodOnchain, ok := result.(*big.Int)
+	if !ok {
+		d.logger.Error("failed to convert result to *big.Int")
+		return
+	}
+	d.logger.Debug("retrieved onchain voting period", votingPeriodOnchain)
+
+	d.logger.Debug("update voting period", votingPeriodOnchain)
+	d.config.OutcomeVotingPeriodSeconds = votingPeriodOnchain.Uint64()
 }
