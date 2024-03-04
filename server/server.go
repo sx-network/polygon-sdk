@@ -21,6 +21,7 @@ import (
 	configHelper "github.com/0xPolygon/polygon-edge/helper/config"
 	"github.com/0xPolygon/polygon-edge/helper/progress"
 	"github.com/0xPolygon/polygon-edge/jsonrpc"
+	"github.com/0xPolygon/polygon-edge/monitoring"
 	"github.com/0xPolygon/polygon-edge/network"
 	"github.com/0xPolygon/polygon-edge/secrets"
 	"github.com/0xPolygon/polygon-edge/server/proto"
@@ -34,6 +35,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
+
+	_ "net/http/pprof"
+	"runtime/pprof"
 )
 
 // Server is the central manager of the blockchain client
@@ -276,6 +280,11 @@ func NewServer(config *Config) (*Server, error) {
 
 	// setup and start datafeed consumer
 	if err := m.setupDataFeedService(); err != nil {
+		return nil, err
+	}
+
+	// setup and start monitoring consumer
+	if err := m.setupMonitoring(); err != nil {
 		return nil, err
 	}
 
@@ -718,9 +727,9 @@ func (s *Server) setupDataFeedService() error {
 				QueueName: s.config.DataFeed.DataFeedAMQPQueueName,
 			},
 		},
-		VerifyOutcomeURI:           s.config.DataFeed.VerifyOutcomeURI,
-		OutcomeReporterAddress:     s.config.DataFeed.OutcomeReporterAddress,
-		SXNodeAddress:              s.config.DataFeed.SXNodeAddress,
+		VerifyOutcomeURI:       s.config.DataFeed.VerifyOutcomeURI,
+		OutcomeReporterAddress: s.config.DataFeed.OutcomeReporterAddress,
+		SXNodeAddress:          s.config.DataFeed.SXNodeAddress,
 	}
 
 	datafeedService, err := datafeed.NewDataFeedService(
@@ -734,6 +743,28 @@ func (s *Server) setupDataFeedService() error {
 	}
 
 	s.datafeedService = datafeedService
+
+	return nil
+}
+
+func (s *Server) setupMonitoring() error {
+	profile := &monitoring.Profile{
+		Logger:                s.logger.Named("monitoring.pprof"),
+		IsEnable:              s.config.Monitoring.IsEnable,
+		DelayInSecondsProfile: s.config.Monitoring.DelayInSecondsProfile,
+		Goroutine:             pprof.Lookup("goroutine"),
+		Heap:                  pprof.Lookup("heap"),
+	}
+
+	stats := &monitoring.Stats{
+		Logger:                s.logger.Named("monitoring.stats"),
+		IsMemStressTestEnable: s.config.Monitoring.IsMemStressTestEnable,
+		DelayInSecondsStats:   s.config.Monitoring.DelayInSecondsStats,
+		Threshold:             s.config.Monitoring.Threshold,
+	}
+
+	go profile.SetupPprofProfiles()
+	go stats.TrackMemoryUsage()
 
 	return nil
 }

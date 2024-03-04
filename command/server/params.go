@@ -47,6 +47,11 @@ const (
 	verifyOutcomeAPIURLFlag             = "verify-outcome-api-url"
 	outcomeReporterAddressFlag          = "outcome-reporter-address"
 	sxNodeAddressFlag                   = "sx-node-address"
+	isEnableFlag                        = "is-enable"
+	delayInSecondsProfileFlag           = "delay-in-seconds"
+	isMemStressTestEnableFlag           = "is-mem-stress-test-enable"
+	delayInSecondsStatsFlag             = "ticker-in-seconds"
+	thresholdFlag                       = "threshold"
 )
 
 // Flags that are deprecated, but need to be preserved for
@@ -101,6 +106,12 @@ type serverParams struct {
 	verifyOutcomeAPIURL            string
 	dataFeedOutcomeReporterAddress string
 	dataFeedSXNodeAddress          string
+
+	isEnable              bool
+	delayInSecondsProfile uint64
+	isMemStressTestEnable bool
+	delayInSecondsStats   uint64
+	threshold             float64
 
 	ibftBaseTimeoutLegacy uint64
 
@@ -196,6 +207,13 @@ func (p *serverParams) generateConfig() *server.Config {
 			VerifyOutcomeURI:         p.verifyOutcomeAPIURL,
 			OutcomeReporterAddress:   p.dataFeedOutcomeReporterAddress,
 			SXNodeAddress:            p.dataFeedSXNodeAddress,
+		},
+		Monitoring: &server.Monitoring{
+			IsEnable:              p.isEnable,
+			DelayInSecondsProfile: p.delayInSecondsProfile,
+			IsMemStressTestEnable: p.isMemStressTestEnable,
+			DelayInSecondsStats:   p.delayInSecondsStats,
+			Threshold:             p.threshold,
 		},
 		DataDir:            p.rawConfig.DataDir,
 		Seal:               p.rawConfig.ShouldSeal,

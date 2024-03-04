@@ -292,6 +292,41 @@ func setFlags(cmd *cobra.Command) {
 		"the address of the SXNode contract, used by DataFeedService reporting txs",
 	)
 
+	cmd.Flags().BoolVar(
+		&params.isEnable,
+		isEnableFlag,
+		defaultConfig.Monitoring.IsEnable,
+		"indicates when pprof should start the snapshot profile routine",
+	)
+
+	cmd.Flags().Uint64Var(
+		&params.delayInSecondsProfile,
+		delayInSecondsProfileFlag,
+		defaultConfig.Monitoring.DelayInSecondsProfile,
+		"indicates the delay time the prof will get from the snapshot profile",
+	)
+
+	cmd.Flags().BoolVar(
+		&params.isMemStressTestEnable,
+		isMemStressTestEnableFlag,
+		defaultConfig.Monitoring.IsMemStressTestEnable,
+		"flag that triggers the memory stress test function",
+	)
+
+	cmd.Flags().Uint64Var(
+		&params.delayInSecondsStats,
+		delayInSecondsStatsFlag,
+		defaultConfig.Monitoring.DelayInSecondsStats,
+		"indicates the delay time that the memory stress test function will allocate memory",
+	)
+
+	cmd.Flags().Float64Var(
+		&params.threshold,
+		thresholdFlag,
+		defaultConfig.Monitoring.Threshold,
+		"the threshold for memory usage, specified as a percentage between 0 and 1",
+	)
+
 	setLegacyFlags(cmd)
 
 	setDevFlags(cmd)
