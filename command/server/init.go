@@ -232,6 +232,10 @@ func (p *serverParams) initAddresses() error {
 		return err
 	}
 
+	if err := p.initMonitoringParams(); err != nil {
+		return err
+	}
+
 	// if err := p.initCustomContractAddress(); err != nil {
 	// 	return err
 	// }
@@ -322,6 +326,16 @@ func (p *serverParams) initDataFeedParams() error {
 	p.verifyOutcomeAPIURL = p.rawConfig.DataFeed.VerifyOutcomeAPIURL
 	p.dataFeedOutcomeReporterAddress = p.rawConfig.DataFeed.OutcomeReporterAddress
 	p.dataFeedSXNodeAddress = p.rawConfig.DataFeed.SXNodeAddress
+
+	return nil
+}
+
+func (p *serverParams) initMonitoringParams() error {
+	p.isEnable = p.rawConfig.Monitoring.IsEnable
+	p.delayInSeconds = p.rawConfig.Monitoring.DelayInSeconds
+	p.isMemStressTestEnable = p.rawConfig.Monitoring.IsMemStressTestEnable
+	p.tickerInSeconds = p.rawConfig.Monitoring.TickerInSeconds
+	p.threshold = p.rawConfig.Monitoring.Threshold
 
 	return nil
 }
