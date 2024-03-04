@@ -61,7 +61,7 @@ func heapMemoryStressTest(logger hclog.Logger) {
 		memory := make([]byte, 1024*1024*1000) // 100 MB
 		memorySlice = append(memorySlice, memory)
 
-		logger.Info(fmt.Sprintf("Iteration %d - Allocated MB %d", i+1, len(memorySlice)*100))
+		logger.Info(fmt.Sprintf("Iteration %d - Allocated %d MB", i+1, len(memorySlice)*100))
 		time.Sleep(time.Second * 5)
 	}
 }
