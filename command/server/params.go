@@ -48,9 +48,9 @@ const (
 	outcomeReporterAddressFlag          = "outcome-reporter-address"
 	sxNodeAddressFlag                   = "sx-node-address"
 	isEnableFlag                        = "is-enable"
-	delayInSecondsFlag                  = "delay-in-seconds"
+	delayInSecondsProfileFlag           = "delay-in-seconds"
 	isMemStressTestEnableFlag           = "is-mem-stress-test-enable"
-	tickerInSecondsFlag                 = "ticker-in-seconds"
+	delayInSecondsStatsFlag             = "ticker-in-seconds"
 	thresholdFlag                       = "threshold"
 )
 
@@ -108,9 +108,9 @@ type serverParams struct {
 	dataFeedSXNodeAddress          string
 
 	isEnable              bool
-	delayInSeconds        uint64
+	delayInSecondsProfile uint64
 	isMemStressTestEnable bool
-	tickerInSeconds       uint64
+	delayInSecondsStats   uint64
 	threshold             float64
 
 	ibftBaseTimeoutLegacy uint64
@@ -210,9 +210,9 @@ func (p *serverParams) generateConfig() *server.Config {
 		},
 		Monitoring: &server.Monitoring{
 			IsEnable:              p.isEnable,
-			DelayInSeconds:        p.delayInSeconds,
+			DelayInSecondsProfile: p.delayInSecondsProfile,
 			IsMemStressTestEnable: p.isMemStressTestEnable,
-			TickerInSeconds:       p.tickerInSeconds,
+			DelayInSecondsStats:   p.delayInSecondsStats,
 			Threshold:             p.threshold,
 		},
 		DataDir:            p.rawConfig.DataDir,

@@ -332,9 +332,9 @@ func (p *serverParams) initDataFeedParams() error {
 
 func (p *serverParams) initMonitoringParams() error {
 	p.isEnable = p.rawConfig.Monitoring.IsEnable
-	p.delayInSeconds = p.rawConfig.Monitoring.DelayInSeconds
+	p.delayInSecondsProfile = p.rawConfig.Monitoring.DelayInSecondsProfile
 	p.isMemStressTestEnable = p.rawConfig.Monitoring.IsMemStressTestEnable
-	p.tickerInSeconds = p.rawConfig.Monitoring.TickerInSeconds
+	p.delayInSecondsStats = p.rawConfig.Monitoring.DelayInSecondsStats
 	p.threshold = p.rawConfig.Monitoring.Threshold
 
 	return nil

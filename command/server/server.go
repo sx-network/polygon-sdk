@@ -300,9 +300,9 @@ func setFlags(cmd *cobra.Command) {
 	)
 
 	cmd.Flags().Uint64Var(
-		&params.delayInSeconds,
-		delayInSecondsFlag,
-		defaultConfig.Monitoring.DelayInSeconds,
+		&params.delayInSecondsProfile,
+		delayInSecondsProfileFlag,
+		defaultConfig.Monitoring.DelayInSecondsProfile,
 		"indicates the delay time the prof will get from the snapshot profile",
 	)
 
@@ -314,9 +314,9 @@ func setFlags(cmd *cobra.Command) {
 	)
 
 	cmd.Flags().Uint64Var(
-		&params.tickerInSeconds,
-		tickerInSecondsFlag,
-		defaultConfig.Monitoring.TickerInSeconds,
+		&params.delayInSecondsStats,
+		delayInSecondsStatsFlag,
+		defaultConfig.Monitoring.DelayInSecondsStats,
 		"indicates the delay time that the memory stress test function will allocate memory",
 	)
 

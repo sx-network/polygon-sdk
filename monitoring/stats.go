@@ -12,7 +12,7 @@ import (
 type Stats struct {
 	Logger                hclog.Logger
 	IsMemStressTestEnable bool
-	TickerInSeconds       uint64
+	DelayInSecondsStats   uint64
 	Threshold             float64
 }
 
@@ -28,7 +28,7 @@ func (stats *Stats) TrackMemoryUsage() {
 		vm, err := mem.VirtualMemory()
 		if err != nil {
 			stats.Logger.Error("Error getting VirtualMemory", err)
-			time.Sleep(time.Second * time.Duration(stats.TickerInSeconds)) // Wait for the specified interval
+			time.Sleep(time.Second * time.Duration(stats.DelayInSecondsStats)) // Wait for the specified interval
 			continue
 		}
 
@@ -43,7 +43,7 @@ func (stats *Stats) TrackMemoryUsage() {
 			return
 		}
 
-		time.Sleep(time.Second * time.Duration(stats.TickerInSeconds)) // Wait for the specified interval
+		time.Sleep(time.Second * time.Duration(stats.DelayInSecondsStats)) // Wait for the specified interval
 	}
 }
 

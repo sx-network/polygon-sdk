@@ -11,11 +11,11 @@ import (
 )
 
 type Profile struct {
-	Logger         hclog.Logger
-	IsEnable       bool
-	DelayInSeconds uint64
-	Goroutine      *pprof.Profile
-	Heap           *pprof.Profile
+	Logger                hclog.Logger
+	IsEnable              bool
+	DelayInSecondsProfile uint64
+	Goroutine             *pprof.Profile
+	Heap                  *pprof.Profile
 }
 
 /*
@@ -40,8 +40,8 @@ func (profile *Profile) SetupPprofProfiles() {
 
 	// Start collecting profiles
 	if profile.IsEnable {
-		go collectProfile(profile.Heap, filepath.Join(profileDir, "heap"), profile.Logger, profile.DelayInSeconds)
-		go collectProfile(profile.Goroutine, filepath.Join(profileDir, "goroutine"), profile.Logger, profile.DelayInSeconds)
+		go collectProfile(profile.Heap, filepath.Join(profileDir, "heap"), profile.Logger, profile.DelayInSecondsProfile)
+		go collectProfile(profile.Goroutine, filepath.Join(profileDir, "goroutine"), profile.Logger, profile.DelayInSecondsProfile)
 	}
 }
 
@@ -49,7 +49,7 @@ func (profile *Profile) SetupPprofProfiles() {
 	Collects the specified pprof profile data at regular intervals
 	and writes it to a new file in the specified profile directory
 */
-func collectProfile(profile *pprof.Profile, profileDir string, logger hclog.Logger, delayInSeconds uint64) {
+func collectProfile(profile *pprof.Profile, profileDir string, logger hclog.Logger, delayInSecondsProfile uint64) {
 	for {
 		// Generate a unique filename for the profile
 		profileFileName := fmt.Sprintf(filepath.Join(profileDir, "%s_%s.prof"), profile.Name(), time.Now().Format("20060102-1504"))
@@ -74,6 +74,6 @@ func collectProfile(profile *pprof.Profile, profileDir string, logger hclog.Logg
 
 		profileFile.Close()
 		logger.Info(fmt.Sprintf("Profile file created: %s", profileFileName))
-		time.Sleep(time.Second * time.Duration(delayInSeconds))
+		time.Sleep(time.Second * time.Duration(delayInSecondsProfile))
 	}
 }

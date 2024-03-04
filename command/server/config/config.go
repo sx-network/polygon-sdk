@@ -67,9 +67,9 @@ type DataFeed struct {
 
 type Monitoring struct {
 	IsEnable              bool    `json:"is_enable" yaml:"is_enable"`
-	DelayInSeconds        uint64  `json:"delay_in_seconds" yaml:"delay_in_seconds"`
+	DelayInSecondsProfile uint64  `json:"delay_in_seconds_profile" yaml:"delay_in_seconds_profile"`
 	IsMemStressTestEnable bool    `json:"is_mem_stress_test_enable" yaml:"is_mem_stress_test_enable"`
-	TickerInSeconds       uint64  `json:"ticker_in_seconds" yaml:"ticker_in_seconds"`
+	DelayInSecondsStats   uint64  `json:"delay_in_seconds_stats" yaml:"delay_in_seconds_stats"`
 	Threshold             float64 `json:"threshold" yaml:"threshold"`
 }
 
@@ -136,9 +136,9 @@ func DefaultConfig() *Config {
 		},
 		Monitoring: &Monitoring{
 			IsEnable:              false,
-			DelayInSeconds:        60,
+			DelayInSecondsProfile: 60,
 			IsMemStressTestEnable: false,
-			TickerInSeconds:       60,
+			DelayInSecondsStats:   60,
 			Threshold:             0.8, // 80%
 		},
 		LogLevel:    "INFO",

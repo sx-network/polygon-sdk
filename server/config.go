@@ -76,8 +76,8 @@ type DataFeed struct {
 
 type Monitoring struct {
 	IsEnable              bool
-	DelayInSeconds        uint64
+	DelayInSecondsProfile uint64
 	IsMemStressTestEnable bool
-	TickerInSeconds       uint64
+	DelayInSecondsStats   uint64
 	Threshold             float64
 }
