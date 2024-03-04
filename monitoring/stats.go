@@ -38,7 +38,7 @@ func (stats *Stats) TrackMemoryUsage() {
 
 		// Check if memory usage exceeds the threshold
 		if memUsage > stats.Threshold {
-			stats.Logger.Info("Memory usage exceeds threshold. Performing graceful shutdown...")
+			stats.Logger.Warn("Memory usage exceeds threshold. Performing graceful shutdown...")
 			gracefulShutdown(stats.Logger)
 			return
 		}
