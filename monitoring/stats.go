@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-hclog"
+	"github.com/shirou/gopsutil/mem"
 )
 
 type Stats struct {
@@ -24,25 +25,24 @@ func (stats *Stats) TrackMemoryUsage() {
 	}
 
 	for {
-		stats.Logger.Info(`Sleep...`)
 		// Get the virtual memory stats
-		// vm, err := mem.VirtualMemory()
-		// if err != nil {
-		// 	stats.Logger.Error("Error getting VirtualMemory", err)
-		// 	time.Sleep(time.Second * time.Duration(stats.TickerInSeconds)) // Wait for the specified interval
-		// 	continue
-		// }
+		vm, err := mem.VirtualMemory()
+		if err != nil {
+			stats.Logger.Error("Error getting VirtualMemory", err)
+			time.Sleep(time.Second * time.Duration(stats.TickerInSeconds)) // Wait for the specified interval
+			continue
+		}
 
-		// // Calculate the memory usage percentage
-		// memUsage := float64(vm.Used) / float64(vm.Total)
-		// stats.Logger.Info(fmt.Sprintf("Memory usage: %.2f%% (%v bytes), Total Memory: %v bytes, Threshold: %.2f%%", memUsage*100, vm.Used, vm.Total, stats.Threshold*100))
+		// Calculate the memory usage percentage
+		memUsage := float64(vm.Used) / float64(vm.Total)
+		stats.Logger.Info(fmt.Sprintf("Memory usage: %.2f%% (%v bytes), Total Memory: %v bytes, Threshold: %.2f%%", memUsage*100, vm.Used, vm.Total, stats.Threshold*100))
 
-		// // Check if memory usage exceeds the threshold
-		// if memUsage > stats.Threshold {
-		// 	stats.Logger.Info("Memory usage exceeds threshold. Performing graceful shutdown...")
-		// 	restart(stats.Logger)
-		// 	return
-		// }
+		// Check if memory usage exceeds the threshold
+		if memUsage > stats.Threshold {
+			stats.Logger.Info("Memory usage exceeds threshold. Performing graceful shutdown...")
+			restart(stats.Logger)
+			return
+		}
 
 		time.Sleep(time.Second * time.Duration(stats.TickerInSeconds)) // Wait for the specified interval
 	}
