@@ -3,7 +3,6 @@ package monitoring
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"time"
 
 	"github.com/hashicorp/go-hclog"
@@ -40,7 +39,7 @@ func (stats *Stats) TrackMemoryUsage() {
 		// Check if memory usage exceeds the threshold
 		if memUsage > stats.Threshold {
 			stats.Logger.Info("Memory usage exceeds threshold. Performing graceful shutdown...")
-			restart(stats.Logger)
+			gracefulShutdown(stats.Logger)
 			return
 		}
 
@@ -48,18 +47,9 @@ func (stats *Stats) TrackMemoryUsage() {
 	}
 }
 
-func restart(logger hclog.Logger) {
-	// Create a command to restart the sxnode service using systemctl
-	restartCmd := exec.Command("sudo", "systemctl", "restart", "sxnode.service")
-	restartCmd.Stdout = os.Stdout
-	restartCmd.Stderr = os.Stderr
-
-	if err := restartCmd.Start(); err != nil {
-		logger.Error("Error restarting service:", err)
-		return
-	}
-
-	logger.Info("Service restarted successfully")
+func gracefulShutdown(logger hclog.Logger) {
+	logger.Warn("Graceful shutdown completed")
+	os.Exit(0)
 }
 
 func heapMemoryStressTest(logger hclog.Logger) {
