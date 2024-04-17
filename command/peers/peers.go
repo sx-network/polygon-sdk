@@ -1,6 +1,8 @@
 package peers
 
 import (
+	"fmt"
+
 	"github.com/0xPolygon/polygon-edge/command/helper"
 	"github.com/0xPolygon/polygon-edge/command/peers/add"
 	"github.com/0xPolygon/polygon-edge/command/peers/list"
@@ -22,6 +24,7 @@ func GetCommand() *cobra.Command {
 }
 
 func registerSubcommands(baseCmd *cobra.Command) {
+	fmt.Println("[peers] 1")
 	baseCmd.AddCommand(
 		// peers status
 		status.GetCommand(),

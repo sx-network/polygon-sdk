@@ -13,6 +13,7 @@ import (
 )
 
 func GetCommand() *cobra.Command {
+	fmt.Println("[genesis] 1")
 	genesisCmd := &cobra.Command{
 		Use:     "genesis",
 		Short:   "Generates the genesis configuration file with the passed in parameters",

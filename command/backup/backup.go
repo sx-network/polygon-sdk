@@ -1,6 +1,8 @@
 package backup
 
 import (
+	"fmt"
+
 	"github.com/0xPolygon/polygon-edge/command"
 	"github.com/spf13/cobra"
 
@@ -8,6 +10,7 @@ import (
 )
 
 func GetCommand() *cobra.Command {
+	fmt.Println("[backup] 1")
 	backupCmd := &cobra.Command{
 		Use:     "backup",
 		Short:   "Create blockchain backup file by fetching blockchain data from the running node",

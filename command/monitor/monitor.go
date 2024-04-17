@@ -16,6 +16,7 @@ import (
 )
 
 func GetCommand() *cobra.Command {
+	fmt.Println("[monitor] 1")
 	monitorCmd := &cobra.Command{
 		Use:   "monitor",
 		Short: "Starts logging block add / remove events on the blockchain",

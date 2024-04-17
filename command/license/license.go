@@ -1,6 +1,8 @@
 package license
 
 import (
+	"fmt"
+
 	"github.com/0xPolygon/polygon-edge/command"
 	"github.com/spf13/cobra"
 
@@ -8,6 +10,7 @@ import (
 )
 
 func GetCommand() *cobra.Command {
+	fmt.Println("[license] 1")
 	return &cobra.Command{
 		Use:   "license",
 		Short: "Returns Polygon Edge license and dependency attributions",

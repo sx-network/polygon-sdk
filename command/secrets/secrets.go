@@ -1,6 +1,8 @@
 package secrets
 
 import (
+	"fmt"
+
 	"github.com/0xPolygon/polygon-edge/command/helper"
 	"github.com/0xPolygon/polygon-edge/command/secrets/generate"
 	initCmd "github.com/0xPolygon/polygon-edge/command/secrets/init"
@@ -9,6 +11,7 @@ import (
 )
 
 func GetCommand() *cobra.Command {
+	fmt.Println("[secrets] 1")
 	secretsCmd := &cobra.Command{
 		Use:   "secrets",
 		Short: "Top level SecretsManager command for interacting with secrets functionality. Only accepts subcommands.",

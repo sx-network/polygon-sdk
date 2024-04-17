@@ -61,6 +61,9 @@ func NewDataFeedService(
 	grpcServer *grpc.Server,
 	consensusInfoFn consensus.ConsensusInfoFn,
 ) (*DataFeed, error) {
+
+	fmt.Println("[datafeed][NewDataFeedService] 1")
+
 	datafeedService := &DataFeed{
 		logger:          logger.Named("datafeed"),
 		config:          config,

@@ -1,6 +1,8 @@
 package ibft
 
 import (
+	"fmt"
+
 	"github.com/0xPolygon/polygon-edge/command/helper"
 	"github.com/0xPolygon/polygon-edge/command/ibft/candidates"
 	"github.com/0xPolygon/polygon-edge/command/ibft/propose"
@@ -12,6 +14,7 @@ import (
 )
 
 func GetCommand() *cobra.Command {
+	fmt.Println("[ibft] 1")
 	ibftCmd := &cobra.Command{
 		Use:   "ibft",
 		Short: "Top level IBFT command for interacting with the IBFT consensus. Only accepts subcommands.",

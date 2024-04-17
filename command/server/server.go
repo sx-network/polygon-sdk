@@ -12,6 +12,7 @@ import (
 )
 
 func GetCommand() *cobra.Command {
+	fmt.Println("[server] 1")
 	serverCmd := &cobra.Command{
 		Use:     "server",
 		Short:   "The default command that starts the Polygon Edge client, by bootstrapping all modules together",

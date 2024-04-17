@@ -1,6 +1,8 @@
 package txpool
 
 import (
+	"fmt"
+
 	"github.com/0xPolygon/polygon-edge/command/helper"
 	"github.com/0xPolygon/polygon-edge/command/txpool/status"
 	"github.com/0xPolygon/polygon-edge/command/txpool/subscribe"
@@ -8,6 +10,7 @@ import (
 )
 
 func GetCommand() *cobra.Command {
+	fmt.Println("[txpool] 1")
 	txPoolCmd := &cobra.Command{
 		Use:   "txpool",
 		Short: "Top level command for interacting with the transaction pool. Only accepts subcommands.",

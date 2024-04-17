@@ -9,6 +9,7 @@ import (
 )
 
 func GetCommand() *cobra.Command {
+	fmt.Println("[loadbot] 1")
 	loadbotCmd := &cobra.Command{
 		Use:     "loadbot",
 		Short:   "Runs the loadbot to stress test the network",

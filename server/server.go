@@ -125,6 +125,9 @@ func newLoggerFromConfig(config *Config) (hclog.Logger, error) {
 // NewServer creates a new Minimal server, using the passed in configuration
 func NewServer(config *Config) (*Server, error) {
 	logger, err := newLoggerFromConfig(config)
+	logger.Info("[server] 1")
+
+
 	if err != nil {
 		return nil, fmt.Errorf("could not setup new logger instance, %w", err)
 	}
@@ -136,6 +139,8 @@ func NewServer(config *Config) (*Server, error) {
 		grpcServer:         grpc.NewServer(),
 		restoreProgression: progress.NewProgressionWrapper(progress.ChainSyncRestore),
 	}
+
+	logger.Info("[server] 2")
 
 	m.logger.Info("Data dir", "path", config.DataDir)
 
@@ -273,6 +278,8 @@ func NewServer(config *Config) (*Server, error) {
 	if err := m.setupJSONRPC(); err != nil {
 		return nil, err
 	}
+
+	logger.Info("[server] 3")
 
 	// setup and start datafeed consumer
 	if err := m.setupDataFeedService(); err != nil {
@@ -710,6 +717,7 @@ func (s *Server) setupJSONRPC() error {
 
 // setupDataFeedService set up and start datafeed service
 func (s *Server) setupDataFeedService() error {
+	fmt.Println("[server][setupDataFeedService] 1")
 	conf := &datafeed.Config{
 		MQConfig: &datafeed.MQConfig{
 			AMQPURI:      s.config.DataFeed.DataFeedAMQPURI,
@@ -734,6 +742,8 @@ func (s *Server) setupDataFeedService() error {
 	}
 
 	s.datafeedService = datafeedService
+
+	fmt.Println("[server][setupDataFeedService] 2")
 
 	return nil
 }
