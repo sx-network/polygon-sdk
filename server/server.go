@@ -278,10 +278,10 @@ func NewServer(config *Config) (*Server, error) {
 
 	// logger.Info("[server] 3")
 
-	// // setup and start datafeed consumer
-	// if err := m.setupDataFeedService(); err != nil {
-	// 	return nil, err
-	// }
+	// setup and start datafeed consumer
+	if err := m.setupDataFeedService(); err != nil {
+		return nil, err
+	}
 
 	// // setup and start grpc server
 	// if err := m.setupGRPC(); err != nil {
