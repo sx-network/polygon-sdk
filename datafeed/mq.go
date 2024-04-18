@@ -47,6 +47,8 @@ type QueueConfig struct {
 	and starts consuming messages asynchronously.
 */
 func newMQService(logger hclog.Logger, config *MQConfig, datafeedService *DataFeed) (*MQService, error) {
+	fmt.Println("[mq][newMQService] 1")
+	
 	conn, err := getConnection(
 		config.AMQPURI,
 	)
@@ -54,6 +56,8 @@ func newMQService(logger hclog.Logger, config *MQConfig, datafeedService *DataFe
 		return nil, err
 	}
 
+	fmt.Println("[mq][newMQService] 2")
+	
 	mq := &MQService{
 		logger:          logger.Named("mq"),
 		config:          config,
@@ -61,8 +65,12 @@ func newMQService(logger hclog.Logger, config *MQConfig, datafeedService *DataFe
 		datafeedService: datafeedService,
 	}
 
+	fmt.Println("[mq][newMQService] 3")
+
 	// It launches a goroutine to start the consume loop for processing messages from the message queue asynchronously.
 	go mq.startConsumeLoop()
+
+	fmt.Println("[mq][newMQService] 4")
 
 	return mq, nil
 }
