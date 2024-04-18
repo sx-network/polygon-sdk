@@ -161,23 +161,23 @@ func NewServer(config *Config) (*Server, error) {
 	// }
 
 	// Set up the secrets manager
-	if err := m.setupSecretsManager(); err != nil {
-		return nil, fmt.Errorf("failed to set up the secrets manager: %w", err)
-	}
+	// if err := m.setupSecretsManager(); err != nil {
+	// 	return nil, fmt.Errorf("failed to set up the secrets manager: %w", err)
+	// }
 
 	// start libp2p
-	{
-		netConfig := config.Network
-		netConfig.Chain = m.config.Chain
-		netConfig.DataDir = filepath.Join(m.config.DataDir, "libp2p")
-		netConfig.SecretsManager = m.secretsManager
+	// {
+	// 	netConfig := config.Network
+	// 	netConfig.Chain = m.config.Chain
+	// 	netConfig.DataDir = filepath.Join(m.config.DataDir, "libp2p")
+	// 	netConfig.SecretsManager = m.secretsManager
 
-		network, err := network.NewServer(logger, netConfig)
-		if err != nil {
-			return nil, err
-		}
-		m.network = network
-	}
+	// 	network, err := network.NewServer(logger, netConfig)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	m.network = network
+	// }
 
 	// // start blockchain object
 	// stateStorage, err := itrie.NewLevelDBStorage(filepath.Join(m.config.DataDir, "trie"), logger)
@@ -247,25 +247,25 @@ func NewServer(config *Config) (*Server, error) {
 	// 	m.txpool.SetSigner(signer)
 	// }
 
-	{
-		// Setup consensus
-		if err := m.setupConsensus(); err != nil {
-			return nil, err
-		}
-		m.blockchain.SetConsensus(m.consensus)
-	}
+	// {
+	// 	// Setup consensus
+	// 	if err := m.setupConsensus(); err != nil {
+	// 		return nil, err
+	// 	}
+	// 	m.blockchain.SetConsensus(m.consensus)
+	// }
 
 	// after consensus is done, we can mine the genesis block in blockchain
 	// This is done because consensus might use a custom Hash function so we need
 	// to wait for consensus because we do any block hashing like genesis
-	if err := m.blockchain.ComputeGenesis(); err != nil {
-		return nil, err
-	}
+	// if err := m.blockchain.ComputeGenesis(); err != nil {
+	// 	return nil, err
+	// }
 
 	// initialize data in consensus layer
-	if err := m.consensus.Initialize(); err != nil {
-		return nil, err
-	}
+	// if err := m.consensus.Initialize(); err != nil {
+	// 	return nil, err
+	// }
 
 	// if err := m.network.Start(); err != nil {
 	// 	return nil, err
@@ -294,9 +294,9 @@ func NewServer(config *Config) (*Server, error) {
 	// }
 
 	// start consensus
-	if err := m.consensus.Start(); err != nil {
-		return nil, err
-	}
+	// if err := m.consensus.Start(); err != nil {
+	// 	return nil, err
+	// }
 
 	// m.txpool.Start()
 
