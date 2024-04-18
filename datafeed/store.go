@@ -36,6 +36,13 @@ func newStoreProcessor(logger hclog.Logger, datafeedService *DataFeed) (*StorePr
 	return storeProcessor, nil
 }
 
+/*
+In summary, newStoreProcessor initializes a store processor responsible for managing market items and their timestamps.
+The startProcessingLoop method continuously checks if each market item is ready for processing based on its timestamp 
+and the configured outcome voting period. If a market item is ready for processing, it queues a reporting transaction 
+to report the outcome. 
+This component plays a critical role in managing the processing of market items within the data feed service.
+*/
 func (s *StoreProcessor) startProcessingLoop() {
 
 	for {

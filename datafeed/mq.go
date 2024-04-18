@@ -41,6 +41,11 @@ type QueueConfig struct {
 	QueueName string
 }
 
+/*
+ 	this function sets up a message queue service with the provided logger, configuration, 
+	and data feed service, establishes a connection to the message queue server, 
+	and starts consuming messages asynchronously.
+*/
 func newMQService(logger hclog.Logger, config *MQConfig, datafeedService *DataFeed) (*MQService, error) {
 	conn, err := getConnection(
 		config.AMQPURI,
@@ -56,17 +61,27 @@ func newMQService(logger hclog.Logger, config *MQConfig, datafeedService *DataFe
 		datafeedService: datafeedService,
 	}
 
+	// It launches a goroutine to start the consume loop for processing messages from the message queue asynchronously.
 	go mq.startConsumeLoop()
 
 	return mq, nil
 }
 
 // startConsumeLoop
+// This method is responsible for continuously listening for messages from a message queue and processing them. 
 func (mq *MQService) startConsumeLoop() {
 	mq.logger.Debug("listening for MQ messages...")
 
+	/*
+	It creates a context with cancellation capability using context.Background().
+	This context will be used for managing the lifecycle of the consumer.
+	*/
 	ctx, _ := context.WithCancel(context.Background())
 
+	/*
+	It calls the startConsumer method to begin consuming messages from the message queue, 
+	passing in the created context and a concurrency value.
+	*/
 	reports, errors, err := mq.startConsumer(ctx, mqConsumerConcurrency)
 
 	if err != nil {
@@ -76,8 +91,16 @@ func (mq *MQService) startConsumeLoop() {
 
 	for {
 		select {
+		/*
+			If a report message is received on the reports channel, it processes the report by queuing a reporting 
+			transaction using the queueReportingTx method of the DataFeed service associated with this MQService.
+		*/
 		case report := <-reports:
 			mq.datafeedService.queueReportingTx(ProposeOutcome, report.MarketHash, report.Outcome)
+		/*
+			If an error occurs during message consumption, it logs the error and attempts to restart the consumer
+			after a short delay.
+		*/
 		case err = <-errors:
 			mq.logger.Error("error while consuming from message queue", "err", err)
 			mq.logger.Debug("Restarting consumer...")
@@ -86,6 +109,9 @@ func (mq *MQService) startConsumeLoop() {
 			if err != nil {
 				mq.logger.Error("Got Error during consumer restart", err)
 			}
+		/*
+			If a termination signal is received (e.g., SIGTERM), it logs the event and attempts to restart the consumer.
+		*/
 		case <-common.GetTerminationSignalCh():
 			mq.logger.Debug("got sigterm, shuttown down mq consumer")
 			mq.logger.Debug("Restarting consumer...")
