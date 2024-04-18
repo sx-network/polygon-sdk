@@ -15,10 +15,7 @@ import (
 	"github.com/0xPolygon/polygon-edge/blockchain"
 	"github.com/0xPolygon/polygon-edge/chain"
 	"github.com/0xPolygon/polygon-edge/consensus"
-	"github.com/0xPolygon/polygon-edge/crypto"
 	"github.com/0xPolygon/polygon-edge/datafeed"
-	"github.com/0xPolygon/polygon-edge/helper/common"
-	configHelper "github.com/0xPolygon/polygon-edge/helper/config"
 	"github.com/0xPolygon/polygon-edge/helper/progress"
 	"github.com/0xPolygon/polygon-edge/jsonrpc"
 	"github.com/0xPolygon/polygon-edge/network"
@@ -144,164 +141,164 @@ func NewServer(config *Config) (*Server, error) {
 
 	m.logger.Info("Data dir", "path", config.DataDir)
 
-	// Generate all the paths in the dataDir
-	if err := common.SetupDataDir(config.DataDir, dirPaths); err != nil {
-		return nil, fmt.Errorf("failed to create data directories: %w", err)
-	}
+	// // Generate all the paths in the dataDir
+	// if err := common.SetupDataDir(config.DataDir, dirPaths); err != nil {
+	// 	return nil, fmt.Errorf("failed to create data directories: %w", err)
+	// }
 
-	if config.Telemetry.PrometheusAddr != nil {
-		// Only setup telemetry if `PrometheusAddr` has been configured.
-		if err := m.setupTelemetry(); err != nil {
-			return nil, err
-		}
+	// if config.Telemetry.PrometheusAddr != nil {
+	// 	// Only setup telemetry if `PrometheusAddr` has been configured.
+	// 	if err := m.setupTelemetry(); err != nil {
+	// 		return nil, err
+	// 	}
 
-		m.prometheusServer = m.startPrometheusServer(config.Telemetry.PrometheusAddr)
-	}
+	// 	m.prometheusServer = m.startPrometheusServer(config.Telemetry.PrometheusAddr)
+	// }
 
-	// Set up datadog profiler
-	if ddErr := m.enableDataDogProfiler(); err != nil {
-		m.logger.Error("DataDog profiler setup failed", "err", ddErr.Error())
-	}
+	// // Set up datadog profiler
+	// if ddErr := m.enableDataDogProfiler(); err != nil {
+	// 	m.logger.Error("DataDog profiler setup failed", "err", ddErr.Error())
+	// }
 
-	// Set up the secrets manager
-	if err := m.setupSecretsManager(); err != nil {
-		return nil, fmt.Errorf("failed to set up the secrets manager: %w", err)
-	}
+	// // Set up the secrets manager
+	// if err := m.setupSecretsManager(); err != nil {
+	// 	return nil, fmt.Errorf("failed to set up the secrets manager: %w", err)
+	// }
 
-	// start libp2p
-	{
-		netConfig := config.Network
-		netConfig.Chain = m.config.Chain
-		netConfig.DataDir = filepath.Join(m.config.DataDir, "libp2p")
-		netConfig.SecretsManager = m.secretsManager
+	// // start libp2p
+	// {
+	// 	netConfig := config.Network
+	// 	netConfig.Chain = m.config.Chain
+	// 	netConfig.DataDir = filepath.Join(m.config.DataDir, "libp2p")
+	// 	netConfig.SecretsManager = m.secretsManager
 
-		network, err := network.NewServer(logger, netConfig)
-		if err != nil {
-			return nil, err
-		}
-		m.network = network
-	}
+	// 	network, err := network.NewServer(logger, netConfig)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	m.network = network
+	// }
 
-	// start blockchain object
-	stateStorage, err := itrie.NewLevelDBStorage(filepath.Join(m.config.DataDir, "trie"), logger)
-	if err != nil {
-		return nil, err
-	}
+	// // start blockchain object
+	// stateStorage, err := itrie.NewLevelDBStorage(filepath.Join(m.config.DataDir, "trie"), logger)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	m.stateStorage = stateStorage
+	// m.stateStorage = stateStorage
 
-	st := itrie.NewState(stateStorage)
-	m.state = st
+	// st := itrie.NewState(stateStorage)
+	// m.state = st
 
-	m.executor = state.NewExecutor(config.Chain.Params, st, logger)
+	// m.executor = state.NewExecutor(config.Chain.Params, st, logger)
 
-	// compute the genesis root state
-	genesisRoot := m.executor.WriteGenesis(config.Chain.Genesis.Alloc)
-	config.Chain.Genesis.StateRoot = genesisRoot
+	// // compute the genesis root state
+	// genesisRoot := m.executor.WriteGenesis(config.Chain.Genesis.Alloc)
+	// config.Chain.Genesis.StateRoot = genesisRoot
 
-	// use the eip155 signer
-	signer := crypto.NewEIP155Signer(uint64(m.config.Chain.Params.ChainID))
+	// // use the eip155 signer
+	// signer := crypto.NewEIP155Signer(uint64(m.config.Chain.Params.ChainID))
 
-	// blockchain object
-	m.blockchain, err = blockchain.NewBlockchain(
-		logger,
-		m.config.DataDir,
-		config.Chain,
-		nil,
-		m.executor,
-		signer,
-		config.GasPriceBlockUtilizationMinimum,
-	)
-	if err != nil {
-		return nil, err
-	}
+	// // blockchain object
+	// m.blockchain, err = blockchain.NewBlockchain(
+	// 	logger,
+	// 	m.config.DataDir,
+	// 	config.Chain,
+	// 	nil,
+	// 	m.executor,
+	// 	signer,
+	// 	config.GasPriceBlockUtilizationMinimum,
+	// )
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	m.executor.GetHash = m.blockchain.GetHashHelper
+	// m.executor.GetHash = m.blockchain.GetHashHelper
 
-	{
-		hub := &txpoolHub{
-			state:      m.state,
-			Blockchain: m.blockchain,
-		}
+	// {
+	// 	hub := &txpoolHub{
+	// 		state:      m.state,
+	// 		Blockchain: m.blockchain,
+	// 	}
 
-		deploymentWhitelist, err := configHelper.GetDeploymentWhitelist(config.Chain)
-		if err != nil {
-			return nil, err
-		}
+	// 	deploymentWhitelist, err := configHelper.GetDeploymentWhitelist(config.Chain)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 
-		// start transaction pool
-		m.txpool, err = txpool.NewTxPool(
-			logger,
-			m.chain.Params.Forks.At(0),
-			hub,
-			m.grpcServer,
-			m.network,
-			&txpool.Config{
-				MaxSlots:            m.config.MaxSlots,
-				PriceLimit:          m.config.PriceLimit,
-				MaxAccountEnqueued:  m.config.MaxAccountEnqueued,
-				DeploymentWhitelist: deploymentWhitelist,
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
+	// 	// start transaction pool
+	// 	m.txpool, err = txpool.NewTxPool(
+	// 		logger,
+	// 		m.chain.Params.Forks.At(0),
+	// 		hub,
+	// 		m.grpcServer,
+	// 		m.network,
+	// 		&txpool.Config{
+	// 			MaxSlots:            m.config.MaxSlots,
+	// 			PriceLimit:          m.config.PriceLimit,
+	// 			MaxAccountEnqueued:  m.config.MaxAccountEnqueued,
+	// 			DeploymentWhitelist: deploymentWhitelist,
+	// 		},
+	// 	)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 
-		m.txpool.SetSigner(signer)
-	}
+	// 	m.txpool.SetSigner(signer)
+	// }
 
-	{
-		// Setup consensus
-		if err := m.setupConsensus(); err != nil {
-			return nil, err
-		}
-		m.blockchain.SetConsensus(m.consensus)
-	}
+	// {
+	// 	// Setup consensus
+	// 	if err := m.setupConsensus(); err != nil {
+	// 		return nil, err
+	// 	}
+	// 	m.blockchain.SetConsensus(m.consensus)
+	// }
 
-	// after consensus is done, we can mine the genesis block in blockchain
-	// This is done because consensus might use a custom Hash function so we need
-	// to wait for consensus because we do any block hashing like genesis
-	if err := m.blockchain.ComputeGenesis(); err != nil {
-		return nil, err
-	}
+	// // after consensus is done, we can mine the genesis block in blockchain
+	// // This is done because consensus might use a custom Hash function so we need
+	// // to wait for consensus because we do any block hashing like genesis
+	// if err := m.blockchain.ComputeGenesis(); err != nil {
+	// 	return nil, err
+	// }
 
-	// initialize data in consensus layer
-	if err := m.consensus.Initialize(); err != nil {
-		return nil, err
-	}
+	// // initialize data in consensus layer
+	// if err := m.consensus.Initialize(); err != nil {
+	// 	return nil, err
+	// }
 
-	if err := m.network.Start(); err != nil {
-		return nil, err
-	}
+	// if err := m.network.Start(); err != nil {
+	// 	return nil, err
+	// }
 
-	// setup and start jsonrpc server
-	if err := m.setupJSONRPC(); err != nil {
-		return nil, err
-	}
+	// // setup and start jsonrpc server
+	// if err := m.setupJSONRPC(); err != nil {
+	// 	return nil, err
+	// }
 
-	logger.Info("[server] 3")
+	// logger.Info("[server] 3")
 
-	// setup and start datafeed consumer
-	if err := m.setupDataFeedService(); err != nil {
-		return nil, err
-	}
+	// // setup and start datafeed consumer
+	// if err := m.setupDataFeedService(); err != nil {
+	// 	return nil, err
+	// }
 
-	// setup and start grpc server
-	if err := m.setupGRPC(); err != nil {
-		return nil, err
-	}
+	// // setup and start grpc server
+	// if err := m.setupGRPC(); err != nil {
+	// 	return nil, err
+	// }
 
-	// restore archive data before starting
-	if err := m.restoreChain(); err != nil {
-		return nil, err
-	}
+	// // restore archive data before starting
+	// if err := m.restoreChain(); err != nil {
+	// 	return nil, err
+	// }
 
-	// start consensus
-	if err := m.consensus.Start(); err != nil {
-		return nil, err
-	}
+	// // start consensus
+	// if err := m.consensus.Start(); err != nil {
+	// 	return nil, err
+	// }
 
-	m.txpool.Start()
+	// m.txpool.Start()
 
 	return m, nil
 }
