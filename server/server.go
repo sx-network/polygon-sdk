@@ -723,6 +723,8 @@ func (s *Server) setupDataFeedService() error {
 		SXNodeAddress:              s.config.DataFeed.SXNodeAddress,
 	}
 
+	fmt.Printf("GetConsensusInfo", "consensus", s.consensus.GetConsensusInfo())
+
 	datafeedService, err := datafeed.NewDataFeedService(
 		s.logger,
 		conf,
