@@ -82,6 +82,8 @@ func NewDataFeedService(
 		reportingTxChan: make(chan *ReportingTx, 200), 
 	}
 
+	fmt.Println("[datafeed][NewDataFeedService] 2")
+
 	// configure and start mqService
 	if config.MQConfig.AMQPURI != "" {
 		if config.MQConfig.ExchangeName == "" {
