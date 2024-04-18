@@ -165,19 +165,19 @@ func NewServer(config *Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to set up the secrets manager: %w", err)
 	}
 
-	// // start libp2p
-	// {
-	// 	netConfig := config.Network
-	// 	netConfig.Chain = m.config.Chain
-	// 	netConfig.DataDir = filepath.Join(m.config.DataDir, "libp2p")
-	// 	netConfig.SecretsManager = m.secretsManager
+	// start libp2p
+	{
+		netConfig := config.Network
+		netConfig.Chain = m.config.Chain
+		netConfig.DataDir = filepath.Join(m.config.DataDir, "libp2p")
+		netConfig.SecretsManager = m.secretsManager
 
-	// 	network, err := network.NewServer(logger, netConfig)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	m.network = network
-	// }
+		network, err := network.NewServer(logger, netConfig)
+		if err != nil {
+			return nil, err
+		}
+		m.network = network
+	}
 
 	// // start blockchain object
 	// stateStorage, err := itrie.NewLevelDBStorage(filepath.Join(m.config.DataDir, "trie"), logger)
