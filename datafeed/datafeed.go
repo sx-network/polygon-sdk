@@ -102,6 +102,8 @@ func NewDataFeedService(
 		datafeedService.mqService = mqService
 	}
 
+	fmt.Println("[datafeed][NewDataFeedService] 3")
+
 	// configure grpc operator service
 	/*
 		In this context, gRPC is being used to facilitate communication between different components of a distributed system. 
@@ -116,6 +118,8 @@ func NewDataFeedService(
 		proto.RegisterDataFeedOperatorServer(grpcServer, datafeedService)
 	}
 
+	fmt.Println("[datafeed][NewDataFeedService] 4")
+
 	// start jsonRpc TxService
 	/*
 	This transaction service likely provides functionality for interacting with an Ethereum node or another
@@ -127,6 +131,8 @@ func NewDataFeedService(
 	}
 	datafeedService.txService = txService
 
+	fmt.Println("[datafeed][NewDataFeedService] 5")
+
 	// start txWorker
 	/*
 		In summary, datafeedService.processTxsFromQueue() starts a goroutine to continuously process reporting 
@@ -136,11 +142,15 @@ func NewDataFeedService(
 	*/
 	go datafeedService.processTxsFromQueue() 
 
+	fmt.Println("[datafeed][NewDataFeedService] 6")
+
 	if config.VerifyOutcomeURI == "" {
 		datafeedService.logger.Warn("Datafeed 'verify_outcome_api_url' is missing but required for outcome voting and reporting.. we will avoid participating in outcome voting and reporting...") //nolint:lll
 
 		return datafeedService, nil
 	}
+
+	fmt.Println("[datafeed][NewDataFeedService] 7")
 
 	// start eventListener
 	/**
@@ -156,12 +166,16 @@ func NewDataFeedService(
 	}
 	datafeedService.eventListener = eventListener 
 
+	fmt.Println("[datafeed][NewDataFeedService] 8")
+
 	// start storeProcessor
 	storeProcessor, err := newStoreProcessor(datafeedService.logger, datafeedService)
 	if err != nil {
 		return nil, err
 	}
 	datafeedService.storeProcessor = storeProcessor // @note ?
+
+	fmt.Println("[datafeed][NewDataFeedService] 9")
 
 	return datafeedService, nil
 }
