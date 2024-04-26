@@ -1,6 +1,7 @@
 package datafeed
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -86,6 +87,8 @@ func (d *DataFeed) sendTxWithRetry(
 		functionArgs = append(make([]interface{}, 0), types.StringToHash(report.MarketHash))
 	}
 
+	fmt.Println("VALIDATOR ADDRESS", d.consensusInfo().ValidatorAddress);
+
 	abiContract, err := ethgoabi.NewABIFromList([]string{functionSig})
 	if err != nil {
 		d.txService.logger.Error(
@@ -96,6 +99,8 @@ func (d *DataFeed) sendTxWithRetry(
 
 		return
 	}
+
+	fmt.Println("VALIDATOR KEY", d.consensusInfo().ValidatorKey);
 
 	c := contract.NewContract(
 		ethgo.Address(ethgo.HexToAddress(d.config.SXNodeAddress)),
