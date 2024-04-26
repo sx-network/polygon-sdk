@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -724,9 +723,10 @@ func (s *Server) setupDataFeedService() error {
 		SXNodeAddress:              s.config.DataFeed.SXNodeAddress,
 	}
 
-	
-	jsonString, err := json.Marshal(s.consensus.GetConsensusInfo())
-    fmt.Println("JSON String: ", string(jsonString))
+
+	consensusInfo := s.consensus.GetConsensusInfo()
+	consensusInfoStr := fmt.Sprintf("%+v", consensusInfo)
+	fmt.Printf("GetConsensusInfo 1", "consensus", consensusInfoStr)
 
 	datafeedService, err := datafeed.NewDataFeedService(
 		s.logger,
