@@ -654,9 +654,12 @@ func (i *backendIBFT) GetConsensusInfo() consensus.ConsensusInfoFn {
 
 // GetValidatorInfo returns consensus info to be used outside consensus layer
 func (i *backendIBFT) getConsensusInfoImpl() *consensus.ConsensusInfo {
+
+	i.logger.Debug("i.currentSigner.Address() ", i.currentSigner.Address());
+
 	return &consensus.ConsensusInfo{
 		Validators:            i.currentValidators,
-		ValidatorKey:          i.currentSigner.PrivateKey(),
+		ValidatorKey:          i.currentSigner.PrivateKey(), // @note private key
 		ValidatorAddress:      i.currentSigner.Address(),
 		Epoch:                 i.GetEpoch(i.blockchain.Header().Number),
 		QuorumSize:            i.quorumSize(i.blockchain.Header().Number)(i.currentValidators),
