@@ -53,6 +53,8 @@ func setFlags(cmd *cobra.Command) {
 		"the genesis file used for starting the chain",
 	)
 
+
+	// @here
 	cmd.Flags().StringVar(
 		&params.configPath,
 		configFlag,
@@ -285,6 +287,7 @@ func setFlags(cmd *cobra.Command) {
 		"the address of the OutcomeReporter contract, used by the DataFeedService's EventListener",
 	)
 
+	// @here
 	cmd.Flags().StringVar(
 		&params.rawConfig.DataFeed.SXNodeAddress,
 		sxNodeAddressFlag,
